@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Data
+data/*.gpkg
+data/*.graphml
+data/*.geojson
+data/*.duckdb
+
+# Results (keep CSV results, ignore other)
+results/*.gpkg
+results/*.geojson
+results/*.parquet
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cache
+cache/
+
+# Environment
+.env
+.env.*
