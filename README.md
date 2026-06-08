@@ -15,7 +15,8 @@ Robin Lovelace
   - [3.1 Benchmark Barplot](#31-benchmark-barplot)
   - [3.2 cityseer Performance](#32-cityseer-performance)
   - [3.3 madina Performance](#33-madina-performance)
-  - [3.4 Overall Comparison](#34-overall-comparison)
+  - [3.4 sfnetworks Performance](#34-sfnetworks-performance)
+  - [3.5 Overall Comparison](#35-overall-comparison)
 - [4. Computational Performance](#4-computational-performance)
 - [5. Discussion](#5-discussion)
   - [5.1 Limitations](#51-limitations)
@@ -32,10 +33,12 @@ This study benchmarks tools for pedestrian flow modelling —
 **cityseer**, **madina** (NetworkX), and **sfnetworks** — against
 Telraam pedestrian count data from Oxfordshire, UK.
 
-cityseer achieves the best predictive performance (R² = 0.60, Pearson r
-= 0.78) at walking-scale catchments with the `shortest_3200m` variant.
-The benchmark compares 10 variants across 2 tools, matching up to 9
-Telraam sensors.
+cityseer achieves the strongest positive correlation with pedestrian
+counts (Pearson r = 0.78, R² = 0.60) at walking-scale catchments
+(`shortest_3200m`). madina-style unweighted betweenness shows a
+counterintuitive negative correlation (r = -0.80). sfnetworks provides
+an R-based alternative with modest correlation (r = 0.31). The benchmark
+compares 11 variants across 3 tools, matching up to 9 Telraam sensors.
 
 ## 1. Introduction
 
@@ -175,15 +178,27 @@ degree \| 0.005 \| 0.069 \| 0.5 \| 280 \| 191244 \| 9 \|
 3.  **Edge-based metrics capture different properties** than node-based
     centrality.
 
-### 3.4 Overall Comparison
+### 3.4 sfnetworks Performance
 
-| Aspect | cityseer | madina |
-|--------|----------|--------|
+| Variant | R²  | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
+|---------|-----|-----------|----------|----------|-------|---------|
 
-Best R² \| **0.605** \| 0.643 \|  
-Best Pearson r \| **0.778** \| 0.394 \|  
-Compute time (s) \| 12–13 \| 0–32 \|  
-Approach \| Node centrality \| Edge betweenness \|
+edge_betweenness \| 0.097 \| 0.311 \| 429.4 \| 450 \| 223 \| 9 \|
+
+sfnetworks edge betweenness yields R²=0.097 (Pearson r=0.311) in 429s.
+The R-based workflow provides native spatial indexing and tidyverse
+integration, though full-network betweenness is computationally
+expensive on a 95K-edge graph.
+
+### 3.5 Overall Comparison
+
+| Aspect | cityseer | madina | sfnetworks |
+|--------|----------|--------|------------|
+
+Best R² \| **0.605** \| 0.643 \| 0.097 \|  
+Best Pearson r \| **0.778** \| 0.394 \| 0.311 \|  
+Compute time (s) \| 12–13 \| 0–32 \| 429 \|  
+Language \| Python (Rust) \| Python \| R \|
 
 ## 4. Computational Performance
 
@@ -199,11 +214,12 @@ cityseer \| shortest_multi \| 12.3 \| 350 \| 7768 \|
 cityseer \| shortest_3200m \| 13.4 \| 350 \| 7125 \|  
 madina \| btw_unweighted \| 14.8 \| 280 \| 6461 \|  
 madina \| btw_weighted_200 \| 15.2 \| 280 \| 6291 \|  
-madina \| btw_weighted_500 \| 32.1 \| 280 \| 2979 \|
+madina \| btw_weighted_500 \| 32.1 \| 280 \| 2979 \|  
+sfnetworks \| edge_betweenness \| 429.4 \| 450 \| 223 \|
 
 - **Fastest**: `madina degree` at 0.5s
-- **Slowest**: `madina btw_weighted_500` at 32.1s
-- **Peak RAM**: 350 MB (95,622 edges)
+- **Slowest**: `sfnetworks edge_betweenness` at 429.4s
+- **Peak RAM**: 450 MB (95,622 edges)
 - **Max throughput**: 191,244 segments/sec
 
 ![Peak memory usage by variant](results/fig3_ram.png)
