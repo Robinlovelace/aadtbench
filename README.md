@@ -34,11 +34,12 @@ This study benchmarks tools for pedestrian flow modelling —
 Telraam pedestrian count data from Oxfordshire, UK.
 
 cityseer achieves the strongest positive correlation with pedestrian
-counts (Pearson r = 0.78, R² = 0.60) at walking-scale catchments
+counts (Pearson r = **0.78**, R² = 0.60) at walking-scale catchments
 (`shortest_3200m`). madina-style unweighted betweenness shows a
 counterintuitive negative correlation (r = -0.80). sfnetworks provides
 an R-based alternative with modest correlation (r = 0.31). The benchmark
-compares 11 variants across 3 tools, matching up to 9 Telraam sensors.
+compares **11** variants across **3** tools, matching up to **9**
+Telraam sensors.
 
 ## 1. Introduction
 
@@ -75,12 +76,12 @@ modelling with **Telraam** data.
 Oxford, UK — a medium-sized city with extensive pedestrian
 infrastructure.
 
-| Network Property | Value                                                    |
-|------------------|----------------------------------------------------------|
-| Nodes            | {python} print(f”{n_nodes:,}“) {/python} (unique coords) |
-| Edges            | {python} print(f”{n_edges:,}“) {/python}                 |
-| Network type     | walk (pedestrian, OSM)                                   |
-| CRS              | EPSG:27700 (OSGB)                                        |
+| Network Property | Value                                    |
+|------------------|------------------------------------------|
+| Nodes            | 38,128                                   |
+| Edges            | {python} print(f”{n_edges:,}“) {/python} |
+| Network type     | walk (pedestrian, OSM)                   |
+| CRS              | EPSG:27700 (OSGB)                        |
 
 ### 2.2 Validation Data
 
@@ -144,15 +145,14 @@ average daily pedestrian count at each sensor.
 
 ### 3.2 cityseer Performance
 
-| Variant | R²  | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|---------|-----|-----------|----------|----------|-------|---------|
-
-shortest_3200m \| 0.605 \| 0.778 \| 13.4 \| 350 \| 7125 \| 3 \|  
-shortest_800m \| 0.589 \| 0.768 \| 12.0 \| 350 \| 7955 \| 3 \|  
-shortest_1600m \| 0.585 \| 0.765 \| 12.1 \| 350 \| 7916 \| 3 \|  
-shortest_400m \| 0.580 \| 0.762 \| 11.5 \| 350 \| 8301 \| 3 \|  
-shortest_multi \| 0.580 \| 0.762 \| 12.3 \| 350 \| 7768 \| 3 \|  
-shortest_200m \| 0.558 \| 0.747 \| 11.6 \| 350 \| 8250 \| 3 \|
+| Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
+|----------------|-------|-----------|----------|----------|-------|---------|
+| shortest_3200m | 0.605 | 0.778     | 13.4     | 350      | 7125  | 3       |
+| shortest_800m  | 0.589 | 0.768     | 12.0     | 350      | 7955  | 3       |
+| shortest_1600m | 0.585 | 0.765     | 12.1     | 350      | 7916  | 3       |
+| shortest_400m  | 0.580 | 0.762     | 11.5     | 350      | 8301  | 3       |
+| shortest_multi | 0.580 | 0.762     | 12.3     | 350      | 7768  | 3       |
+| shortest_200m  | 0.558 | 0.747     | 11.6     | 350      | 8250  | 3       |
 
 1.  **Optimal catchment**: The best variant is `shortest_3200m` with
     R²=0.605.
@@ -165,13 +165,12 @@ shortest_200m \| 0.558 \| 0.747 \| 11.6 \| 350 \| 8250 \| 3 \|
 
 ### 3.3 madina Performance
 
-| Variant | R²  | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|---------|-----|-----------|----------|----------|-------|---------|
-
-btw_unweighted \| 0.643 \| -0.802 \| 14.8 \| 280 \| 6461 \| 9 \|  
-btw_weighted_200 \| 0.155 \| 0.394 \| 15.2 \| 280 \| 6291 \| 9 \|  
-btw_weighted_500 \| 0.155 \| 0.394 \| 32.1 \| 280 \| 2979 \| 9 \|  
-degree \| 0.005 \| 0.069 \| 0.5 \| 280 \| 191244 \| 9 \|
+| Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
+|------------------|-------|-----------|----------|----------|--------|---------|
+| btw_unweighted   | 0.643 | -0.802    | 14.8     | 280      | 6461   | 9       |
+| btw_weighted_200 | 0.155 | 0.394     | 15.2     | 280      | 6291   | 9       |
+| btw_weighted_500 | 0.155 | 0.394     | 32.1     | 280      | 2979   | 9       |
+| degree           | 0.005 | 0.069     | 0.5      | 280      | 191244 | 9       |
 
 1.  **Degree centrality has limited predictive power** (R²=0.005).
 2.  **Weighted betweenness is best** with R²=0.643 (`btw_unweighted`).
@@ -180,10 +179,9 @@ degree \| 0.005 \| 0.069 \| 0.5 \| 280 \| 191244 \| 9 \|
 
 ### 3.4 sfnetworks Performance
 
-| Variant | R²  | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|---------|-----|-----------|----------|----------|-------|---------|
-
-edge_betweenness \| 0.097 \| 0.311 \| 429.4 \| 450 \| 223 \| 9 \|
+| Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
+|------------------|-------|-----------|----------|----------|-------|---------|
+| edge_betweenness | 0.097 | 0.311     | 429.4    | 450      | 223   | 9       |
 
 sfnetworks edge betweenness yields R²=0.097 (Pearson r=0.311) in 429s.
 The R-based workflow provides native spatial indexing and tidyverse
@@ -192,30 +190,28 @@ expensive on a 95K-edge graph.
 
 ### 3.5 Overall Comparison
 
-| Aspect | cityseer | madina | sfnetworks |
-|--------|----------|--------|------------|
-
-Best R² \| **0.605** \| 0.643 \| 0.097 \|  
-Best Pearson r \| **0.778** \| 0.394 \| 0.311 \|  
-Compute time (s) \| 12–13 \| 0–32 \| 429 \|  
-Language \| Python (Rust) \| Python \| R \|
+| Aspect           | cityseer      | madina | sfnetworks |
+|------------------|---------------|--------|------------|
+| Best R²          | **0.605**     | 0.643  | 0.097      |
+| Best Pearson r   | **0.778**     | 0.394  | 0.311      |
+| Compute time (s) | 12–13         | 0–32   | 429        |
+| Language         | Python (Rust) | Python | R          |
 
 ## 4. Computational Performance
 
-| Tool | Variant | Time (s) | RAM (MB) | Segments/sec |
-|------|---------|----------|----------|--------------|
-
-madina \| degree \| 0.5 \| 280 \| 191244 \|  
-cityseer \| shortest_400m \| 11.5 \| 350 \| 8301 \|  
-cityseer \| shortest_200m \| 11.6 \| 350 \| 8250 \|  
-cityseer \| shortest_800m \| 12.0 \| 350 \| 7955 \|  
-cityseer \| shortest_1600m \| 12.1 \| 350 \| 7916 \|  
-cityseer \| shortest_multi \| 12.3 \| 350 \| 7768 \|  
-cityseer \| shortest_3200m \| 13.4 \| 350 \| 7125 \|  
-madina \| btw_unweighted \| 14.8 \| 280 \| 6461 \|  
-madina \| btw_weighted_200 \| 15.2 \| 280 \| 6291 \|  
-madina \| btw_weighted_500 \| 32.1 \| 280 \| 2979 \|  
-sfnetworks \| edge_betweenness \| 429.4 \| 450 \| 223 \|
+| Tool       | Variant          | Time (s) | RAM (MB) | Segments/sec |
+|------------|------------------|----------|----------|--------------|
+| madina     | degree           | 0.5      | 280      | 191244       |
+| cityseer   | shortest_400m    | 11.5     | 350      | 8301         |
+| cityseer   | shortest_200m    | 11.6     | 350      | 8250         |
+| cityseer   | shortest_800m    | 12.0     | 350      | 7955         |
+| cityseer   | shortest_1600m   | 12.1     | 350      | 7916         |
+| cityseer   | shortest_multi   | 12.3     | 350      | 7768         |
+| cityseer   | shortest_3200m   | 13.4     | 350      | 7125         |
+| madina     | btw_unweighted   | 14.8     | 280      | 6461         |
+| madina     | btw_weighted_200 | 15.2     | 280      | 6291         |
+| madina     | btw_weighted_500 | 32.1     | 280      | 2979         |
+| sfnetworks | edge_betweenness | 429.4    | 450      | 223          |
 
 - **Fastest**: `madina degree` at 0.5s
 - **Slowest**: `sfnetworks edge_betweenness` at 429.4s
