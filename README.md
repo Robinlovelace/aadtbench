@@ -17,7 +17,7 @@ Robin Lovelace
   - [3.3 madina Performance](#33-madina-performance)
   - [3.4 sfnetworks Performance](#34-sfnetworks-performance)
   - [3.5 Overall Comparison](#35-overall-comparison)
-- [4. Computational Performance](#4-computational-performance)
+- [Performance](#performance)
 - [5. Discussion](#5-discussion)
   - [5.1 Limitations](#51-limitations)
 - [6. Conclusion](#6-conclusion)
@@ -197,28 +197,14 @@ expensive on a 95K-edge graph.
 | Compute time (s) | 12–13         | 0–32   | 429        |
 | Language         | Python (Rust) | Python | R          |
 
-## 4. Computational Performance
+## Performance
 
-| Tool       | Variant          | Time (s) | RAM (MB) | Segments/sec |
-|------------|------------------|----------|----------|--------------|
-| madina     | degree           | 0.5      | 280      | 191244       |
-| cityseer   | shortest_400m    | 11.5     | 350      | 8301         |
-| cityseer   | shortest_200m    | 11.6     | 350      | 8250         |
-| cityseer   | shortest_800m    | 12.0     | 350      | 7955         |
-| cityseer   | shortest_1600m   | 12.1     | 350      | 7916         |
-| cityseer   | shortest_multi   | 12.3     | 350      | 7768         |
-| cityseer   | shortest_3200m   | 13.4     | 350      | 7125         |
-| madina     | btw_unweighted   | 14.8     | 280      | 6461         |
-| madina     | btw_weighted_200 | 15.2     | 280      | 6291         |
-| madina     | btw_weighted_500 | 32.1     | 280      | 2979         |
-| sfnetworks | edge_betweenness | 429.4    | 450      | 223          |
+![Performance: throughput (left) and memory use
+(right)](results/fig3_performance.png)
 
-- **Fastest**: `madina degree` at 0.5s
-- **Slowest**: `sfnetworks edge_betweenness` at 429.4s
-- **Peak RAM**: 450 MB (95,622 edges)
-- **Max throughput**: 191,244 segments/sec
-
-![Peak memory usage by variant](results/fig3_ram.png)
+**madina degree** is fastest at 0.5s, processing **191,244**
+segments/sec. Memory ranges from **280** to **450** MB across all
+variants.
 
 ## 5. Discussion
 
@@ -286,7 +272,7 @@ streets (main roads) are often the least pleasant for walking.
 - `results/combined_results.csv` — Auto-generated results
 - `results/fig1_oxford_network.png` — Network map
 - `results/fig2_barplot.png` — R² comparison plot
-- `results/fig3_ram.png` — Memory usage plot
+- `results/fig3_performance.png` — Speed and memory comparison
 
 ### Software Versions
 
