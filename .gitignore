@@ -29,3 +29,8 @@ cache/
 # Environment
 .env
 .env.*
+
+# Interactive Map Artifacts
+*.html
+*.js
+
