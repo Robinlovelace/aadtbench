@@ -25,6 +25,8 @@ results/*.parquet
 
 # Cache
 cache/
+_targets/
+_targets.Rout
 
 # Environment
 .env
