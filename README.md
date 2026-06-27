@@ -6,6 +6,7 @@ Robin Lovelace
 - [Abstract](#abstract)
 - [1. Introduction](#1-introduction)
   - [1.1 Related Work](#11-related-work)
+  - [1.2 Input Datasets](#12-input-datasets)
 - [2. Methods](#2-methods)
   - [2.1 Study Area](#21-study-area)
   - [2.2 Validation Data](#22-validation-data)
@@ -68,6 +69,32 @@ Prior benchmarks in the `a private study` repository tested cityseer,
 sfnetworks, and dodgr against Leeds AADT counts, finding best R² ~0.46
 for cityseer. This study extends that work focusing on **pedestrian**
 modelling with **Telraam** data.
+
+### 1.2 Input Datasets
+
+Six datasets underpin the Leuven benchmark, all sourced from open data:
+
+    | Dataset | Description | Rows | Key variables | Source |\n|---------|-------------|------|---------------|--------|\n| Walk network | OSM pedestrian network (edges) | 19,118 | `u`, `v`, `highway`, `length` | OpenStreetMap |\n| Walk nodes | Network nodes | 7,074 | `osmid`, `y`, `x`, `highway` | OpenStreetMap |\n| Telraam sensors | Pedestrian counts (7-day avg) | 38 | `sensor_id`, `avg_daily_pedestrians` | Telraam API |\n| Telraam segments | Road segments with monitoring | 798 | `oidn` | Telraam API |\n| WorldPop origins | Population grid cells (100m) | 2,859 | `population` | WorldPop |\n| POI attractors | Destinations by category | 800 | `name`, `category`, `attractor_weight` | OSM |
+
+The Leuven walk network has 19,118 edges (vs 95,622 for Oxford) — a **5×
+smaller** network that enables rapid iteration. The 38 Telraam sensors
+report an average of 286 pedestrians per day (max 4,377), providing a
+substantially richer validation signal than Oxford’s low-count sensors.
+
+WorldPop population data (100m grid, total population 171,574) serves as
+origin weights for gravity models. POI attractors (800 points across 7
+categories including universities, dining, shops, transit stations)
+provide destination weights.
+
+![Leuven input datasets: (a) walk network, (b) Telraam sensor locations
+with daily pedestrian counts, (c) WorldPop population grid, (d) POI
+attractors by category, (e) Telraam road segments, (f) composite
+overlay](results/leuven_input_datasets.png)
+
+**Figure 2** visualises all six datasets. The Telraam sensor
+distribution shows high pedestrian volumes concentrated in the city
+centre (250–4,377/day) with moderate volumes on arterial routes and
+suburban streets (50–250/day).
 
 ## 2. Methods
 
