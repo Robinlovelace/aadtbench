@@ -32,13 +32,13 @@ Robin Lovelace
 
 ## Abstract
 
-This study benchmarks six tools for pedestrian flow modelling using
-Telraam sensor data in Leuven, Belgium. cityseer_demand gravity models
-achieve the strongest predictive performance (R² up to 0.543), followed
-by sDNA+ (R²=0.271 for angular distance at 1600m). Pure network
-centrality measures show weak correlation with pedestrian counts (R² \<
-0.02), highlighting the importance of land-use attractor weights for
-pedestrian flow estimation.
+This study benchmarks seven tools for pedestrian flow modelling using
+Telraam sensor data in Leuven, Belgium. madina_worldpop gravity models
+achieve the strongest predictive performance (R² up to 0.676), followed
+by cityseer_demand (R²=0.543) and sfnetworks (R²=0.466). sDNA+ angular
+distance (R²=0.271) leads pure network measures. Gravity models with
+land-use attractor weights substantially outperform raw network
+centrality (R² \< 0.02).
 
 ## 1. Introduction
 
@@ -188,8 +188,9 @@ seconds.
 
 ### 3.6 Gravity / Demand Model Performance
 
-| Variant | R²  | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|---------|-----|-----------|----------|----------|-------|---------|
+| Variant              | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
+|----------------------|-------|-----------|----------|----------|-------|---------|
+| wp_r2000_beta002_all | 0.676 | 0.822     | 29.5     | 310      | 649   | 22      |
 
 | Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |-----------------------------|-------|-----------|----------|----------|--------|---------|
@@ -218,10 +219,12 @@ across all tools (310–450 MB peak).
 
 Three clear tiers emerge from the benchmarks:
 
-1.  **Gravity/demand models** (R² 0.40–0.54): cityseer_demand with
-    land-use attractors and population origins provide the strongest
-    predictions. The 800m catchment radius performs best, suggesting
-    pedestrian flows are highly localised.
+1.  **Gravity/demand models** (R² 0.47–0.68): madina_worldpop with
+    population-weighted origins and cost-decayed destination attraction
+    achieves the top result (R²=0.676 at 2000m, β=0.02). cityseer_demand
+    at 800m (R²=0.543) performs best at shorter ranges with an
+    alternative gravity formulation. sfnetworks edge betweenness
+    (R²=0.466) also captures flow patterns effectively.
 
 2.  **Spatial network measures** (R² 0.15–0.27): sDNA+ angular distance
     (R²=0.271) and madina degree centrality (R²=0.145) capture some
@@ -246,12 +249,16 @@ which acts as a proxy for network integration and walkability.
 
 ## 6. Conclusion
 
-Gravity-based demand models outperform pure network centrality by over
-an order of magnitude for pedestrian flow estimation. Among purely
-structural measures, sDNA+’s angular distance provides the most
-informative signal. The benchmark demonstrates that land-use attractor
-weights and population origins are essential for meaningful pedestrian
-flow prediction, and that network centrality alone is insufficient.
+Gravity-based demand models (madina_worldpop, cityseer_demand)
+outperform pure network centrality by over an order of magnitude for
+pedestrian flow estimation. The top result (R²=0.676) comes from
+madina_worldpop with population-weighted origins and distance-decayed
+destination attraction. Among purely structural measures, sfnetworks
+edge betweenness (R²=0.466) and sDNA+ angular distance (R²=0.271)
+provide the most informative signals. The benchmark demonstrates that
+land-use attractor weights and population origins are essential for
+meaningful pedestrian flow prediction, and that raw network centrality
+alone is insufficient.
 
 Future work should expand validation to larger, multi-city datasets and
 explore hybrid models combining centrality with land-use covariates.
