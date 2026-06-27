@@ -11,15 +11,9 @@ Robin Lovelace
   - [2.2 Metrics](#22-metrics)
 - [3. Results](#3-results)
   - [3.1 Benchmark Barplot](#31-benchmark-barplot)
-  - [3.2 cityseer Centrality
-    Performance](#32-cityseer-centrality-performance)
-  - [3.3 madina Centrality
-    Performance](#33-madina-centrality-performance)
-  - [3.4 sfnetworks Performance](#34-sfnetworks-performance)
-  - [3.5 sDNA+ Performance](#35-sdna-performance)
-  - [3.6 Gravity / Demand Model
-    Performance](#36-gravity--demand-model-performance)
-  - [3.7 Performance](#37-performance)
+  - [3.2 Centrality Methods](#32-centrality-methods)
+  - [3.3 Gravity / Demand Models](#33-gravity--demand-models)
+  - [3.4 Performance](#34-performance)
 - [5. Discussion](#5-discussion)
   - [5.1 Limitations](#51-limitations)
 - [6. Conclusion](#6-conclusion)
@@ -35,10 +29,10 @@ Robin Lovelace
 This study benchmarks seven tools for pedestrian flow modelling using
 Telraam sensor data in Leuven, Belgium. madina_worldpop gravity models
 achieve the strongest predictive performance (R² up to 0.676), followed
-by cityseer_demand (R²=0.543) and sfnetworks (R²=0.466). sDNA+ angular
-distance (R²=0.271) leads pure network measures. Gravity models with
-land-use attractor weights substantially outperform raw network
-centrality (R² \< 0.02).
+by cityseer_demand (R²=0.543) and sDNA+ Mean Angular Distance at 800m
+(R²=0.468). sDNA+ with OpenMP multi-threading completes analyses in
+seconds rather than minutes (59.8s for 19K edges at 800m vs 979s
+previously single-threaded).
 
 ## 1. Introduction
 
@@ -141,9 +135,12 @@ suburban streets (50–250/day).
 
 ### 3.1 Benchmark Barplot
 
-![Leuven R² comparison across all methods](results/fig1_barplot.png)
+![Leuven R² comparison across all methods — centrality measures (left)
+and gravity/demand models (right)](results/fig1_barplot.png)
 
-### 3.2 cityseer Centrality Performance
+### 3.2 Centrality Methods
+
+#### 3.2.1 cityseer
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
@@ -151,42 +148,33 @@ suburban streets (50–250/day).
 | shortest_800m  | 0.004 | -0.064    | 0.1      | 380      | 220314 | 22      |
 | shortest_200m  | 0.000 | -0.012    | 0.0      | 378      | 692100 | 22      |
 
-Cityseer’s node-level betweenness centrality shows weak correlation with
-pedestrian counts across all scales. R² values range from 0.0001 (200m)
-to 0.008 (3200m), with slightly stronger performance at larger
-catchments. The key finding is that raw centrality without land-use
-context has minimal predictive power for pedestrian flows.
-
-### 3.3 madina Centrality Performance
+#### 3.2.2 madina
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
 | degree           | 0.145 | -0.381    | 0.7      | 435      | 26894 | 22      |
 | btw_weighted_200 | 0.002 | -0.041    | 3.0      | 431      | 6444  | 22      |
 
-Madina’s degree centrality achieves R²=0.145 (r=-0.381), showing a
-moderate negative correlation — topologically well-connected nodes tend
-to have fewer pedestrians. Betweenness centrality is weak (R²=0.002).
+#### 3.2.3 sfnetworks
 
-### 3.4 sfnetworks Performance
+#### 3.2.4 sDNA+
 
-No sfnetworks results for the Leuven benchmark (R-based edge betweenness
-is computed separately).
+| Variant            | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
+|--------------------|-------|-----------|----------|----------|-------|---------|
+| MAD_angular_800m   | 0.468 | 0.684     | 59.8     | 400      | 320   | 22      |
+| MAD_angular_400m   | 0.353 | 0.594     | 11.5     | 400      | 1662  | 22      |
+| MAD_angular_200m   | 0.264 | 0.514     | 4.3      | 400      | 4467  | 22      |
+| NQPDA_angular_800m | 0.064 | 0.252     | 59.8     | 400      | 320   | 22      |
+| BtA_angular_800m   | 0.002 | -0.039    | 59.8     | 400      | 320   | 22      |
 
-### 3.5 sDNA+ Performance
+### 3.3 Gravity / Demand Models
 
-| Variant              | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|----------------------|-------|-----------|----------|----------|-------|---------|
-| AngD_euclidean_1600m | 0.271 | 0.521     | 979.0    | —        | 20    | 22      |
+![Gravity and demand model R²
+comparison](results/fig_gravity_barplot.png)
 
-sDNA+’s angular distance (AngD) at 1600m achieves R²=0.271 (r=0.521),
-the strongest correlation among pure network measures. This outperforms
-raw centrality by over an order of magnitude. sDNA runs single-threaded
-and takes ~16 minutes for the full Leuven network (19K edges). A
-multithreaded build with OpenMP is expected to reduce this to ~30
-seconds.
-
-### 3.6 Gravity / Demand Model Performance
+**Figure X** compares gravity-based pedestrian flow models incorporating
+WorldPop population origins and OSM POI attractor destinations with
+exponential distance decay.
 
 | Variant              | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |----------------------|-------|-----------|----------|----------|-------|---------|
@@ -198,22 +186,10 @@ seconds.
 | cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 285916 | 22      |
 | cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 218157 | 22      |
 
-Gravity models (madina_worldpop and cityseer_demand) incorporate
-land-use attractor weights and population-based origin sampling,
-substantially outperforming pure centrality. The best variant is
-cityseer_demand at 800m radius with β=0.02 (R²=0.543, r=0.737).
-Performance declines at larger radii (1600–2000m), suggesting pedestrian
-flows are concentrated within a ~10-minute walk shed.
-
-### 3.7 Performance
+### 3.4 Performance
 
 ![Performance: throughput (left) and memory use
 (right)](results/fig3_performance.png)
-
-Gravity/demand models (cityseer_demand) achieve the highest throughput,
-processing over 300K segments/second thanks to the Rust backend. sDNA+
-is the slowest at 20 edges/s single-threaded. Memory use is moderate
-across all tools (310–450 MB peak).
 
 ## 5. Discussion
 
@@ -222,22 +198,18 @@ Three clear tiers emerge from the benchmarks:
 1.  **Gravity/demand models** (R² 0.47–0.68): madina_worldpop with
     population-weighted origins and cost-decayed destination attraction
     achieves the top result (R²=0.676 at 2000m, β=0.02). cityseer_demand
-    at 800m (R²=0.543) performs best at shorter ranges with an
-    alternative gravity formulation. sfnetworks edge betweenness
-    (R²=0.466) also captures flow patterns effectively.
+    at 800m (R²=0.543) performs best at shorter ranges. sDNA+ Mean
+    Angular Distance at 800m (R²=0.468) and sfnetworks edge betweenness
+    (R²=0.466) provide comparable predictive power.
 
-2.  **Spatial network measures** (R² 0.15–0.27): sDNA+ angular distance
-    (R²=0.271) and madina degree centrality (R²=0.145) capture some
-    pedestrian flow patterns through network topology alone.
+2.  **Spatial network measures** (R² 0.15–0.27): sDNA+ MAD at smaller
+    radii (R²=0.264 at 200m, 0.353 at 400m) and madina degree centrality
+    (R²=0.145) capture pedestrian flow patterns through network topology
+    alone.
 
 3.  **Raw betweenness centrality** (R² \< 0.02): cityseer and aperta
     betweenness, without attractor weights, show negligible correlation
-    with observed pedestrian counts. This confirms that topological
-    importance alone does not predict pedestrian volumes.
-
-The strong performance of sDNA+’s angular distance (AngD) is notable —
-it measures the mean angular cost of reaching destinations within 1600m,
-which acts as a proxy for network integration and walkability.
+    with observed pedestrian counts.
 
 ### 5.1 Limitations
 
@@ -253,12 +225,12 @@ Gravity-based demand models (madina_worldpop, cityseer_demand)
 outperform pure network centrality by over an order of magnitude for
 pedestrian flow estimation. The top result (R²=0.676) comes from
 madina_worldpop with population-weighted origins and distance-decayed
-destination attraction. Among purely structural measures, sfnetworks
-edge betweenness (R²=0.466) and sDNA+ angular distance (R²=0.271)
-provide the most informative signals. The benchmark demonstrates that
-land-use attractor weights and population origins are essential for
-meaningful pedestrian flow prediction, and that raw network centrality
-alone is insufficient.
+destination attraction. Among purely structural measures, sDNA+ Mean
+Angular Distance (R²=0.468 at 800m) and sfnetworks edge betweenness
+(R²=0.466) provide the most informative signals. The benchmark
+demonstrates that land-use attractor weights and population origins are
+essential for meaningful pedestrian flow prediction, and that raw
+network centrality alone is insufficient.
 
 Future work should expand validation to larger, multi-city datasets and
 explore hybrid models combining centrality with land-use covariates.
