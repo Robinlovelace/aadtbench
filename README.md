@@ -64,7 +64,7 @@ modelling with **Telraam** data.
 
 Six datasets underpin the Leuven benchmark, all sourced from open data:
 
-    | Dataset | Description | Rows | Key variables | Source |\n|---------|-------------|------|---------------|--------|\n| Walk network | OSM pedestrian network (edges) | 19,118 | `u`, `v`, `highway`, `length` | OpenStreetMap |\n| Walk nodes | Network nodes | 7,074 | `osmid`, `y`, `x`, `highway` | OpenStreetMap |\n| Telraam sensors | Pedestrian counts (7-day avg) | 38 | `sensor_id`, `avg_daily_pedestrians` | Telraam API |\n| Telraam segments | Road segments with monitoring | 798 | `oidn` | Telraam API |\n| WorldPop origins | Population grid cells (100m) | 576 | `population` | WorldPop |\n| POI attractors | Destinations by category | 2 | `name`, `category`, `attractor_weight` | OSM |
+    | Dataset | Description | Rows | Key variables | Source |\n|---------|-------------|------|---------------|--------|\n| Walk network | OSM pedestrian network (edges) | 19,118 | `u`, `v`, `highway`, `length` | OpenStreetMap |\n| Walk nodes | Network nodes | 7,074 | `osmid`, `y`, `x`, `highway` | OpenStreetMap |\n| Telraam sensors | Pedestrian counts (7-day avg) | 38 | `sensor_id`, `avg_daily_pedestrians` | Telraam API |\n| Telraam segments | Road segments with monitoring | 798 | `oidn` | Telraam API |\n| WorldPop origins | Population grid cells (100m) | 2,859 | `population` | WorldPop |\n| POI attractors | Destinations by category | 801 | `name`, `category`, `attractor_weight` | OSM |
 
 The Leuven walk network has 19,118 edges. The 38 Telraam sensors report
 an average of 286 pedestrians per day (max 4,377), providing a
@@ -142,23 +142,23 @@ and gravity/demand models (right)](results/fig1_barplot.png)
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
-| shortest_800m  | 0.109 | -0.330    | 0.0      | 301      | 233353 | 6       |
-| shortest_200m  | 0.033 | -0.181    | 0.0      | 296      | 384158 | 6       |
-| shortest_3200m | 0.000 | -0.014    | 0.1      | 308      | 79574  | 6       |
+| shortest_3200m | 0.008 | -0.091    | 0.6      | 418      | 30606  | 22      |
+| shortest_800m  | 0.004 | -0.064    | 0.1      | 374      | 191724 | 22      |
+| shortest_200m  | 0.000 | -0.012    | 0.0      | 371      | 623652 | 22      |
 
 #### 3.2.2 madina
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| degree           | 0.015 | 0.122     | 0.2      | 312      | 26862 | 6       |
-| btw_weighted_200 | 0.000 | 0.018     | 0.8      | 313      | 7414  | 6       |
+| degree           | 0.145 | -0.381    | 0.7      | 428      | 26810 | 22      |
+| btw_weighted_200 | 0.002 | -0.041    | 2.9      | 425      | 6603  | 22      |
 
 #### 3.2.3 sDNA+
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| MAD_angular_200m | 0.337 | 0.581     | 1.1      | 400      | 5607  | 6       |
-| MAD_angular_400m | 0.137 | 0.370     | 3.8      | 400      | 1583  | 6       |
+| MAD_angular_400m | 0.353 | 0.594     | 11.0     | 400      | 1739  | 22      |
+| MAD_angular_200m | 0.264 | 0.514     | 4.1      | 400      | 4676  | 22      |
 
 ### 3.3 Gravity / Demand Models
 
@@ -171,16 +171,16 @@ exponential distance decay.
 
 | Variant                      | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------------------|-------|-----------|----------|----------|-------|---------|
-| wp_r3000_det100_all_beta0005 | 0.135 | -0.367    | 1.7      | 229      | 1714  | 6       |
-| wp_r2000_det100_all_beta001  | 0.067 | -0.260    | 1.8      | 229      | 1683  | 6       |
-| wp_r3000_det100_all_beta001  | 0.067 | -0.260    | 1.7      | 229      | 1765  | 6       |
-| wp_r3000_det100_all_beta002  | 0.000 | 0.011     | 1.8      | 229      | 1670  | 6       |
+| wp_r3000_det100_all_beta002  | 0.070 | -0.264    | 45.6     | 304      | 207   | 22      |
+| wp_r2000_det100_all_beta001  | 0.056 | -0.237    | 29.7     | 304      | 318   | 22      |
+| wp_r3000_det100_all_beta001  | 0.043 | -0.207    | 43.0     | 304      | 220   | 22      |
+| wp_r3000_det100_all_beta0005 | 0.040 | -0.200    | 46.0     | 304      | 206   | 22      |
 
 | Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |-----------------------------|-------|-----------|----------|----------|--------|---------|
-| cs_demand_r2000_beta002_all | 0.548 | -0.740    | 0.0      | 420      | 295364 | 6       |
-| cs_demand_r1200_beta002_all | 0.531 | -0.729    | 0.0      | 420      | 276694 | 6       |
-| cs_demand_r800_beta002_all  | 0.201 | -0.449    | 0.0      | 420      | 281448 | 6       |
+| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 319686 | 22      |
+| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 267936 | 22      |
+| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 212274 | 22      |
 
 ### 3.4 Performance
 
