@@ -16,6 +16,7 @@ data/*.duckdb
 results/*.gpkg
 results/*.geojson
 results/*.parquet
+results/*.png
 
 # IDE
 .vscode/
