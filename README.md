@@ -22,8 +22,6 @@ Robin Lovelace
   - [Reproducibility](#reproducibility)
   - [Software Versions](#software-versions)
 
-`{r targets-dependencies, include = FALSE} #| eval: false #| echo: false library(targets) tar_load(leuven_results) tar_load(leuven_input_figure)`
-
 ## Abstract
 
 This study benchmarks seven tools for pedestrian flow modelling using
@@ -66,7 +64,7 @@ modelling with **Telraam** data.
 
 Six datasets underpin the Leuven benchmark, all sourced from open data:
 
-    | Dataset | Description | Rows | Key variables | Source |\n|---------|-------------|------|---------------|--------|\n| Walk network | OSM pedestrian network (edges) | 19,118 | `u`, `v`, `highway`, `length` | OpenStreetMap |\n| Walk nodes | Network nodes | 7,074 | `osmid`, `y`, `x`, `highway` | OpenStreetMap |\n| Telraam sensors | Pedestrian counts (7-day avg) | 38 | `sensor_id`, `avg_daily_pedestrians` | Telraam API |\n| Telraam segments | Road segments with monitoring | 798 | `oidn` | Telraam API |\n| WorldPop origins | Population grid cells (100m) | 2,859 | `population` | WorldPop |\n| POI attractors | Destinations by category | 801 | `name`, `category`, `attractor_weight` | OSM |
+    | Dataset | Description | Rows | Key variables | Source |\n|---------|-------------|------|---------------|--------|\n| Walk network | OSM pedestrian network (edges) | 19,118 | `u`, `v`, `highway`, `length` | OpenStreetMap |\n| Walk nodes | Network nodes | 7,074 | `osmid`, `y`, `x`, `highway` | OpenStreetMap |\n| Telraam sensors | Pedestrian counts (7-day avg) | 38 | `sensor_id`, `avg_daily_pedestrians` | Telraam API |\n| Telraam segments | Road segments with monitoring | 798 | `oidn` | Telraam API |\n| WorldPop origins | Population grid cells (100m) | 576 | `population` | WorldPop |\n| POI attractors | Destinations by category | 2 | `name`, `category`, `attractor_weight` | OSM |
 
 The Leuven walk network has 19,118 edges. The 38 Telraam sensors report
 an average of 286 pedestrians per day (max 4,377), providing a
@@ -144,18 +142,23 @@ and gravity/demand models (right)](results/fig1_barplot.png)
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
-| shortest_3200m | 0.008 | -0.091    | 1.0      | 418      | 18450  | 22      |
-| shortest_800m  | 0.004 | -0.064    | 0.1      | 374      | 246766 | 22      |
-| shortest_200m  | 0.000 | -0.012    | 0.0      | 371      | 670043 | 22      |
+| shortest_800m  | 0.109 | -0.330    | 0.0      | 301      | 233353 | 6       |
+| shortest_200m  | 0.033 | -0.181    | 0.0      | 296      | 384158 | 6       |
+| shortest_3200m | 0.000 | -0.014    | 0.1      | 308      | 79574  | 6       |
 
 #### 3.2.2 madina
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| degree           | 0.145 | -0.381    | 0.7      | 428      | 26307 | 22      |
-| btw_weighted_200 | 0.002 | -0.041    | 2.9      | 425      | 6595  | 22      |
+| degree           | 0.015 | 0.122     | 0.2      | 312      | 26862 | 6       |
+| btw_weighted_200 | 0.000 | 0.018     | 0.8      | 313      | 7414  | 6       |
 
 #### 3.2.3 sDNA+
+
+| Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
+|------------------|-------|-----------|----------|----------|-------|---------|
+| MAD_angular_200m | 0.337 | 0.581     | 1.1      | 400      | 5607  | 6       |
+| MAD_angular_400m | 0.137 | 0.370     | 3.8      | 400      | 1583  | 6       |
 
 ### 3.3 Gravity / Demand Models
 
@@ -166,14 +169,18 @@ comparison](results/fig_gravity_barplot.png)
 WorldPop population origins and OSM POI attractor destinations with
 exponential distance decay.
 
-| Variant | R²  | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|---------|-----|-----------|----------|----------|-------|---------|
+| Variant                      | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
+|------------------------------|-------|-----------|----------|----------|-------|---------|
+| wp_r3000_det100_all_beta0005 | 0.135 | -0.367    | 1.7      | 229      | 1714  | 6       |
+| wp_r2000_det100_all_beta001  | 0.067 | -0.260    | 1.8      | 229      | 1683  | 6       |
+| wp_r3000_det100_all_beta001  | 0.067 | -0.260    | 1.7      | 229      | 1765  | 6       |
+| wp_r3000_det100_all_beta002  | 0.000 | 0.011     | 1.8      | 229      | 1670  | 6       |
 
 | Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |-----------------------------|-------|-----------|----------|----------|--------|---------|
-| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 286749 | 22      |
-| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 285895 | 22      |
-| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 197175 | 22      |
+| cs_demand_r2000_beta002_all | 0.548 | -0.740    | 0.0      | 420      | 295364 | 6       |
+| cs_demand_r1200_beta002_all | 0.531 | -0.729    | 0.0      | 420      | 276694 | 6       |
+| cs_demand_r800_beta002_all  | 0.201 | -0.449    | 0.0      | 420      | 281448 | 6       |
 
 ### 3.4 Performance
 
