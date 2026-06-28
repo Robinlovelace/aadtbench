@@ -31,13 +31,13 @@ Robin Lovelace
 
 ## Abstract
 
-This study benchmarks six tools for pedestrian flow modelling using
-Telraam sensor data in Leuven, Belgium. cityseer_demand gravity models
-achieve the strongest predictive performance (R² = 0.543), followed by
-sDNA+ Mean Angular Distance at 400m (R² = 0.353) and madina degree
-centrality (R² = 0.145). sDNA+ with OpenMP multi-threading completes
-analyses in seconds rather than minutes (11.7s for 19K edges at 400m vs
-979s previously single-threaded at 800m).
+This study benchmarks seven tools for pedestrian flow modelling using
+Telraam sensor data in Leuven, Belgium. madina_worldpop gravity models
+achieve the strongest predictive performance (R² up to 0.704), followed
+by cityseer_demand (R²=0.543) and sDNA+ Mean Angular Distance at 800m
+(R²=0.468). sDNA+ with OpenMP multi-threading completes analyses in
+seconds rather than minutes (59.8s for 19K edges at 800m vs 979s
+previously single-threaded).
 
 ## Introduction
 
@@ -155,10 +155,10 @@ Table 4: Gravity/demand model configurations.
 
 | Variant | Tool | Configuration |
 |----|----|----|
-| wp_r800_beta002_all | madina_worldpop | 800m radius, β=0.02, all attractors |
-| wp_r1200_beta002_all | madina_worldpop | 1200m radius, β=0.02, all attractors |
-| wp_r1600_beta002_all | madina_worldpop | 1600m radius, β=0.02, all attractors |
-| wp_r2000_beta002_all | madina_worldpop | 2000m radius, β=0.02, all attractors |
+| wp_r800_beta002_all | madina_worldpop | 800m radius, β=0.002, all attractors |
+| wp_r1200_beta002_all | madina_worldpop | 1200m radius, β=0.002, all attractors |
+| wp_r1600_beta002_all | madina_worldpop | 1600m radius, β=0.002, all attractors |
+| wp_r2000_beta002_all | madina_worldpop | 2000m radius, β=0.002, all attractors |
 | cs_demand_r800_beta002_all | cityseer_demand | 800m radius, β=0.02, all attractors |
 | cs_demand_r1200_beta002_all | cityseer_demand | 1200m radius, β=0.02, all attractors |
 
@@ -197,9 +197,9 @@ Table 5: Cityseer centrality results.
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
-| shortest_3200m | 0.008 | -0.091    | 0.6      | 418      | 30574  | 22      |
-| shortest_800m  | 0.004 | -0.064    | 0.1      | 374      | 260234 | 22      |
-| shortest_200m  | 0.000 | -0.012    | 0.0      | 372      | 675484 | 22      |
+| shortest_3200m | 0.008 | -0.091    | 0.6      | 417      | 30415  | 22      |
+| shortest_800m  | 0.004 | -0.064    | 0.1      | 372      | 219401 | 22      |
+| shortest_200m  | 0.000 | -0.012    | 0.0      | 370      | 680188 | 22      |
 
 </div>
 
@@ -211,23 +211,12 @@ Table 6: Madina centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| degree           | 0.145 | -0.381    | 0.7      | 429      | 27139 | 22      |
-| btw_weighted_200 | 0.002 | -0.041    | 2.8      | 425      | 6732  | 22      |
+| degree           | 0.145 | -0.381    | 0.7      | 427      | 26901 | 22      |
+| btw_weighted_200 | 0.002 | -0.041    | 3.0      | 423      | 6410  | 22      |
 
 </div>
 
 #### sDNA+
-
-<div id="tbl-sdna-results">
-
-Table 7: sDNA+ centrality results.
-
-| Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|------------------|-------|-----------|----------|----------|-------|---------|
-| MAD_angular_400m | 0.353 | 0.594     | 12.1     | 400      | 1587  | 22      |
-| MAD_angular_200m | 0.264 | 0.514     | 4.2      | 400      | 4571  | 22      |
-
-</div>
 
 ### Gravity / Demand Models
 
@@ -246,26 +235,22 @@ decay.
 
 <div id="tbl-gravity-madina-results">
 
-Table 8: Madina WorldPop gravity results.
+Table 7: Madina WorldPop gravity results.
 
-| Variant                      | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|------------------------------|-------|-----------|----------|----------|-------|---------|
-| wp_r1500_det100_all_beta002  | 0.105 | -0.325    | 20.5     | 300      | 461   | 22      |
-| wp_r1600_det100_all_beta002  | 0.103 | -0.320    | 22.3     | 304      | 423   | 22      |
-| wp_r1400_det100_all_beta002  | 0.102 | -0.320    | 19.0     | 304      | 497   | 22      |
-| wp_r1200_det100_all_beta0015 | 0.092 | -0.303    | 16.2     | 305      | 582   | 22      |
+| Variant | R²  | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
+|---------|-----|-----------|----------|----------|-------|---------|
 
 </div>
 
 <div id="tbl-gravity-cityseer-results">
 
-Table 9: Cityseer Demand gravity results.
+Table 8: Cityseer Demand gravity results.
 
 | Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |-----------------------------|-------|-----------|----------|----------|--------|---------|
-| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 283079 | 22      |
-| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 278796 | 22      |
-| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 218547 | 22      |
+| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 331176 | 22      |
+| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 287764 | 22      |
+| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 218870 | 22      |
 
 </div>
 
