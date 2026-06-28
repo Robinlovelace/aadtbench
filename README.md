@@ -2,24 +2,30 @@
 Robin Lovelace
 2026-06-01
 
-- [Abstract](#abstract)
-- [1. Introduction](#1-introduction)
-  - [1.1 Related Work](#11-related-work)
-  - [1.2 Input Datasets](#12-input-datasets)
-- [2. Methods](#2-methods)
-  - [2.1 Benchmark Design](#21-benchmark-design)
-  - [2.2 Metrics](#22-metrics)
-- [3. Results](#3-results)
-  - [3.1 Benchmark Barplot](#31-benchmark-barplot)
-  - [3.2 Centrality Methods](#32-centrality-methods)
-  - [3.3 Gravity / Demand Models](#33-gravity--demand-models)
-  - [3.4 Performance](#34-performance)
-- [5. Discussion](#5-discussion)
-  - [5.1 Limitations](#51-limitations)
-- [6. Conclusion](#6-conclusion)
-- [7. Next Steps](#7-next-steps)
+- [<span class="toc-section-number">1</span> Abstract](#abstract)
+- [<span class="toc-section-number">2</span>
+  Introduction](#introduction)
+  - [<span class="toc-section-number">2.1</span> Related
+    Work](#related-work)
+  - [<span class="toc-section-number">2.2</span> Input
+    Datasets](#input-datasets)
+- [<span class="toc-section-number">3</span> Methods](#methods)
+  - [<span class="toc-section-number">3.1</span> Benchmark
+    Design](#benchmark-design)
+  - [<span class="toc-section-number">3.2</span> Metrics](#metrics)
+- [<span class="toc-section-number">4</span> Results](#results)
+  - [<span class="toc-section-number">4.1</span> Benchmark
+    Barplot](#benchmark-barplot)
+  - [<span class="toc-section-number">4.2</span> Centrality
+    Methods](#centrality-methods)
+  - [<span class="toc-section-number">4.3</span> Gravity / Demand
+    Models](#gravity--demand-models)
+  - [<span class="toc-section-number">4.4</span>
+    Performance](#performance)
+- [<span class="toc-section-number">5</span> Next Steps](#next-steps)
 - [Appendix](#appendix)
-  - [Reproducibility](#reproducibility)
+  - [<span class="toc-section-number">5.1</span>
+    Reproducibility](#reproducibility)
 
 ## Abstract
 
@@ -31,7 +37,7 @@ centrality (R² = 0.145). sDNA+ with OpenMP multi-threading completes
 analyses in seconds rather than minutes (11.7s for 19K edges at 400m vs
 979s previously single-threaded at 800m).
 
-## 1. Introduction
+## Introduction
 
 Pedestrian flow modelling is central to walkability analysis, transport
 planning, and urban design. Three approaches exist:
@@ -52,18 +58,31 @@ Rust, with shortest-path and angular analysis.
 **sfnetworks** (van der Meer et al. 2024) provides a
 tidyverse-compatible R interface for spatial network analysis.
 
-### 1.1 Related Work
+### Related Work
 
 Prior benchmarks in the `a private study` repository tested cityseer,
 sfnetworks, and dodgr against Leeds AADT counts, finding best R² ~0.46
 for cityseer. This study extends that work focusing on **pedestrian**
 modelling with **Telraam** data.
 
-### 1.2 Input Datasets
+### Input Datasets
 
 Six datasets underpin the Leuven benchmark, all sourced from open data:
 
-    | Dataset | Description | Rows | Key variables | Source |\n|---------|-------------|------|---------------|--------|\n| Walk network | OSM pedestrian network (edges) | 19,118 | `u`, `v`, `highway`, `length` | OpenStreetMap |\n| Walk nodes | Network nodes | 7,074 | `osmid`, `y`, `x`, `highway` | OpenStreetMap |\n| Telraam sensors | Pedestrian counts (7-day avg) | 38 | `sensor_id`, `avg_daily_pedestrians` | Telraam API |\n| Telraam segments | Road segments with monitoring | 798 | `oidn` | Telraam API |\n| WorldPop origins | Population grid cells (100m) | 2,859 | `population` | WorldPop |\n| POI attractors | Destinations by category | 801 | `name`, `category`, `attractor_weight` | OSM |
+<div id="tbl-datasets">
+
+Table 1: Leuven input datasets sourced from open data.
+
+| Dataset | Description | Rows | Key variables | Source |
+|----|----|----|----|----|
+| Walk network | OSM pedestrian network (edges) | 19,118 | `u`, `v`, `highway`, `length` | OpenStreetMap |
+| Walk nodes | Network nodes | 7,074 | `osmid`, `y`, `x`, `highway` | OpenStreetMap |
+| Telraam sensors | Pedestrian counts (7-day avg) | 38 | `sensor_id`, `avg_daily_pedestrians` | Telraam API |
+| Telraam segments | Road segments with monitoring | 798 | `oidn` | Telraam API |
+| WorldPop origins | Population grid cells (100m) | 2,859 | `population` | WorldPop |
+| POI attractors | Destinations by category | 801 | `name`, `category`, `attractor_weight` | OSM |
+
+</div>
 
 The Leuven walk network has 19,118 edges. The 38 Telraam sensors report
 an average of 286 pedestrians per day (max 4,377), providing a
@@ -74,21 +93,32 @@ origin weights for gravity models. POI attractors (800 points across 7
 categories including universities, dining, shops, transit stations)
 provide destination weights.
 
-![Leuven input datasets: (a) walk network & monitored road segments, (b)
-Telraam sensor locations with daily average pedestrian counts, (c)
-WorldPop population grid (origins), (d) POI attractors by category
-(destinations)](results/leuven_input_datasets.png)
+<div id="fig-input-datasets">
 
-**Figure 2** visualises these input datasets. The Telraam sensor
-distribution shows high pedestrian volumes concentrated in the city
-centre (250–4,377/day) with moderate volumes on arterial routes and
-suburban streets (50–250/day).
+![](results/leuven_input_datasets.png)
 
-## 2. Methods
+Figure 1: Leuven input datasets: (a) walk network & monitored road
+segments, (b) Telraam sensor locations with daily average pedestrian
+counts, (c) WorldPop population grid (origins), (d) POI attractors by
+category (destinations)
 
-### 2.1 Benchmark Design
+</div>
+
+<a href="#fig-input-datasets" class="quarto-xref">Figure 1</a>
+visualises these input datasets. The Telraam sensor distribution shows
+high pedestrian volumes concentrated in the city centre (250–4,377/day)
+with moderate volumes on arterial routes and suburban streets
+(50–250/day).
+
+## Methods
+
+### Benchmark Design
 
 **cityseer experiments**:
+
+<div id="tbl-cityseer-design">
+
+Table 2: Cityseer benchmark design configurations.
 
 | Variant        | Method                   | Distance | Description            |
 |----------------|--------------------------|----------|------------------------|
@@ -98,7 +128,13 @@ suburban streets (50–250/day).
 | shortest_1600m | node_centrality_shortest | 1600m    | 20-min walk radius     |
 | shortest_3200m | node_centrality_shortest | 3200m    | Extended walking range |
 
+</div>
+
 **madina experiments** (NetworkX-based):
+
+<div id="tbl-madina-design">
+
+Table 3: Madina centrality benchmark design configurations.
 
 | Variant          | Method                             | Description         |
 |------------------|------------------------------------|---------------------|
@@ -107,7 +143,13 @@ suburban streets (50–250/day).
 | btw_weighted_200 | Edge betweenness (length-weighted) | 200-node OD sample  |
 | btw_weighted_500 | Edge betweenness (length-weighted) | 500-node OD sample  |
 
+</div>
+
 **Gravity / demand models**:
+
+<div id="tbl-gravity-design">
+
+Table 4: Gravity/demand model configurations.
 
 | Variant | Tool | Configuration |
 |----|----|----|
@@ -118,7 +160,9 @@ suburban streets (50–250/day).
 | cs_demand_r800_beta002_all | cityseer_demand | 800m radius, β=0.02, all attractors |
 | cs_demand_r1200_beta002_all | cityseer_demand | 1200m radius, β=0.02, all attractors |
 
-### 2.2 Metrics
+</div>
+
+### Metrics
 
 - **R²**: Coefficient of determination
 - **Pearson r**: Correlation coefficient
@@ -128,16 +172,26 @@ suburban streets (50–250/day).
 - **Segments/sec**: Network edges processed per second
 - **n_matched**: Number of matched sensor-model pairs
 
-## 3. Results
+## Results
 
-### 3.1 Benchmark Barplot
+### Benchmark Barplot
 
-![Leuven R² comparison across all methods — centrality measures (left)
-and gravity/demand models (right)](results/fig1_barplot.png)
+<div id="fig-barplot-centrality">
 
-### 3.2 Centrality Methods
+![](results/fig1_barplot.png)
 
-#### 3.2.1 cityseer
+Figure 2: Leuven R² comparison across pure centrality methods (cityseer,
+madina, sDNA+)
+
+</div>
+
+### Centrality Methods
+
+#### cityseer
+
+<div id="tbl-cityseer-results">
+
+Table 5: Cityseer centrality results.
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
@@ -145,28 +199,52 @@ and gravity/demand models (right)](results/fig1_barplot.png)
 | shortest_800m  | 0.004 | -0.064    | 0.1      | 374      | 191724 | 22      |
 | shortest_200m  | 0.000 | -0.012    | 0.0      | 371      | 623652 | 22      |
 
-#### 3.2.2 madina
+</div>
+
+#### madina
+
+<div id="tbl-madina-results">
+
+Table 6: Madina centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
 | degree           | 0.145 | -0.381    | 0.7      | 428      | 26810 | 22      |
 | btw_weighted_200 | 0.002 | -0.041    | 2.9      | 425      | 6603  | 22      |
 
-#### 3.2.3 sDNA+
+</div>
+
+#### sDNA+
+
+<div id="tbl-sdna-results">
+
+Table 7: sDNA+ centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
 | MAD_angular_400m | 0.353 | 0.594     | 11.0     | 400      | 1739  | 22      |
 | MAD_angular_200m | 0.264 | 0.514     | 4.1      | 400      | 4676  | 22      |
 
-### 3.3 Gravity / Demand Models
+</div>
 
-![Gravity and demand model R²
-comparison](results/fig_gravity_barplot.png)
+### Gravity / Demand Models
 
-**Figure X** compares gravity-based pedestrian flow models incorporating
-WorldPop population origins and OSM POI attractor destinations with
-exponential distance decay.
+<div id="fig-barplot-gravity">
+
+![](results/fig_gravity_barplot.png)
+
+Figure 3: Gravity and demand model R² comparison
+
+</div>
+
+<a href="#fig-barplot-gravity" class="quarto-xref">Figure 3</a> compares
+gravity-based pedestrian flow models incorporating WorldPop population
+origins and OSM POI attractor destinations with exponential distance
+decay.
+
+<div id="tbl-gravity-madina-results">
+
+Table 8: Madina WorldPop gravity results.
 
 | Variant                      | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------------------|-------|-----------|----------|----------|-------|---------|
@@ -175,61 +253,31 @@ exponential distance decay.
 | wp_r3000_det100_all_beta001  | 0.043 | -0.207    | 43.0     | 304      | 220   | 22      |
 | wp_r3000_det100_all_beta0005 | 0.040 | -0.200    | 46.0     | 304      | 206   | 22      |
 
+</div>
+
+<div id="tbl-gravity-cityseer-results">
+
+Table 9: Cityseer Demand gravity results.
+
 | Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |-----------------------------|-------|-----------|----------|----------|--------|---------|
 | cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 319686 | 22      |
 | cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 267936 | 22      |
 | cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 212274 | 22      |
 
-### 3.4 Performance
+</div>
 
-![Performance: throughput (left) and memory use
-(right)](results/fig3_performance.png)
+### Performance
 
-## 5. Discussion
+<div id="fig-performance">
 
-1.  **Gravity/demand models** (R² 0.08–0.54): `cityseer_demand` at 800m
-    (R²=0.543, β=0.02) achieves the top gravity result, followed by
-    `madina_worldpop` (R²=0.082 at 1500m, β=0.001).
-2.  **Spatial network measures** (R² 0.14–0.35): `sDNA+` Mean Angular
-    Distance at 400m (R²=0.353) is the top purely structural network
-    topology measure. At smaller radii, `sDNA+` MAD captures a moderate
-    signal (R²=0.264 at 200m). `madina` degree centrality explains a
-    smaller fraction of variance (R²=0.145).
-3.  **Raw betweenness centrality** (R² \< 0.02): `cityseer` shortest
-    path betweenness, without attractor weights, shows negligible
-    correlation with observed pedestrian counts.
+![](results/fig3_performance.png)
 
-Other tools (`sfnetworks` and `aperta`) were also evaluated and are
-documented in [Appendix: Other Centrality & Flow Modelling
-Tools](appendix-other-tools.md).
+Figure 4: Computational performance: throughput and memory usage
 
-### 5.1 Limitations
+</div>
 
-1.  **Matching uncertainty**: Sensor-to-network matching introduces
-    spatial uncertainty.
-2.  **Missing covariates**: No land use, population density, or POI
-    data.
-3.  **Single study area**: Results may not generalise.
-
-## 6. Conclusion
-
-Gravity-based demand models (`madina_worldpop`, `cityseer_demand`)
-outperform pure network centrality by over an order of magnitude for
-pedestrian flow estimation. The top result (R² = 0.543) comes from
-`cityseer_demand` with population-weighted origins and distance-decayed
-destination attraction. Among purely structural measures, `sDNA+` Mean
-Angular Distance (R² = 0.353 at 400m) provides the most informative
-topological signal. The benchmark demonstrates that land-use attractor
-weights and population origins are essential for meaningful pedestrian
-flow prediction, and that raw network centrality alone is insufficient.
-
-Future work should expand validation to larger, multi-city datasets and
-explore hybrid models combining centrality with land-use covariates.
-
-[github.com/Robinlovelace/cenbench](https://github.com/Robinlovelace/cenbench)
-
-## 7. Next Steps
+## Next Steps
 
 1.  Expand validation with Vivacity pedestrian counts from oxflow
 2.  Full madina API integration (Zonal-based benchmarking)
