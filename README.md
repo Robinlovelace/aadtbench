@@ -24,8 +24,10 @@ Robin Lovelace
     Performance](#performance)
 - [<span class="toc-section-number">5</span> Next Steps](#next-steps)
 - [Appendix](#appendix)
-  - [<span class="toc-section-number">5.1</span>
-    Reproducibility](#reproducibility)
+  - [<span class="toc-section-number">5.1</span> How to Run and Update
+    Benchmarks](#how-to-run-and-update-benchmarks)
+  - [<span class="toc-section-number">5.2</span> Project Structure &
+    Reproducibility](#project-structure--reproducibility)
 
 ## Abstract
 
@@ -195,9 +197,9 @@ Table 5: Cityseer centrality results.
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
-| shortest_3200m | 0.008 | -0.091    | 0.6      | 418      | 30606  | 22      |
-| shortest_800m  | 0.004 | -0.064    | 0.1      | 374      | 191724 | 22      |
-| shortest_200m  | 0.000 | -0.012    | 0.0      | 371      | 623652 | 22      |
+| shortest_3200m | 0.008 | -0.091    | 0.6      | 418      | 30574  | 22      |
+| shortest_800m  | 0.004 | -0.064    | 0.1      | 374      | 260234 | 22      |
+| shortest_200m  | 0.000 | -0.012    | 0.0      | 372      | 675484 | 22      |
 
 </div>
 
@@ -209,8 +211,8 @@ Table 6: Madina centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| degree           | 0.145 | -0.381    | 0.7      | 428      | 26810 | 22      |
-| btw_weighted_200 | 0.002 | -0.041    | 2.9      | 425      | 6603  | 22      |
+| degree           | 0.145 | -0.381    | 0.7      | 429      | 27139 | 22      |
+| btw_weighted_200 | 0.002 | -0.041    | 2.8      | 425      | 6732  | 22      |
 
 </div>
 
@@ -222,8 +224,8 @@ Table 7: sDNA+ centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| MAD_angular_400m | 0.353 | 0.594     | 11.0     | 400      | 1739  | 22      |
-| MAD_angular_200m | 0.264 | 0.514     | 4.1      | 400      | 4676  | 22      |
+| MAD_angular_400m | 0.353 | 0.594     | 12.1     | 400      | 1587  | 22      |
+| MAD_angular_200m | 0.264 | 0.514     | 4.2      | 400      | 4571  | 22      |
 
 </div>
 
@@ -248,10 +250,10 @@ Table 8: Madina WorldPop gravity results.
 
 | Variant                      | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------------------|-------|-----------|----------|----------|-------|---------|
-| wp_r3000_det100_all_beta002  | 0.070 | -0.264    | 45.6     | 304      | 207   | 22      |
-| wp_r2000_det100_all_beta001  | 0.056 | -0.237    | 29.7     | 304      | 318   | 22      |
-| wp_r3000_det100_all_beta001  | 0.043 | -0.207    | 43.0     | 304      | 220   | 22      |
-| wp_r3000_det100_all_beta0005 | 0.040 | -0.200    | 46.0     | 304      | 206   | 22      |
+| wp_r1500_det100_all_beta002  | 0.105 | -0.325    | 20.5     | 300      | 461   | 22      |
+| wp_r1600_det100_all_beta002  | 0.103 | -0.320    | 22.3     | 304      | 423   | 22      |
+| wp_r1400_det100_all_beta002  | 0.102 | -0.320    | 19.0     | 304      | 497   | 22      |
+| wp_r1200_det100_all_beta0015 | 0.092 | -0.303    | 16.2     | 305      | 582   | 22      |
 
 </div>
 
@@ -261,9 +263,9 @@ Table 9: Cityseer Demand gravity results.
 
 | Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |-----------------------------|-------|-----------|----------|----------|--------|---------|
-| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 319686 | 22      |
-| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 267936 | 22      |
-| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 212274 | 22      |
+| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 283079 | 22      |
+| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 278796 | 22      |
+| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 218547 | 22      |
 
 </div>
 
@@ -289,12 +291,56 @@ Figure 4: Computational performance: throughput and memory usage
 
 ## Appendix
 
-### Reproducibility
+### How to Run and Update Benchmarks
 
+The benchmark suite is fully orchestrated using **DVC** (Data Version
+Control) to manage dependencies, execution caching, and outputs.
+
+#### 1. Setup the Environment
+
+Ensure you have the required dependencies installed (including Python
+packages and `sDNA+` CLI) by running:
+
+``` bash
+pip install -r requirements.txt
+```
+
+#### 2. Run the Pipeline
+
+To run the entire benchmark pipeline (prepare demand datasets, run
+cityseer, madina, and sDNA benchmarks, generate visual figures, and
+compile the final report):
+
+``` bash
+dvc repro
+```
+
+DVC will trace dependencies and execute only the stages whose code,
+configurations, or data inputs have changed, retrieving the rest from
+cache.
+
+#### 3. Rapid Testing Mode
+
+To quickly test code changes on a lightweight 5,900-edge cropped dataset
+rather than the full 19k edge network: 1. Open `scripts/config.py`. 2.
+Toggle `TEST_MODE = True`. 3. Run `dvc repro`. Remember to flip
+`TEST_MODE = False` before committing final results.
+
+#### 4. Add/Modify Experiments
+
+- **sDNA+**: Edit configurations in `scripts/bench_sdna.py`.
+- **Madina (Zonal)**: Edit the dictionary grid list in
+  `scripts/run_leuven_demand_experiments.py`.
+- **Cityseer**: Edit configurations in
+  `scripts/run_cityseer_demand_experiments.py`.
+
+### Project Structure & Reproducibility
+
+- `dvc.yaml` — Stage orchestration and dependencies
 - `scripts/bench_all.py` — Unified benchmark runner
-- `results/leuven_results.csv` — Auto-generated results
+- `results/leuven_results.csv` — Compiled metrics output
 - `results/fig1_barplot.png` — R² comparison plot
-- `results/fig2_performance.png` — Speed and memory comparison
+- `results/fig2_performance.png` — Throughput and memory use comparison
 
 | Package   | Version   |
 |-----------|-----------|
