@@ -20,17 +20,16 @@ Robin Lovelace
 - [7. Next Steps](#7-next-steps)
 - [Appendix](#appendix)
   - [Reproducibility](#reproducibility)
-  - [Software Versions](#software-versions)
 
 ## Abstract
 
-This study benchmarks seven tools for pedestrian flow modelling using
-Telraam sensor data in Leuven, Belgium. madina_worldpop gravity models
-achieve the strongest predictive performance (R² up to 0.676), followed
-by cityseer_demand (R²=0.543) and sDNA+ Mean Angular Distance at 800m
-(R²=0.468). sDNA+ with OpenMP multi-threading completes analyses in
-seconds rather than minutes (59.8s for 19K edges at 800m vs 979s
-previously single-threaded).
+This study benchmarks six tools for pedestrian flow modelling using
+Telraam sensor data in Leuven, Belgium. cityseer_demand gravity models
+achieve the strongest predictive performance (R² = 0.543), followed by
+sDNA+ Mean Angular Distance at 400m (R² = 0.353) and madina degree
+centrality (R² = 0.145). sDNA+ with OpenMP multi-threading completes
+analyses in seconds rather than minutes (11.7s for 19K edges at 400m vs
+979s previously single-threaded at 800m).
 
 ## 1. Introduction
 
@@ -189,18 +188,14 @@ exponential distance decay.
 
 ## 5. Discussion
 
-Three clear tiers emerge from the benchmarks:
-
-1.  **Gravity/demand models** (R² 0.47–0.68): `madina_worldpop` with
-    population-weighted origins and cost-decayed destination attraction
-    achieves the top result (R²=0.676 at 2000m, β=0.002).
-    `cityseer_demand` at 800m (R²=0.543) performs best at shorter
-    ranges.
-2.  **Spatial network measures** (R² 0.15–0.47): `sDNA+` Mean Angular
-    Distance at 800m (R²=0.468) is the top purely structural network
-    topology measure. At smaller radii, `sDNA+` MAD also captures a
-    moderate signal (R²=0.264 at 200m, 0.353 at 400m). `madina` degree
-    centrality explains a smaller fraction of variance (R²=0.145).
+1.  **Gravity/demand models** (R² 0.08–0.54): `cityseer_demand` at 800m
+    (R²=0.543, β=0.02) achieves the top gravity result, followed by
+    `madina_worldpop` (R²=0.082 at 1500m, β=0.001).
+2.  **Spatial network measures** (R² 0.14–0.35): `sDNA+` Mean Angular
+    Distance at 400m (R²=0.353) is the top purely structural network
+    topology measure. At smaller radii, `sDNA+` MAD captures a moderate
+    signal (R²=0.264 at 200m). `madina` degree centrality explains a
+    smaller fraction of variance (R²=0.145).
 3.  **Raw betweenness centrality** (R² \< 0.02): `cityseer` shortest
     path betweenness, without attractor weights, shows negligible
     correlation with observed pedestrian counts.
@@ -221,10 +216,10 @@ Tools](appendix-other-tools.md).
 
 Gravity-based demand models (`madina_worldpop`, `cityseer_demand`)
 outperform pure network centrality by over an order of magnitude for
-pedestrian flow estimation. The top result (R²=0.676) comes from
-`madina_worldpop` with population-weighted origins and distance-decayed
+pedestrian flow estimation. The top result (R² = 0.543) comes from
+`cityseer_demand` with population-weighted origins and distance-decayed
 destination attraction. Among purely structural measures, `sDNA+` Mean
-Angular Distance (R²=0.468 at 800m) provides the most informative
+Angular Distance (R² = 0.353 at 400m) provides the most informative
 topological signal. The benchmark demonstrates that land-use attractor
 weights and population origins are essential for meaningful pedestrian
 flow prediction, and that raw network centrality alone is insufficient.
@@ -253,15 +248,13 @@ explore hybrid models combining centrality with land-use covariates.
 - `results/fig1_barplot.png` — R² comparison plot
 - `results/fig2_performance.png` — Speed and memory comparison
 
-### Software Versions
-
-| Package | Version |
-|----|----|
-| Python | {python} import sys; print(sys.version.split()\[0\]) {/python} |
-| cityseer | {python} import cityseer; print(“installed”) {/python} |
-| networkx | {python} import networkx; print(networkx.\_\_version\_\_) {/python} |
-| pandas | {python} import pandas; print(pandas.\_\_version\_\_) {/python} |
-| geopandas | {python} import geopandas; print(geopandas.\_\_version\_\_) {/python} |
+| Package   | Version   |
+|-----------|-----------|
+| Python    | 3.13.11   |
+| cityseer  | installed |
+| networkx  | 3.6.1     |
+| pandas    | 3.0.3     |
+| geopandas | 1.1.3     |
 
 <div id="refs" class="references csl-bib-body hanging-indent"
 entry-spacing="0">
