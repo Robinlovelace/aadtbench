@@ -5,8 +5,8 @@ Robin Lovelace
 - [<span class="toc-section-number">1</span> Abstract](#abstract)
 - [<span class="toc-section-number">2</span>
   Introduction](#introduction)
-  - [<span class="toc-section-number">2.1</span> Related
-    Work](#related-work)
+  - [<span class="toc-section-number">2.1</span> 1.1 Related
+    Work](#11-related-work)
   - [<span class="toc-section-number">2.2</span> Input
     Datasets](#input-datasets)
 - [<span class="toc-section-number">3</span> Methods](#methods)
@@ -60,12 +60,10 @@ Rust, with shortest-path and angular analysis.
 **sfnetworks** (van der Meer et al. 2024) provides a
 tidyverse-compatible R interface for spatial network analysis.
 
-### Related Work
+### 1.1 Related Work
 
-Prior benchmarks in the `a private study` repository tested cityseer,
-sfnetworks, and dodgr against Leeds AADT counts, finding best R² ~0.46
-for cityseer. This study extends that work focusing on **pedestrian**
-modelling with **Telraam** data.
+This study benchmarks network centrality and gravity-based pedestrian
+flow models using Telraam validation data from Leuven, Belgium.
 
 ### Input Datasets
 
