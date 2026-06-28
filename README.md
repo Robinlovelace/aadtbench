@@ -77,12 +77,12 @@ origin weights for gravity models. POI attractors (800 points across 7
 categories including universities, dining, shops, transit stations)
 provide destination weights.
 
-![Leuven input datasets: (a) walk network, (b) Telraam sensor locations
-with daily pedestrian counts, (c) WorldPop population grid, (d) POI
-attractors by category, (e) Telraam road segments, (f) composite
-overlay](results/leuven_input_datasets.png)
+![Leuven input datasets: (a) walk network & monitored road segments, (b)
+Telraam sensor locations with daily average pedestrian counts, (c)
+WorldPop population grid (origins), (d) POI attractors by category
+(destinations)](results/leuven_input_datasets.png)
 
-**Figure 1** visualises all six datasets. The Telraam sensor
+**Figure 2** visualises these input datasets. The Telraam sensor
 distribution shows high pedestrian volumes concentrated in the city
 centre (250–4,377/day) with moderate volumes on arterial routes and
 suburban streets (50–250/day).
@@ -144,28 +144,18 @@ and gravity/demand models (right)](results/fig1_barplot.png)
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
-| shortest_3200m | 0.008 | -0.091    | 0.6      | 425      | 30722  | 22      |
-| shortest_800m  | 0.004 | -0.064    | 0.1      | 380      | 220314 | 22      |
-| shortest_200m  | 0.000 | -0.012    | 0.0      | 378      | 692100 | 22      |
+| shortest_3200m | 0.008 | -0.091    | 0.7      | 427      | 27905  | 22      |
+| shortest_800m  | 0.004 | -0.064    | 0.1      | 382      | 243413 | 22      |
+| shortest_200m  | 0.000 | -0.012    | 0.0      | 380      | 670172 | 22      |
 
 #### 3.2.2 madina
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| degree           | 0.145 | -0.381    | 0.7      | 435      | 26894 | 22      |
-| btw_weighted_200 | 0.002 | -0.041    | 3.0      | 431      | 6444  | 22      |
+| degree           | 0.145 | -0.381    | 0.7      | 437      | 26484 | 22      |
+| btw_weighted_200 | 0.002 | -0.041    | 3.4      | 433      | 5710  | 22      |
 
-#### 3.2.3 sfnetworks
-
-#### 3.2.4 sDNA+
-
-| Variant            | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|--------------------|-------|-----------|----------|----------|-------|---------|
-| MAD_angular_800m   | 0.468 | 0.684     | 59.8     | 400      | 320   | 22      |
-| MAD_angular_400m   | 0.353 | 0.594     | 11.5     | 400      | 1662  | 22      |
-| MAD_angular_200m   | 0.264 | 0.514     | 4.3      | 400      | 4467  | 22      |
-| NQPDA_angular_800m | 0.064 | 0.252     | 59.8     | 400      | 320   | 22      |
-| BtA_angular_800m   | 0.002 | -0.039    | 59.8     | 400      | 320   | 22      |
+#### 3.2.3 sDNA+
 
 ### 3.3 Gravity / Demand Models
 
@@ -176,15 +166,14 @@ comparison](results/fig_gravity_barplot.png)
 WorldPop population origins and OSM POI attractor destinations with
 exponential distance decay.
 
-| Variant              | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|----------------------|-------|-----------|----------|----------|-------|---------|
-| wp_r2000_beta002_all | 0.676 | 0.822     | 29.5     | 310      | 649   | 22      |
+| Variant | R²  | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
+|---------|-----|-----------|----------|----------|-------|---------|
 
 | Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |-----------------------------|-------|-----------|----------|----------|--------|---------|
-| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 332446 | 22      |
-| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 285916 | 22      |
-| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 218157 | 22      |
+| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 278318 | 22      |
+| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 271501 | 22      |
+| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 214172 | 22      |
 
 ### 3.4 Performance
 
@@ -195,21 +184,23 @@ exponential distance decay.
 
 Three clear tiers emerge from the benchmarks:
 
-1.  **Gravity/demand models** (R² 0.47–0.68): madina_worldpop with
+1.  **Gravity/demand models** (R² 0.47–0.68): `madina_worldpop` with
     population-weighted origins and cost-decayed destination attraction
-    achieves the top result (R²=0.676 at 2000m, β=0.02). cityseer_demand
-    at 800m (R²=0.543) performs best at shorter ranges. sDNA+ Mean
-    Angular Distance at 800m (R²=0.468) and sfnetworks edge betweenness
-    (R²=0.466) provide comparable predictive power.
+    achieves the top result (R²=0.676 at 2000m, β=0.002).
+    `cityseer_demand` at 800m (R²=0.543) performs best at shorter
+    ranges.
+2.  **Spatial network measures** (R² 0.15–0.47): `sDNA+` Mean Angular
+    Distance at 800m (R²=0.468) is the top purely structural network
+    topology measure. At smaller radii, `sDNA+` MAD also captures a
+    moderate signal (R²=0.264 at 200m, 0.353 at 400m). `madina` degree
+    centrality explains a smaller fraction of variance (R²=0.145).
+3.  **Raw betweenness centrality** (R² \< 0.02): `cityseer` shortest
+    path betweenness, without attractor weights, shows negligible
+    correlation with observed pedestrian counts.
 
-2.  **Spatial network measures** (R² 0.15–0.27): sDNA+ MAD at smaller
-    radii (R²=0.264 at 200m, 0.353 at 400m) and madina degree centrality
-    (R²=0.145) capture pedestrian flow patterns through network topology
-    alone.
-
-3.  **Raw betweenness centrality** (R² \< 0.02): cityseer and aperta
-    betweenness, without attractor weights, show negligible correlation
-    with observed pedestrian counts.
+Other tools (`sfnetworks` and `aperta`) were also evaluated and are
+documented in [Appendix: Other Centrality & Flow Modelling
+Tools](appendix-other-tools.md).
 
 ### 5.1 Limitations
 
@@ -221,16 +212,15 @@ Three clear tiers emerge from the benchmarks:
 
 ## 6. Conclusion
 
-Gravity-based demand models (madina_worldpop, cityseer_demand)
+Gravity-based demand models (`madina_worldpop`, `cityseer_demand`)
 outperform pure network centrality by over an order of magnitude for
 pedestrian flow estimation. The top result (R²=0.676) comes from
-madina_worldpop with population-weighted origins and distance-decayed
-destination attraction. Among purely structural measures, sDNA+ Mean
-Angular Distance (R²=0.468 at 800m) and sfnetworks edge betweenness
-(R²=0.466) provide the most informative signals. The benchmark
-demonstrates that land-use attractor weights and population origins are
-essential for meaningful pedestrian flow prediction, and that raw
-network centrality alone is insufficient.
+`madina_worldpop` with population-weighted origins and distance-decayed
+destination attraction. Among purely structural measures, `sDNA+` Mean
+Angular Distance (R²=0.468 at 800m) provides the most informative
+topological signal. The benchmark demonstrates that land-use attractor
+weights and population origins are essential for meaningful pedestrian
+flow prediction, and that raw network centrality alone is insufficient.
 
 Future work should expand validation to larger, multi-city datasets and
 explore hybrid models combining centrality with land-use covariates.
