@@ -202,11 +202,9 @@ Table 5: Cityseer centrality results.
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
-| segment_800m   | 0.015 | -0.124    | 1.1      | 473      | 16930  | 22      |
-| segment_1600m  | 0.014 | -0.118    | 1.1      | 473      | 16902  | 22      |
-| shortest_3200m | 0.008 | -0.091    | 1.4      | 456      | 13347  | 22      |
-| shortest_800m  | 0.004 | -0.064    | 0.1      | 412      | 129147 | 22      |
-| shortest_200m  | 0.000 | -0.012    | 0.0      | 410      | 426119 | 22      |
+| shortest_3200m | 0.008 | -0.091    | 1.2      | 483      | 16400  | 22      |
+| shortest_800m  | 0.004 | -0.064    | 0.1      | 438      | 157678 | 22      |
+| shortest_200m  | 0.000 | -0.012    | 0.0      | 436      | 534414 | 22      |
 
 </div>
 
@@ -218,8 +216,8 @@ Table 6: Madina centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| degree           | 0.145 | -0.381    | 1.0      | 484      | 18813 | 22      |
-| btw_weighted_200 | 0.002 | -0.041    | 6.2      | 479      | 3079  | 22      |
+| degree           | 0.145 | -0.381    | 1.0      | 489      | 19671 | 22      |
+| btw_weighted_200 | 0.002 | -0.041    | 6.3      | 489      | 3048  | 22      |
 
 </div>
 
@@ -290,13 +288,13 @@ Table 9: Cityseer Demand gravity results.
 Table 10: Runtime summary per tool: min, median, and max wall-clock
 seconds across all variants.
 
-min 0.0 median 1.1 max 1.4 Name: cityseer, dtype: float64 min 0.1 median
+min 0.0 median 0.1 max 1.2 Name: cityseer, dtype: float64 min 0.1 median
 0.2 max 0.2 Name: cityseer_demand, dtype: float64 min 1.0 median 3.6 max
-6.2 Name: madina, dtype: float64 min 30.5 median 49.5 max 75.0 Name:
+6.3 Name: madina, dtype: float64 min 30.5 median 49.5 max 75.0 Name:
 madina_worldpop, dtype: float64 min 12.8 median 37.6 max 62.5 Name:
 sdna, dtype: float64 \| tool \| min \| median \| max \|
-\|:—————-\|——:\|———:\|——:\| \| cityseer \| 0 \| 1.1 \| 1.4 \| \|
-cityseer_demand \| 0.1 \| 0.2 \| 0.2 \| \| madina \| 1 \| 3.6 \| 6.2 \|
+\|:—————-\|——:\|———:\|——:\| \| cityseer \| 0 \| 0.1 \| 1.2 \| \|
+cityseer_demand \| 0.1 \| 0.2 \| 0.2 \| \| madina \| 1 \| 3.6 \| 6.3 \|
 \| madina_worldpop \| 30.5 \| 49.5 \| 75 \| \| sdna \| 12.8 \| 37.6 \|
 62.5 \|
 
