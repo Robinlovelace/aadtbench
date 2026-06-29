@@ -4,7 +4,6 @@ Robin Lovelace
 
 - [Abstract](#abstract)
 - [Introduction](#introduction)
-  - [1.1 Related Work](#11-related-work)
   - [Input Datasets](#input-datasets)
 - [Methods](#methods)
   - [Benchmark Design](#benchmark-design)
@@ -14,7 +13,7 @@ Robin Lovelace
   - [Gravity / Demand Models](#gravity--demand-models)
   - [Performance](#performance)
 - [Next Steps](#next-steps)
-- [Appendix](#appendix)
+- [Appendices](#appendices)
   - [How to Run and Update
     Benchmarks](#how-to-run-and-update-benchmarks)
   - [Project Structure &
@@ -33,6 +32,8 @@ at 800m vs 979s previously single-threaded).
 > **⚠ Work in progress** — This manuscript is actively evolving.
 > Contributions, issues, and forks are welcome at
 > [github.com/Robinlovelace/cenbench](https://github.com/Robinlovelace/cenbench).
+
+[![](https://github.com/Robinlovelace/cenbench/actions/workflows/docker-build.yml/badge.svg)](https://github.com/Robinlovelace/cenbench/pkgs/container/cenbench)
 
 ## Introduction
 
@@ -57,10 +58,10 @@ analysis via a C++ library with Python, QGIS, and command-line
 interfaces, supporting hybrid and angular metrics with OpenMP
 multi-threading.
 
-### 1.1 Related Work
+<!-- TODO: populate this section -->
 
-This study benchmarks network centrality and gravity-based pedestrian
-flow models using Telraam validation data from Leuven, Belgium.
+<!-- ### Related Work
+&#10;This study benchmarks network centrality and gravity-based pedestrian flow models using Telraam validation data from Leuven, Belgium. -->
 
 ### Input Datasets
 
@@ -311,7 +312,7 @@ Figure 4: Computational performance: throughput and memory usage
 4.  Angular (simplest-path) analysis with cityseer `segment_centrality`
 5.  Add covariates: POI density, population, transit stops
 
-## Appendix
+## Appendices
 
 <details>
 
