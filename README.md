@@ -33,7 +33,7 @@ Robin Lovelace
 
 This study benchmarks seven tools for pedestrian flow modelling using
 Telraam sensor data in Leuven, Belgium. madina_worldpop gravity models
-achieve the strongest predictive performance (R² up to 0.704), followed
+achieve the strongest predictive performance (R² up to 0.876), followed
 by cityseer_demand (R²=0.543) and sDNA+ Mean Angular Distance at 800m
 (R²=0.468). sDNA+ with OpenMP multi-threading completes analyses in
 seconds rather than minutes (59.8s for 19K edges at 800m vs 979s
@@ -195,9 +195,9 @@ Table 5: Cityseer centrality results.
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
-| shortest_3200m | 0.008 | -0.091    | 1.4      | 456      | 13325  | 22      |
-| shortest_800m  | 0.004 | -0.064    | 0.2      | 412      | 106110 | 22      |
-| shortest_200m  | 0.000 | -0.012    | 0.0      | 409      | 523956 | 22      |
+| shortest_3200m | 0.008 | -0.091    | 1.2      | 457      | 15286  | 22      |
+| shortest_800m  | 0.004 | -0.064    | 0.2      | 412      | 113657 | 22      |
+| shortest_200m  | 0.000 | -0.012    | 0.1      | 410      | 381738 | 22      |
 
 </div>
 
@@ -209,8 +209,8 @@ Table 6: Madina centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| degree           | 0.145 | -0.381    | 1.3      | 467      | 14493 | 22      |
-| btw_weighted_200 | 0.002 | -0.041    | 7.3      | 462      | 2604  | 22      |
+| degree           | 0.145 | -0.381    | 0.9      | 467      | 21371 | 22      |
+| btw_weighted_200 | 0.002 | -0.041    | 7.5      | 463      | 2545  | 22      |
 
 </div>
 
@@ -222,8 +222,8 @@ Table 7: sDNA+ centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| MAD_angular_800m | 0.468 | 0.684     | 63.8     | 400      | 300   | 22      |
-| MAD_angular_400m | 0.353 | 0.594     | 12.8     | 400      | 1495  | 22      |
+| MAD_angular_800m | 0.468 | 0.684     | 63.2     | 400      | 303   | 22      |
+| MAD_angular_400m | 0.353 | 0.594     | 12.7     | 400      | 1504  | 22      |
 
 </div>
 
@@ -248,10 +248,10 @@ Table 8: Madina WorldPop gravity results.
 
 | Variant              | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |----------------------|-------|-----------|----------|----------|-------|---------|
-| wp_r1200_beta002_all | 0.002 | -0.048    | 14.9     | 339      | 634   | 22      |
-| wp_r1600_beta002_all | 0.001 | -0.031    | 29.4     | 339      | 322   | 22      |
-| wp_r2000_beta002_all | 0.001 | -0.027    | 45.3     | 339      | 209   | 22      |
-| wp_r3000_beta002_all | 0.001 | -0.025    | 54.8     | 339      | 172   | 22      |
+| wp_r2000_beta002_all | 0.868 | 0.932     | 71.4     | 339      | 132   | 22      |
+| wp_r1600_beta002_all | 0.862 | 0.928     | 55.7     | 339      | 170   | 22      |
+| wp_r1200_beta002_all | 0.851 | 0.923     | 31.4     | 338      | 301   | 22      |
+| wp_r3000_beta002_all | nan   | nan       | 75.0     | —        | —     | 38      |
 
 </div>
 
@@ -261,9 +261,9 @@ Table 9: Cityseer Demand gravity results.
 
 | Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |-----------------------------|-------|-----------|----------|----------|--------|---------|
-| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 214661 | 22      |
-| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 212656 | 22      |
-| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 151541 | 22      |
+| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.2      | 420      | 97148  | 22      |
+| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 197202 | 22      |
+| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 137288 | 22      |
 
 </div>
 
