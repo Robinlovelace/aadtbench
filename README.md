@@ -2,8 +2,33 @@
 Robin Lovelace
 2026-06-01
 
+<!-- ## Abstract
+&#10;This study benchmarks five tools for pedestrian flow modelling using Telraam sensor data in Leuven, Belgium. madina_worldpop gravity models achieve the strongest predictive performance (R² up to 0.876), followed by cityseer_demand (R²=0.543) and sDNA+ [@cooper2020sdna] Mean Angular Distance at 800m (R²=0.468). sDNA+ with OpenMP multi-threading completes analyses in seconds rather than minutes (59.8s for 19K edges at 800m vs 979s previously single-threaded). -->
+
+<!-- ## Introduction
+&#10;Pedestrian flow modelling is central to walkability analysis, transport planning, and urban design. Three approaches exist: network centrality (betweenness), gravity/flow models (origin-destination allocation with distance decay), and spatial network analysis (graph-based metrics within a GIS framework).
+&#10;**cityseer** [@simons2022cityseer] implements high-performance centrality in Rust.
+**madina** [@sevtsuk2025madina] implements Urban Network Analysis (UNA) with flow simulation.
+**sDNA+** [@cooper2020sdna] provides 3-d spatial network analysis with hybrid and angular metrics.
+&#10;-->
+
+> **⚠ Work in progress** — This manuscript is actively evolving.
+> Contributions, issues, and forks are welcome at
+> [github.com/Robinlovelace/cenbench](https://github.com/Robinlovelace/cenbench).
+
+[![](https://github.com/Robinlovelace/cenbench/actions/workflows/docker-build.yml/badge.svg)](https://github.com/Robinlovelace/cenbench/pkgs/container/cenbench)
+
+[![](https://img.shields.io/badge/Open%20in%20Codespaces-2ea44f?logo=github.png)](https://codespaces.new/Robinlovelace/cenbench)
+
+<details>
+
+<summary>
+
+<strong>Table of Contents</strong>
+</summary>
+
 - [Introduction](#introduction)
-  - [Input Datasets](#input-datasets)
+- [Input Datasets](#input-datasets)
 - [Methods](#methods)
   - [Benchmark Design](#benchmark-design)
   - [Metrics](#metrics)
@@ -13,21 +38,8 @@ Robin Lovelace
   - [Performance](#performance)
 - [Next Steps](#next-steps)
 - [Reproducibility](#reproducibility)
-  - [How to Run and Update
-    Benchmarks](#how-to-run-and-update-benchmarks)
-  - [Project Structure &
-    Reproducibility](#project-structure--reproducibility)
-- [References](#references)
 
-TODO: Update and add. <!-- ## Abstract
-
-This study benchmarks five tools for pedestrian flow modelling using Telraam sensor data in Leuven, Belgium. madina_worldpop gravity models achieve the strongest predictive performance (R² up to 0.876), followed by cityseer_demand (R²=0.543) and sDNA+ [@cooper2020sdna] Mean Angular Distance at 800m (R²=0.468). sDNA+ with OpenMP multi-threading completes analyses in seconds rather than minutes (59.8s for 19K edges at 800m vs 979s previously single-threaded). -->
-
-> **⚠ Work in progress** — This manuscript is actively evolving.
-> Contributions, issues, and forks are welcome at
-> [github.com/Robinlovelace/cenbench](https://github.com/Robinlovelace/cenbench).
-
-\-[![Docker](https://github.com/Robinlovelace/cenbench/actions/workflows/docker-build.yml/badge.svg)](https://github.com/Robinlovelace/cenbench/pkgs/container/cenbench)
+</details>
 
 ## Introduction
 
