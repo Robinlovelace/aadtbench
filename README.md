@@ -187,6 +187,13 @@ madina, sDNA+)
 
 ### Centrality Methods
 
+Centrality methods measure the structural importance of each network
+edge (or node) based purely on network geometry — how many shortest
+paths pass through it (betweenness) or how quickly it can reach nearby
+edges (closeness). They do not incorporate trip origins, destinations,
+or land-use data. Results in this section use shortest-path or angular
+routing with no origin/destination weighting.
+
 #### cityseer
 
 <div id="tbl-cityseer-results">
@@ -229,6 +236,13 @@ Table 7: sDNA+ centrality results.
 
 ### Gravity / Demand Models
 
+Gravity models estimate pedestrian flow by simulating trips from
+population-weighted origins (WorldPop cells) to attractor destinations
+(OSM points of interest) using a distance-decay function: flow =
+attractor_weight × exp(-β × distance). Unlike centrality methods, they
+incorporate real land-use data and trip distribution, making them
+behavioural rather than purely structural.
+
 <div id="fig-barplot-gravity">
 
 ![](results/fig_gravity_barplot.png)
@@ -268,6 +282,23 @@ Table 9: Cityseer Demand gravity results.
 </div>
 
 ### Performance
+
+<div id="tbl-performance-summary">
+
+Table 10: Runtime summary per tool: min, median, and max wall-clock
+seconds across all variants.
+
+min 0.0 median 0.2 max 1.8 Name: cityseer, dtype: float64 min 0.1 median
+0.2 max 0.2 Name: cityseer_demand, dtype: float64 min 1.3 median 5.6 max
+9.9 Name: madina, dtype: float64 min 30.5 median 49.5 max 75.0 Name:
+madina_worldpop, dtype: float64 min 12.8 median 37.6 max 62.5 Name:
+sdna, dtype: float64 \| tool \| min \| median \| max \|
+\|:—————-\|——:\|———:\|——:\| \| cityseer \| 0 \| 0.2 \| 1.8 \| \|
+cityseer_demand \| 0.1 \| 0.2 \| 0.2 \| \| madina \| 1.3 \| 5.6 \| 9.9
+\| \| madina_worldpop \| 30.5 \| 49.5 \| 75 \| \| sdna \| 12.8 \| 37.6
+\| 62.5 \|
+
+</div>
 
 <div id="fig-performance">
 
