@@ -2,7 +2,6 @@
 Robin Lovelace
 2026-06-01
 
-- [Abstract](#abstract)
 - [Introduction](#introduction)
   - [Input Datasets](#input-datasets)
 - [Methods](#methods)
@@ -13,27 +12,22 @@ Robin Lovelace
   - [Gravity / Demand Models](#gravity--demand-models)
   - [Performance](#performance)
 - [Next Steps](#next-steps)
-- [Appendices](#appendices)
+- [Reproducibility](#reproducibility)
   - [How to Run and Update
     Benchmarks](#how-to-run-and-update-benchmarks)
   - [Project Structure &
     Reproducibility](#project-structure--reproducibility)
+- [References](#references)
 
-## Abstract
+TODO: Update and add. <!-- ## Abstract
 
-This study benchmarks five tools for pedestrian flow modelling using
-Telraam sensor data in Leuven, Belgium. madina_worldpop gravity models
-achieve the strongest predictive performance (R² up to 0.876), followed
-by cityseer_demand (R²=0.543) and sDNA+ (Cooper and Chiaradia 2020) Mean
-Angular Distance at 800m (R²=0.468). sDNA+ with OpenMP multi-threading
-completes analyses in seconds rather than minutes (59.8s for 19K edges
-at 800m vs 979s previously single-threaded).
+This study benchmarks five tools for pedestrian flow modelling using Telraam sensor data in Leuven, Belgium. madina_worldpop gravity models achieve the strongest predictive performance (R² up to 0.876), followed by cityseer_demand (R²=0.543) and sDNA+ [@cooper2020sdna] Mean Angular Distance at 800m (R²=0.468). sDNA+ with OpenMP multi-threading completes analyses in seconds rather than minutes (59.8s for 19K edges at 800m vs 979s previously single-threaded). -->
 
 > **⚠ Work in progress** — This manuscript is actively evolving.
 > Contributions, issues, and forks are welcome at
 > [github.com/Robinlovelace/cenbench](https://github.com/Robinlovelace/cenbench).
 
-[![](https://github.com/Robinlovelace/cenbench/actions/workflows/docker-build.yml/badge.svg)](https://github.com/Robinlovelace/cenbench/pkgs/container/cenbench)
+\-[![Docker](https://github.com/Robinlovelace/cenbench/actions/workflows/docker-build.yml/badge.svg)](https://github.com/Robinlovelace/cenbench/pkgs/container/cenbench)
 
 ## Introduction
 
@@ -306,13 +300,12 @@ Figure 4: Computational performance: throughput and memory usage
 
 ## Next Steps
 
-1.  Expand validation with Vivacity pedestrian counts from oxflow
-2.  Multi-city comparison (Leeds, Manchester, Edinburgh)
-3.  K-fold spatial cross-validation
-4.  Angular (simplest-path) analysis with cityseer `segment_centrality`
-5.  Add covariates: POI density, population, transit stops
+1.  Multi-city comparison (Leeds, Manchester, Edinburgh)
+2.  K-fold spatial cross-validation
+3.  Additional goodness-of-fit metrics and centrality measures
+4.  Test adding covariates: e.g. POI density, population, transit stops
 
-## Appendices
+## Reproducibility
 
 <details>
 
@@ -373,6 +366,8 @@ dvc repro
 | sDNA+     | \(CLI\)   |
 
 </details>
+
+## References
 
 <div id="refs" class="references csl-bib-body hanging-indent"
 entry-spacing="0">
