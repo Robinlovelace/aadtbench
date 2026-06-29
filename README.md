@@ -195,9 +195,9 @@ Table 5: Cityseer centrality results.
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
-| shortest_3200m | 0.008 | -0.091    | 0.6      | 418      | 31593  | 22      |
-| shortest_800m  | 0.004 | -0.064    | 0.1      | 374      | 220261 | 22      |
-| shortest_200m  | 0.000 | -0.012    | 0.0      | 371      | 704109 | 22      |
+| shortest_3200m | 0.008 | -0.091    | 0.6      | 418      | 31927  | 22      |
+| shortest_800m  | 0.004 | -0.064    | 0.1      | 374      | 220926 | 22      |
+| shortest_200m  | 0.000 | -0.012    | 0.0      | 371      | 701411 | 22      |
 
 </div>
 
@@ -209,25 +209,12 @@ Table 6: Madina centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| degree           | 0.145 | -0.381    | 0.7      | 428      | 27345 | 22      |
-| btw_weighted_200 | 0.002 | -0.041    | 2.8      | 425      | 6838  | 22      |
+| degree           | 0.145 | -0.381    | 0.7      | 428      | 27530 | 22      |
+| btw_weighted_200 | 0.002 | -0.041    | 2.8      | 425      | 6877  | 22      |
 
 </div>
 
 #### sDNA+
-
-<div id="tbl-sdna-results">
-
-Table 7: sDNA+ centrality results.
-
-| Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|------------------|-------|-----------|----------|----------|-------|---------|
-| MAD_angular_800m | 0.468 | 0.684     | 59.0     | 400      | 324   | 22      |
-| MAD_angular_800m | 0.468 | 0.684     | 59.0     | 400      | 324   | 22      |
-| MAD_angular_400m | 0.353 | 0.594     | 11.4     | 400      | 1671  | 22      |
-| MAD_angular_400m | 0.353 | 0.594     | 11.4     | 400      | 1671  | 22      |
-
-</div>
 
 ### Gravity / Demand Models
 
@@ -246,26 +233,22 @@ decay.
 
 <div id="tbl-gravity-madina-results">
 
-Table 8: Madina WorldPop gravity results.
+Table 7: Madina WorldPop gravity results.
 
-| Variant              | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|----------------------|-------|-----------|----------|----------|-------|---------|
-| wp_r3000_beta002_all | 0.704 | 0.839     | 37.0     | 313      | 256   | 22      |
-| wp_r2000_beta002_all | 0.672 | 0.820     | 26.7     | 310      | 354   | 22      |
-| wp_r1600_beta002_all | 0.644 | 0.803     | 20.4     | 308      | 464   | 22      |
-| wp_r1200_beta002_all | 0.616 | 0.785     | 15.2     | 310      | 623   | 22      |
+| Variant | R²  | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
+|---------|-----|-----------|----------|----------|-------|---------|
 
 </div>
 
 <div id="tbl-gravity-cityseer-results">
 
-Table 9: Cityseer Demand gravity results.
+Table 8: Cityseer Demand gravity results.
 
 | Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |-----------------------------|-------|-----------|----------|----------|--------|---------|
-| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 354228 | 22      |
-| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 302075 | 22      |
-| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 225576 | 22      |
+| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 344230 | 22      |
+| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 291450 | 22      |
+| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 224377 | 22      |
 
 </div>
 
