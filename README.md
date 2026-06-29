@@ -14,13 +14,11 @@ Robin Lovelace
     Design](#benchmark-design)
   - [<span class="toc-section-number">3.2</span> Metrics](#metrics)
 - [<span class="toc-section-number">4</span> Results](#results)
-  - [<span class="toc-section-number">4.1</span> Benchmark
-    Barplot](#benchmark-barplot)
-  - [<span class="toc-section-number">4.2</span> Centrality
+  - [<span class="toc-section-number">4.1</span> Centrality
     Methods](#centrality-methods)
-  - [<span class="toc-section-number">4.3</span> Gravity / Demand
+  - [<span class="toc-section-number">4.2</span> Gravity / Demand
     Models](#gravity--demand-models)
-  - [<span class="toc-section-number">4.4</span>
+  - [<span class="toc-section-number">4.3</span>
     Performance](#performance)
 - [<span class="toc-section-number">5</span> Next Steps](#next-steps)
 - [Appendix](#appendix)
@@ -31,13 +29,17 @@ Robin Lovelace
 
 ## Abstract
 
-This study benchmarks seven tools for pedestrian flow modelling using
+This study benchmarks five tools for pedestrian flow modelling using
 Telraam sensor data in Leuven, Belgium. madina_worldpop gravity models
 achieve the strongest predictive performance (R² up to 0.876), followed
-by cityseer_demand (R²=0.543) and sDNA+ Mean Angular Distance at 800m
-(R²=0.468). sDNA+ with OpenMP multi-threading completes analyses in
-seconds rather than minutes (59.8s for 19K edges at 800m vs 979s
-previously single-threaded).
+by cityseer_demand (R²=0.543) and sDNA+ (Cooper and Chiaradia 2020) Mean
+Angular Distance at 800m (R²=0.468). sDNA+ with OpenMP multi-threading
+completes analyses in seconds rather than minutes (59.8s for 19K edges
+at 800m vs 979s previously single-threaded).
+
+> **⚠ Work in progress** — This manuscript is actively evolving.
+> Contributions, issues, and forks are welcome at
+> [github.com/Robinlovelace/cenbench](https://github.com/Robinlovelace/cenbench).
 
 ## Introduction
 
@@ -174,7 +176,14 @@ Table 4: Gravity/demand model configurations.
 
 ## Results
 
-### Benchmark Barplot
+### Centrality Methods
+
+Centrality methods measure the structural importance of each network
+edge (or node) based purely on network geometry — how many shortest
+paths pass through it (betweenness) or how quickly it can reach nearby
+edges (closeness). They do not incorporate trip origins, destinations,
+or land-use data. Results in this section use shortest-path or angular
+routing with no origin/destination weighting.
 
 <div id="fig-barplot-centrality">
 
@@ -185,15 +194,6 @@ madina, sDNA+)
 
 </div>
 
-### Centrality Methods
-
-Centrality methods measure the structural importance of each network
-edge (or node) based purely on network geometry — how many shortest
-paths pass through it (betweenness) or how quickly it can reach nearby
-edges (closeness). They do not incorporate trip origins, destinations,
-or land-use data. Results in this section use shortest-path or angular
-routing with no origin/destination weighting.
-
 #### cityseer
 
 <div id="tbl-cityseer-results">
@@ -202,9 +202,11 @@ Table 5: Cityseer centrality results.
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
-| shortest_3200m | 0.008 | -0.091    | 1.8      | 456      | 10367  | 22      |
-| shortest_800m  | 0.004 | -0.064    | 0.2      | 412      | 103537 | 22      |
-| shortest_200m  | 0.000 | -0.012    | 0.1      | 410      | 391981 | 22      |
+| segment_800m   | 0.015 | -0.124    | 1.1      | 473      | 16930  | 22      |
+| segment_1600m  | 0.014 | -0.118    | 1.1      | 473      | 16902  | 22      |
+| shortest_3200m | 0.008 | -0.091    | 1.4      | 456      | 13347  | 22      |
+| shortest_800m  | 0.004 | -0.064    | 0.1      | 412      | 129147 | 22      |
+| shortest_200m  | 0.000 | -0.012    | 0.0      | 410      | 426119 | 22      |
 
 </div>
 
@@ -216,8 +218,8 @@ Table 6: Madina centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| degree           | 0.145 | -0.381    | 1.3      | 467      | 15147 | 22      |
-| btw_weighted_200 | 0.002 | -0.041    | 9.9      | 462      | 1926  | 22      |
+| degree           | 0.145 | -0.381    | 1.0      | 484      | 18813 | 22      |
+| btw_weighted_200 | 0.002 | -0.041    | 6.2      | 479      | 3079  | 22      |
 
 </div>
 
@@ -288,15 +290,15 @@ Table 9: Cityseer Demand gravity results.
 Table 10: Runtime summary per tool: min, median, and max wall-clock
 seconds across all variants.
 
-min 0.0 median 0.2 max 1.8 Name: cityseer, dtype: float64 min 0.1 median
-0.2 max 0.2 Name: cityseer_demand, dtype: float64 min 1.3 median 5.6 max
-9.9 Name: madina, dtype: float64 min 30.5 median 49.5 max 75.0 Name:
+min 0.0 median 1.1 max 1.4 Name: cityseer, dtype: float64 min 0.1 median
+0.2 max 0.2 Name: cityseer_demand, dtype: float64 min 1.0 median 3.6 max
+6.2 Name: madina, dtype: float64 min 30.5 median 49.5 max 75.0 Name:
 madina_worldpop, dtype: float64 min 12.8 median 37.6 max 62.5 Name:
 sdna, dtype: float64 \| tool \| min \| median \| max \|
-\|:—————-\|——:\|———:\|——:\| \| cityseer \| 0 \| 0.2 \| 1.8 \| \|
-cityseer_demand \| 0.1 \| 0.2 \| 0.2 \| \| madina \| 1.3 \| 5.6 \| 9.9
-\| \| madina_worldpop \| 30.5 \| 49.5 \| 75 \| \| sdna \| 12.8 \| 37.6
-\| 62.5 \|
+\|:—————-\|——:\|———:\|——:\| \| cityseer \| 0 \| 1.1 \| 1.4 \| \|
+cityseer_demand \| 0.1 \| 0.2 \| 0.2 \| \| madina \| 1 \| 3.6 \| 6.2 \|
+\| madina_worldpop \| 30.5 \| 49.5 \| 75 \| \| sdna \| 12.8 \| 37.6 \|
+62.5 \|
 
 </div>
 
@@ -311,25 +313,27 @@ Figure 4: Computational performance: throughput and memory usage
 ## Next Steps
 
 1.  Expand validation with Vivacity pedestrian counts from oxflow
-2.  Full madina API integration (Zonal-based benchmarking)
-3.  Gravity models combining centrality with land-use attractiveness
-4.  Add covariates: POI density, population, transit stops
-5.  Multi-city comparison (Leeds, Manchester, Edinburgh)
-6.  Angular (simplest-path) centrality analysis
-7.  K-fold spatial cross-validation
+2.  Multi-city comparison (Leeds, Manchester, Edinburgh)
+3.  K-fold spatial cross-validation
+4.  Angular (simplest-path) analysis with cityseer `segment_centrality`
+5.  Add covariates: POI density, population, transit stops
 
 ## Appendix
 
+<details>
+
+<summary>
+
+Reproducibility: DVC pipeline, setup, and version details
+</summary>
+
 ### How to Run and Update Benchmarks
 
-The benchmark suite is fully orchestrated using **DVC** (Data Version
+The benchmark suite is fully orchestrated using
+**[DVC](https://dvc.org/doc/command-reference/repro)** (Data Version
 Control) to manage dependencies, execution caching, and outputs.
 
 #### 1. Setup the Environment
-
-Ensure you have the required dependencies installed (including Python
-packages, the `sDNA+` CLI, and the pandas 3.0+/numpy 2.0+ compatible
-`madina` fork) by running:
 
 ``` bash
 pip install -r requirements.txt
@@ -337,40 +341,32 @@ pip install -r requirements.txt
 
 #### 2. Run the Pipeline
 
-To run the entire benchmark pipeline (prepare demand datasets, run
-cityseer, madina, and sDNA benchmarks, generate visual figures, and
-compile the final report):
-
 ``` bash
 dvc repro
 ```
 
-DVC will trace dependencies and execute only the stages whose code,
-configurations, or data inputs have changed, retrieving the rest from
-cache.
-
 #### 3. Rapid Testing Mode
 
-To quickly test code changes on a lightweight 5,900-edge cropped dataset
-rather than the full 19k edge network: 1. Open `scripts/config.py`. 2.
-Toggle `TEST_MODE = True`. 3. Run `dvc repro`. Remember to flip
-`TEST_MODE = False` before committing final results.
+1.  Open `scripts/config.py`.
+2.  Toggle `TEST_MODE = True`.
+3.  Run `dvc repro`.
+4.  Flip `TEST_MODE = False` before committing.
 
 #### 4. Add/Modify Experiments
 
-- **sDNA+**: Edit configurations in `scripts/bench_sdna.py`.
-- **Madina (Zonal)**: Edit the dictionary grid list in
-  `scripts/run_leuven_demand_experiments.py`.
-- **Cityseer**: Edit configurations in
+- **sDNA+**: Edit `scripts/bench_sdna.py`.
+- **Madina gravity**: Edit `scripts/run_demand_experiments.py`.
+- **Cityseer demand**: Edit
   `scripts/run_cityseer_demand_experiments.py`.
+- **Centrality**: Edit `scripts/bench_city.py`.
 
 ### Project Structure & Reproducibility
 
 - `dvc.yaml` — Stage orchestration and dependencies
-- `scripts/bench_all.py` — Unified benchmark runner
+- `dvc.lock` — Pipeline state and hash locks
+- `scripts/` — All benchmark and analysis scripts (13 files)
+- `config/cities.yaml` — City parameters
 - `results/leuven_results.csv` — Compiled metrics output
-- `results/fig1_barplot.png` — R² comparison plot
-- `results/fig2_performance.png` — Throughput and memory use comparison
 
 | Package   | Version   |
 |-----------|-----------|
@@ -379,9 +375,22 @@ Toggle `TEST_MODE = True`. 3. Run `dvc repro`. Remember to flip
 | networkx  | 3.6.1     |
 | pandas    | 3.0.4     |
 | geopandas | 1.1.4     |
+| madina    | installed |
+| sDNA+     | \(CLI\)   |
+
+</details>
 
 <div id="refs" class="references csl-bib-body hanging-indent"
 entry-spacing="0">
+
+<div id="ref-cooper2020sdna" class="csl-entry">
+
+Cooper, Crispin H. V., and Alain J. F. Chiaradia. 2020. “sDNA: 3-d
+Spatial Network Analysis for GIS, CAD, Command Line & Python.”
+*SoftwareX* 12 (July): 100525.
+<https://doi.org/10.1016/j.softx.2020.100525>.
+
+</div>
 
 <div id="ref-sevtsuk2025madina" class="csl-entry">
 
