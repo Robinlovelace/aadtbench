@@ -2,29 +2,22 @@
 Robin Lovelace
 2026-06-01
 
-- [<span class="toc-section-number">1</span> Abstract](#abstract)
-- [<span class="toc-section-number">2</span>
-  Introduction](#introduction)
-  - [<span class="toc-section-number">2.1</span> 1.1 Related
-    Work](#11-related-work)
-  - [<span class="toc-section-number">2.2</span> Input
-    Datasets](#input-datasets)
-- [<span class="toc-section-number">3</span> Methods](#methods)
-  - [<span class="toc-section-number">3.1</span> Benchmark
-    Design](#benchmark-design)
-  - [<span class="toc-section-number">3.2</span> Metrics](#metrics)
-- [<span class="toc-section-number">4</span> Results](#results)
-  - [<span class="toc-section-number">4.1</span> Centrality
-    Methods](#centrality-methods)
-  - [<span class="toc-section-number">4.2</span> Gravity / Demand
-    Models](#gravity--demand-models)
-  - [<span class="toc-section-number">4.3</span>
-    Performance](#performance)
-- [<span class="toc-section-number">5</span> Next Steps](#next-steps)
+- [Abstract](#abstract)
+- [Introduction](#introduction)
+  - [1.1 Related Work](#11-related-work)
+  - [Input Datasets](#input-datasets)
+- [Methods](#methods)
+  - [Benchmark Design](#benchmark-design)
+  - [Metrics](#metrics)
+- [Results](#results)
+  - [Centrality Methods](#centrality-methods)
+  - [Gravity / Demand Models](#gravity--demand-models)
+  - [Performance](#performance)
+- [Next Steps](#next-steps)
 - [Appendix](#appendix)
-  - [<span class="toc-section-number">5.1</span> How to Run and Update
+  - [How to Run and Update
     Benchmarks](#how-to-run-and-update-benchmarks)
-  - [<span class="toc-section-number">5.2</span> Project Structure &
+  - [Project Structure &
     Reproducibility](#project-structure--reproducibility)
 
 ## Abstract
