@@ -195,9 +195,9 @@ Table 5: Cityseer centrality results.
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
-| shortest_3200m | 0.008 | -0.091    | 0.6      | 418      | 31927  | 22      |
-| shortest_800m  | 0.004 | -0.064    | 0.1      | 374      | 220926 | 22      |
-| shortest_200m  | 0.000 | -0.012    | 0.0      | 371      | 701411 | 22      |
+| shortest_3200m | 0.008 | -0.091    | 0.6      | 418      | 29875  | 22      |
+| shortest_800m  | 0.004 | -0.064    | 0.1      | 374      | 196971 | 22      |
+| shortest_200m  | 0.000 | -0.012    | 0.0      | 371      | 650032 | 22      |
 
 </div>
 
@@ -209,8 +209,8 @@ Table 6: Madina centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| degree           | 0.145 | -0.381    | 0.7      | 428      | 27530 | 22      |
-| btw_weighted_200 | 0.002 | -0.041    | 2.8      | 425      | 6877  | 22      |
+| degree           | 0.145 | -0.381    | 0.7      | 428      | 27765 | 22      |
+| btw_weighted_200 | 0.002 | -0.041    | 2.9      | 424      | 6671  | 22      |
 
 </div>
 
@@ -235,8 +235,12 @@ decay.
 
 Table 7: Madina WorldPop gravity results.
 
-| Variant | R²  | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|---------|-----|-----------|----------|----------|-------|---------|
+| Variant              | R²  | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
+|----------------------|-----|-----------|----------|----------|-------|---------|
+| wp_r1200_beta002_all | nan | nan       | 5.0      | 317      | 1891  | 22      |
+| wp_r1600_beta002_all | nan | nan       | 5.1      | 321      | 1868  | 22      |
+| wp_r2000_beta002_all | nan | nan       | 5.1      | 325      | 1866  | 22      |
+| wp_r3000_beta002_all | nan | nan       | 5.2      | 333      | 1829  | 22      |
 
 </div>
 
@@ -246,9 +250,9 @@ Table 8: Cityseer Demand gravity results.
 
 | Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |-----------------------------|-------|-----------|----------|----------|--------|---------|
-| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 344230 | 22      |
-| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 291450 | 22      |
-| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 224377 | 22      |
+| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 334560 | 22      |
+| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.1      | 420      | 283224 | 22      |
+| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.1      | 420      | 217122 | 22      |
 
 </div>
 
@@ -282,7 +286,8 @@ Control) to manage dependencies, execution caching, and outputs.
 #### 1. Setup the Environment
 
 Ensure you have the required dependencies installed (including Python
-packages and `sDNA+` CLI) by running:
+packages, the `sDNA+` CLI, and the pandas 3.0+/numpy 2.0+ compatible
+`madina` fork) by running:
 
 ``` bash
 pip install -r requirements.txt

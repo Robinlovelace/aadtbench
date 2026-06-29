@@ -1,0 +1,8 @@
+pandas>=3.0.0
+geopandas>=1.0.0
+networkx>=3.0
+scipy>=1.10.0
+matplotlib>=3.7.0
+cityseer>=4.25.0
+osmnx>=2.0.0
+git+https://github.com/Robinlovelace/madina.git@fix-pandas-numpy-compat
