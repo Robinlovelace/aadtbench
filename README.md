@@ -59,8 +59,10 @@ Rust, with shortest-path and angular analysis.
 **madina** (Sevtsuk and Alhassan 2025) implements Urban Network Analysis
 (UNA) with flow simulation, decay functions, and detour penalties.
 
-**sfnetworks** (van der Meer et al. 2024) provides a
-tidyverse-compatible R interface for spatial network analysis.
+**sDNA+** (Cooper and Chiaradia 2020) provides 3-d spatial network
+analysis via a C++ library with Python, QGIS, and command-line
+interfaces, supporting hybrid and angular metrics with OpenMP
+multi-threading.
 
 ### 1.1 Related Work
 
@@ -405,14 +407,6 @@ Simons, Gareth. 2022. “The Cityseer Python Package for Pedestrian-Scale
 Network-Based Urban Analysis.” *Environment and Planning B: Urban
 Analytics and City Science* 50 (5): 1328–44.
 <https://doi.org/10.1177/23998083221133827>.
-
-</div>
-
-<div id="ref-vandermeer2024sfnetworks" class="csl-entry">
-
-van der Meer, Lucas, Lorena Abad, Andrea Gilardi, and Robin Lovelace.
-2024. “Sfnetworks: Tidy Geospatial Networks.”
-<https://doi.org/10.32614/CRAN.package.sfnetworks>.
 
 </div>
 
