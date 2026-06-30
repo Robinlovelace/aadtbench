@@ -204,9 +204,9 @@ Table 5: Cityseer centrality results.
 
 | Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
 |----------------|-------|-----------|----------|----------|--------|---------|
-| shortest_3200m | 0.008 | -0.091    | 1.2      | 483      | 16400  | 22      |
-| shortest_800m  | 0.004 | -0.064    | 0.1      | 438      | 157678 | 22      |
-| shortest_200m  | 0.000 | -0.012    | 0.0      | 436      | 534414 | 22      |
+| shortest_3200m | 0.008 | -0.091    | 0.7      | 483      | 29428  | 22      |
+| shortest_800m  | 0.004 | -0.064    | 0.1      | 439      | 233663 | 22      |
+| shortest_200m  | 0.000 | -0.012    | 0.0      | 436      | 675752 | 22      |
 
 </div>
 
@@ -218,8 +218,8 @@ Table 6: Madina centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| degree           | 0.145 | -0.381    | 1.0      | 489      | 19671 | 22      |
-| btw_weighted_200 | 0.002 | -0.041    | 6.3      | 489      | 3048  | 22      |
+| degree           | 0.145 | -0.381    | 0.7      | 489      | 26592 | 22      |
+| btw_weighted_200 | 0.002 | -0.041    | 2.9      | 489      | 6645  | 22      |
 
 </div>
 
@@ -231,8 +231,8 @@ Table 7: sDNA+ centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| MAD_angular_800m | 0.468 | 0.684     | 62.5     | 400      | 306   | 22      |
-| MAD_angular_400m | 0.353 | 0.594     | 12.8     | 400      | 1498  | 22      |
+| MAD_angular_800m | 0.468 | 0.684     | 64.6     | 400      | 296   | 22      |
+| MAD_angular_400m | 0.353 | 0.594     | 10.8     | 400      | 1779  | 22      |
 
 </div>
 
@@ -264,10 +264,10 @@ Table 8: Madina WorldPop gravity results.
 
 | Variant              | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |----------------------|-------|-----------|----------|----------|-------|---------|
-| wp_r2000_beta002_all | 0.868 | 0.932     | 65.3     | 339      | 145   | 22      |
-| wp_r1600_beta002_all | 0.862 | 0.928     | 33.6     | 339      | 281   | 22      |
-| wp_r1200_beta002_all | 0.851 | 0.923     | 30.5     | 339      | 310   | 22      |
-| wp_r3000_beta002_all | nan   | nan       | 75.0     | —        | —     | 38      |
+| wp_r3000_beta002_all | 0.876 | 0.936     | 57.3     | 344      | 165   | 22      |
+| wp_r2000_beta002_all | 0.868 | 0.932     | 33.2     | 344      | 285   | 22      |
+| wp_r1600_beta002_all | 0.862 | 0.928     | 25.0     | 344      | 378   | 22      |
+| wp_r1200_beta002_all | 0.851 | 0.923     | 17.2     | 343      | 550   | 22      |
 
 </div>
 
@@ -275,11 +275,11 @@ Table 8: Madina WorldPop gravity results.
 
 Table 9: Cityseer Demand gravity results.
 
-| Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
-|-----------------------------|-------|-----------|----------|----------|--------|---------|
-| cs_demand_r800_beta002_all  | 0.543 | 0.737     | 0.1      | 420      | 169345 | 22      |
-| cs_demand_r1200_beta002_all | 0.515 | 0.718     | 0.2      | 420      | 107309 | 22      |
-| cs_demand_r2000_beta002_all | 0.437 | 0.661     | 0.2      | 420      | 83872  | 22      |
+| Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
+|-----------------------------|-------|-----------|----------|----------|-------|---------|
+| cs_demand_r2000_beta002_all | 0.632 | 0.795     | 2.5      | 420      | 7758  | 22      |
+| cs_demand_r1200_beta002_all | 0.573 | 0.757     | 2.1      | 420      | 8895  | 22      |
+| cs_demand_r800_beta002_all  | 0.426 | 0.653     | 2.0      | 420      | 9448  | 22      |
 
 </div>
 
@@ -290,15 +290,15 @@ Table 9: Cityseer Demand gravity results.
 Table 10: Runtime summary per tool: min, median, and max wall-clock
 seconds across all variants.
 
-min 0.0 median 0.1 max 1.2 Name: cityseer, dtype: float64 min 0.1 median
-0.2 max 0.2 Name: cityseer_demand, dtype: float64 min 1.0 median 3.6 max
-6.3 Name: madina, dtype: float64 min 30.5 median 49.5 max 75.0 Name:
-madina_worldpop, dtype: float64 min 12.8 median 37.6 max 62.5 Name:
+min 0.0 median 0.1 max 0.6 Name: cityseer, dtype: float64 min 2.0 median
+2.1 max 2.5 Name: cityseer_demand, dtype: float64 min 0.7 median 1.8 max
+2.9 Name: madina, dtype: float64 min 17.2 median 29.1 max 57.3 Name:
+madina_worldpop, dtype: float64 min 10.8 median 37.7 max 64.6 Name:
 sdna, dtype: float64 \| tool \| min \| median \| max \|
-\|:—————-\|——:\|———:\|——:\| \| cityseer \| 0 \| 0.1 \| 1.2 \| \|
-cityseer_demand \| 0.1 \| 0.2 \| 0.2 \| \| madina \| 1 \| 3.6 \| 6.3 \|
-\| madina_worldpop \| 30.5 \| 49.5 \| 75 \| \| sdna \| 12.8 \| 37.6 \|
-62.5 \|
+\|:—————-\|——:\|———:\|——:\| \| cityseer \| 0 \| 0.1 \| 0.6 \| \|
+cityseer_demand \| 2 \| 2.1 \| 2.5 \| \| madina \| 0.7 \| 1.8 \| 2.9 \|
+\| madina_worldpop \| 17.2 \| 29.1 \| 57.3 \| \| sdna \| 10.8 \| 37.7 \|
+64.6 \|
 
 </div>
 
