@@ -6,7 +6,10 @@ __pycache__/
 venv/
 *.egg-info/
 
-# Data
+# Data (base inputs tracked; generated outputs ignored)
+data/*.gpkg
+data/*.geojson
+data/*.graphml
 data/*.duckdb
 
 # Results (keep CSV results, ignore other)
