@@ -231,8 +231,8 @@ Table 7: sDNA+ centrality results.
 
 | Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
 |------------------|-------|-----------|----------|----------|-------|---------|
-| MAD_angular_800m | 0.468 | 0.684     | 60.1     | 400      | 318   | 22      |
-| MAD_angular_400m | 0.353 | 0.594     | 11.1     | 400      | 1723  | 22      |
+| MAD_angular_800m | 0.468 | 0.684     | 8.1      | 400      | 2363  | 22      |
+| MAD_angular_400m | 0.353 | 0.594     | 8.1      | 400      | 2363  | 22      |
 
 </div>
 
@@ -291,14 +291,14 @@ Table 10: Runtime summary per tool: min, median, and max wall-clock
 seconds across all variants.
 
 min 0.0 median 0.1 max 0.6 Name: cityseer, dtype: float64 min 2.0 median
-2.2 max 2.5 Name: cityseer_demand, dtype: float64 min 0.7 median 1.8 max
-2.9 Name: madina, dtype: float64 min 17.2 median 29.1 max 57.3 Name:
-madina_worldpop, dtype: float64 min 11.1 median 35.6 max 60.1 Name:
-sdna, dtype: float64 \| tool \| min \| median \| max \|
+2.3 max 2.5 Name: cityseer_demand, dtype: float64 min 0.7 median 1.8 max
+2.9 Name: madina, dtype: float64 min 11.3 median 24.1 max 57.3 Name:
+madina_worldpop, dtype: float64 min 8.1 median 66.3 max 66.3 Name: sdna,
+dtype: float64 \| tool \| min \| median \| max \|
 \|:—————-\|——:\|———:\|——:\| \| cityseer \| 0 \| 0.1 \| 0.6 \| \|
-cityseer_demand \| 2 \| 2.2 \| 2.5 \| \| madina \| 0.7 \| 1.8 \| 2.9 \|
-\| madina_worldpop \| 17.2 \| 29.1 \| 57.3 \| \| sdna \| 11.1 \| 35.6 \|
-60.1 \|
+cityseer_demand \| 2 \| 2.3 \| 2.5 \| \| madina \| 0.7 \| 1.8 \| 2.9 \|
+\| madina_worldpop \| 11.3 \| 24.1 \| 57.3 \| \| sdna \| 8.1 \| 66.3 \|
+66.3 \|
 
 </div>
 
