@@ -7,9 +7,6 @@ venv/
 *.egg-info/
 
 # Data
-data/*.gpkg
-data/*.graphml
-data/*.geojson
 data/*.duckdb
 
 # Results (keep CSV results, ignore other)
