@@ -354,10 +354,10 @@ dvc repro
 #### 4. Add/Modify Experiments
 
 - **sDNA+**: Edit `scripts/bench_sdna.py`.
-- **Madina gravity**: Edit `scripts/run_demand_experiments.py`.
+- **Madina gravity**: Edit `scripts/run_madina_demand_experiments.py`.
 - **Cityseer demand**: Edit
   `scripts/run_cityseer_demand_experiments.py`.
-- **Centrality**: Edit `scripts/bench_city.py`.
+- **Centrality**: Edit `scripts/bench_centrality.py`.
 
 ### Project Structure & Reproducibility
 
