@@ -202,11 +202,11 @@ madina, sDNA+)
 
 Table 5: Cityseer centrality results.
 
-| Variant        | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s  | Matched |
-|----------------|-------|-----------|----------|----------|--------|---------|
-| shortest_3200m | 0.008 | -0.091    | 0.7      | 483      | 29428  | 22      |
-| shortest_800m  | 0.004 | -0.064    | 0.1      | 439      | 233663 | 22      |
-| shortest_200m  | 0.000 | -0.012    | 0.0      | 436      | 675752 | 22      |
+| variant | r_squared | pearson_r | compute_time_s | peak_memory_mb | segments_per_sec | n_matched |
+|----|----|----|----|----|----|----|
+| shortest_3200m | 0.008 | -0.091 | 0.6 | 483 | 29428 | 22 |
+| shortest_800m | 0.004 | -0.064 | 0.1 | 439 | 233663 | 22 |
+| shortest_200m | 0 | -0.012 | 0 | 436 | 675752 | 22 |
 
 </div>
 
@@ -216,10 +216,10 @@ Table 5: Cityseer centrality results.
 
 Table 6: Madina centrality results.
 
-| Variant          | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|------------------|-------|-----------|----------|----------|-------|---------|
-| degree           | 0.145 | -0.381    | 0.7      | 489      | 26592 | 22      |
-| btw_weighted_200 | 0.002 | -0.041    | 2.9      | 489      | 6645  | 22      |
+| variant | r_squared | pearson_r | compute_time_s | peak_memory_mb | segments_per_sec | n_matched |
+|----|----|----|----|----|----|----|
+| degree | 0.145 | -0.381 | 0.7 | 489 | 26592 | 22 |
+| btw_weighted_200 | 0.002 | -0.041 | 2.9 | 489 | 6645 | 22 |
 
 </div>
 
@@ -229,12 +229,12 @@ Table 6: Madina centrality results.
 
 Table 7: sDNA+ centrality results.
 
-| Variant              | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|----------------------|-------|-----------|----------|----------|-------|---------|
-| MAD_angular_800m     | 0.468 | 0.684     | 8.1      | 400      | 2363  | 22      |
-| MAD_angular_400m     | 0.353 | 0.594     | 8.1      | 400      | 2363  | 22      |
-| MAD_angular_200m     | 0.264 | 0.514     | 8.1      | 400      | 2363  | 22      |
-| NQPDE_euclidean_800m | 0.241 | 0.491     | 66.3     | 400      | 288   | 22      |
+| variant | r_squared | pearson_r | compute_time_s | peak_memory_mb | segments_per_sec | n_matched |
+|----|----|----|----|----|----|----|
+| MAD_angular_800m | 0.468 | 0.684 | 8.1 | 400 | 2363 | 22 |
+| MAD_angular_400m | 0.353 | 0.594 | 8.1 | 400 | 2363 | 22 |
+| MAD_angular_200m | 0.264 | 0.514 | 8.1 | 400 | 2363 | 22 |
+| NQPDE_euclidean_800m | 0.241 | 0.491 | 66.3 | 400 | 288 | 22 |
 
 </div>
 
@@ -264,12 +264,12 @@ decay.
 
 Table 8: Madina WorldPop gravity results.
 
-| Variant              | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|----------------------|-------|-----------|----------|----------|-------|---------|
-| wp_r3000_beta002_all | 0.876 | 0.936     | 57.3     | 344      | 165   | 22      |
-| wp_r2000_beta002_all | 0.868 | 0.932     | 33.2     | 344      | 285   | 22      |
-| wp_r1600_beta002_all | 0.862 | 0.928     | 25.0     | 344      | 378   | 22      |
-| wp_r1200_beta002_all | 0.851 | 0.923     | 17.2     | 343      | 550   | 22      |
+| variant | r_squared | pearson_r | compute_time_s | peak_memory_mb | segments_per_sec | n_matched |
+|----|----|----|----|----|----|----|
+| wp_r3000_beta002_all | 0.876 | 0.936 | 57.3 | 344 | 165 | 22 |
+| wp_r2000_beta002_all | 0.868 | 0.932 | 33.2 | 344 | 285 | 22 |
+| wp_r1600_beta002_all | 0.862 | 0.928 | 25 | 344 | 378 | 22 |
+| wp_r1200_beta002_all | 0.851 | 0.923 | 17.2 | 343 | 550 | 22 |
 
 </div>
 
@@ -277,11 +277,11 @@ Table 8: Madina WorldPop gravity results.
 
 Table 9: Cityseer Demand gravity results.
 
-| Variant                     | R²    | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |
-|-----------------------------|-------|-----------|----------|----------|-------|---------|
-| cs_demand_r2000_beta002_all | 0.632 | 0.795     | 2.5      | 420      | 7607  | 22      |
-| cs_demand_r1200_beta002_all | 0.573 | 0.757     | 2.2      | 420      | 8848  | 22      |
-| cs_demand_r800_beta002_all  | 0.426 | 0.653     | 2.0      | 420      | 9436  | 22      |
+| variant | r_squared | pearson_r | compute_time_s | peak_memory_mb | segments_per_sec | n_matched |
+|----|----|----|----|----|----|----|
+| cs_demand_r2000_beta002_all | 0.632 | 0.795 | 2.5 | 420 | 7607 | 22 |
+| cs_demand_r1200_beta002_all | 0.573 | 0.757 | 2.2 | 420 | 8848 | 22 |
+| cs_demand_r800_beta002_all | 0.426 | 0.653 | 2 | 420 | 9436 | 22 |
 
 </div>
 
@@ -292,13 +292,13 @@ Table 9: Cityseer Demand gravity results.
 Table 10: Runtime summary per tool: min, median, and max wall-clock
 seconds across all variants.
 
-| tool            |  min | median |  max |
-|:----------------|-----:|-------:|-----:|
-| cityseer        |    0 |    0.1 |  0.6 |
-| cityseer_demand |    2 |    2.3 |  2.5 |
-| madina          |  0.7 |    1.8 |  2.9 |
-| madina_worldpop | 11.3 |   24.1 | 57.3 |
-| sdna            |  8.1 |   66.3 | 66.3 |
+| tool            | min  | median | max  |
+|-----------------|------|--------|------|
+| cityseer        | 0    | 0.1    | 0.6  |
+| cityseer_demand | 2    | 2.3    | 2.5  |
+| madina          | 0.7  | 1.8    | 2.9  |
+| madina_worldpop | 11.3 | 24.1   | 57.3 |
+| sdna            | 8.1  | 66.3   | 66.3 |
 
 </div>
 
