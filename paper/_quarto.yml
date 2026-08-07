@@ -1,0 +1,21 @@
+# cenbench paper — Quarto project configuration
+# Requires Quarto >= 1.6 (tested with 1.8.x) and a Python environment
+# with pandas (the repo virtualenv satisfies this). Render with:
+#
+#   source ../.venv/bin/activate
+#   quarto render index.qmd --to html
+#
+project:
+  type: default
+
+execute:
+  freeze: auto
+
+bibliography: references.bib
+
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    theme: cosmo
