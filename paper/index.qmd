@@ -9,37 +9,84 @@ execute:
 
 # Introduction
 
-Urban transport planners increasingly rely on open-source tools to estimate pedestrian, cycle and motor traffic flows on street networks. The tools benchmarked here — cityseer [@simons2022cityseer], madina [@sevtsuk2025madina], sDNA [@cooper2020sdna], flownet [@krantz2024flownet] and aequilibrae — span very different modelling traditions: network centrality and space syntax, gravity and floating-catchment-area demand models, path-sized logit assignment and user-equilibrium traffic assignment. Yet no systematic benchmark has compared these tools against the same observed counts, on the same networks, with the same demand inputs, so evidence-based tool choice remains difficult.
+Urban transport planners increasingly rely on open-source tools to estimate pedestrian, cycle and motor traffic flows on street networks. The tools benchmarked here — cityseer [@simons2022cityseer], madina [@sevtsuk2025madina], sDNA [@cooper2020sdna], flownet [@krantz2024flownet] and aequilibrae [@aequilibrae2024] — span very different modelling traditions: network centrality and space syntax, gravity and floating-catchment-area demand models, path-sized logit assignment and user-equilibrium traffic assignment. Yet no systematic benchmark has compared these tools against the same observed counts, on the same networks, with the same demand inputs, so evidence-based tool choice remains difficult.
 
 A structural gap motivates this work: most tools belong to the all-or-nothing (AoN) shortest-path family, which assigns each origin–destination pair to a single deterministic route. Only a few implement dispersed or multi-path assignment, spreading flow across several plausible routes via stochastic user equilibrium (SUE), user equilibrium (UE) or path-sized logit (PSL) models. Whether the route-choice model class materially affects predictive performance against real counts is untested, because tools are rarely run side-by-side on common ground-truth data.
 
-Two further questions are also open. First, demand realism: does a real census-derived origin–destination matrix outperform a synthetic gravity model, and does either dominate the choice of assignment algorithm? Second, practicality: runtime and memory requirements vary by orders of magnitude across tools, so any honest comparison must reward accuracy per unit of computational resource. The benchmark presented here addresses these questions with a reproducible suite and a single composite metric, the *efficiency score*.
+This paper addresses three research questions:
+
+1. **Does the route-choice model class matter?** Do dispersed and equilibrium assignment models (UE, PSL, dispersion-tolerant OD betweenness) predict observed flows better than the AoN shortest-path baseline?
+2. **Does demand realism dominate algorithm sophistication?** Does a real census-derived origin–destination matrix outperform a synthetic gravity model, and does the choice of demand input swamp the choice of assignment algorithm?
+3. **Does a composite efficiency score change the rankings?** Runtime and memory requirements vary by orders of magnitude across tools, so any honest comparison must reward accuracy per unit of computational resource — and doing so may reorder the tools relative to an accuracy-only ranking.
+
+The benchmark presented here answers these questions with a reproducible suite (DVC pipeline, Docker image, pinned versions) and a single composite metric, the *efficiency score* (Equation @eq-efficiency). Results are organised by mode — walking (Leuven), driving (Leeds) and cycling (a coverage gap) — and all tables and figures are computed live from the benchmark result files at render time.
 
 # Methods
 
 ## Benchmark suite design
 
-Results were produced by a reproducible benchmark suite, defined as a DVC pipeline (`dvc.yaml`) with a `Dockerfile` for containerised reproduction (`dvc repro` regenerates all stages). Each tool is run by a dedicated script in `scripts/` (`bench_centrality.py`, `bench_cityseer_od.py`, `bench_sdna.py`, `bench_flownet.py`, `bench_aequilibrae.py`, and the demand-experiment runners `run_cityseer_demand_experiments.py` and `run_madina_demand_experiments.py`), driven by shared configuration (`config/cities.yaml`) and shared metrics helpers (`scripts/utils/`). Per-tool results are merged into per-city result tables (`results/leuven_results.csv`, `results/leeds_results.csv`), which all tables in this paper read directly during rendering.
+Results were produced by a reproducible benchmark suite, defined as a DVC pipeline (`dvc.yaml`) with a `Dockerfile` for containerised reproduction (`dvc repro` regenerates all stages, and `dvc.lock` pins the state of every stage). Each tool is run by a dedicated script in `scripts/` (`bench_centrality.py`, `bench_cityseer_od.py`, `bench_sdna.py`, `bench_flownet.py`, `bench_aequilibrae.py`, and the demand-experiment runners `run_cityseer_demand_experiments.py` and `run_madina_demand_experiments.py`), driven by shared configuration (`config/cities.yaml`) and shared metrics helpers (`scripts/utils/`). Per-tool results are merged into per-city result tables (`results/leuven_results.csv`, `results/leeds_results.csv`), which all tables and figures in this paper read directly during rendering.
 
 ## Tools
 
-Seven tool configurations are compared: **cityseer** (network centrality; gravity demand), **cityseer_od** (OD betweenness with configurable dispersion and tolerance), **madina** (topological betweenness and weighted betweenness), **madina_worldpop** (floating-catchment-area gravity with WorldPop demand), **sDNA+** (hybrid centrality), **flownet** (path-sized logit assignment) and **aequilibrae** (all-or-nothing and user-equilibrium assignment).
+Eight tool configurations are compared: **cityseer** (network centrality), **cityseer_demand** (cityseer's gravity demand model), **cityseer_od** (OD betweenness with configurable dispersion and tolerance), **madina** (topological betweenness and weighted betweenness), **madina_worldpop** (floating-catchment-area gravity with WorldPop demand), **sDNA+** (hybrid centrality), **flownet** (path-sized logit assignment) and **aequilibrae** (all-or-nothing and user-equilibrium assignment).
 
 ## Ground truth and demand
 
-Ground truth comprises Leuven Telraam pedestrian counts (walk mode) [@telraam2024] and Leeds Department for Transport annual average daily traffic (AADT) counts (drive mode). Demand inputs are a real 2011 Census journey-to-work origin–destination matrix for Leeds (`pct::get_od`, MSOA level) and a synthetic WorldPop × OSM-POI gravity model for Leuven; the same demand is fed to all demand-driven tools within each city, isolating the effect of the assignment algorithm.
+Ground truth comprises Leuven Telraam pedestrian counts (walk mode) [@telraam2024] and Leeds Department for Transport annual average daily traffic (AADT) counts (drive mode) [@dft2023aadt]. Demand inputs differ by design: Leeds demand-driven tools are fed a real 2011 Census journey-to-work origin–destination matrix (`pct::get_od`, MSOA level; used by cityseer_od and aequilibrae), whereas a synthetic gravity demand (WorldPop residential origins × OSM-POI attractors) is used for the gravity-family tools (cityseer_demand, madina_worldpop) and for flownet, and for the Leuven OD runs. Comparing cityseer_od (real OD) with madina_worldpop (synthetic gravity) on the same Leeds network therefore isolates the effect of demand realism on otherwise comparable assignment frameworks.
 
 ## Metrics and the efficiency score
 
-Predictive performance is measured with R² against observed counts (linear R² for Telraam walk counts; log-log R² for AADT, which spans orders of magnitude), alongside runtime (`compute_time_s`), peak memory (`peak_memory_mb`) and throughput (`segments_per_sec`). To combine accuracy with computational cost we use the composite efficiency score:
+Predictive performance is measured with R² against observed counts alongside runtime (`compute_time_s`), peak memory (`peak_memory_mb`) and throughput (`segments_per_sec`). Two R² variants are in use: linear R² (`compute_metrics`) for the centrality and gravity tools, and log-log R² (`compute_metrics_loglog`) for cityseer_od and aequilibrae, whose flows span orders of magnitude. **R² values from the two variants are not directly comparable** — a point we return to in Limitations. Sample sizes are small: 22 matched Telraam sensors in Leuven and 181–197 matched AADT links in Leeds (where recorded).
 
-$$ \mathrm{efficiency\_score} = \frac{\max(R^2, 0)}{\log_{10}(1 + t) \cdot \log_{10}(1 + m)} $$
+To combine accuracy with computational cost we use the composite efficiency score:
 
-where $t$ is runtime in seconds and $m$ is peak memory in MB. Code complexity is quantified as lines of code (LoC, non-blank, non-comment) of each tool's integration script plus its source code. Leeds is modelled within a 10 km buffer clip around central Leeds (235.7k / 233.2k / 63.9k walk/cycle/drive edges), which introduces a boundary artefact for zone-based dispersion (see Limitations).
+$$ \mathrm{efficiency\_score} = \frac{\max(R^2, 0)}{\log_{10}(1 + t) \cdot \log_{10}(1 + m)} $$ {#eq-efficiency}
+
+where $t$ is runtime in seconds and $m$ is peak memory in MB (@eq-efficiency). Code complexity is quantified as lines of code (LoC, non-blank, non-comment) of each tool's integration script plus its source code.
+
+Leeds is modelled within a 10 km buffer clip around central Leeds (235.7k / 233.2k / 63.9k walk/cycle/drive edges), which introduces a boundary artefact for zone-based dispersion (see Limitations).
+
+## Tool complexity
+
+Table @tbl-complexity quantifies integration effort and codebase size per tool. The integration LoC column counts the benchmark scripts that wrap each tool; the source LoC column counts the tool's own code, excluding native cores where the tool is a Python binding (cityseer's Rust core and aequilibrae's C++ core are deliberately excluded).
+
+```{python}
+#| echo: false
+#| label: tbl-complexity
+#| tbl-cap: "Code complexity by tool: integration script LoC, tool source LoC and total (non-blank, non-comment lines). cityseer and aequilibrae totals exclude native (Rust/C++) cores."
+import pandas as pd
+
+# Verified LoC counts from the benchmark runs (paper outline, 2026-08-07): integration scripts per
+# tool (cityseer 194+913+329, flownet 180+133) and tool source (flownet is R, deparsed, 34 functions;
+# sDNA+ is C++).
+tbl_complexity = pd.DataFrame(
+    {
+        "Tool": ["cityseer", "madina", "sDNA", "flownet", "aequilibrae"],
+        "Integration LoC": [1436, 155, 225, 313, 339],
+        "Tool source LoC": [8715, 3616, 17173, 1847, 16248],
+    }
+)
+tbl_complexity["Total LoC"] = tbl_complexity["Integration LoC"] + tbl_complexity["Tool source LoC"]
+tbl_complexity
+```
+
+## Reproducibility
+
+The suite is designed to make every number in this paper regenerable:
+
+- **DVC pipeline.** `dvc.yaml` defines one stage per benchmark (e.g. `bench_centrality`, `bench_cityseer_demand`, `bench_madina_gravity`, `bench_sdna`, `bench_flownet`, and the Leeds equivalents `bench_cityseer_od_leeds`, `bench_aequilibrae_leeds`), plus data preparation (`prepare_demand`, `prepare_leeds_ground_truth`, `generate_networks`, `generate_networks_leeds`), the `clip_leeds_inputs` side-effect stage, result merging (`merge_results`, `merge_results_leeds`) and report rendering (`render_report`). `dvc repro` from the repository root regenerates every stage; `dvc.lock` records the hashes of all inputs and outputs.
+- **Docker image.** The multi-stage `Dockerfile` first builds the sDNA+ C++ library with OpenMP, then installs the Python/R toolchain on `ghcr.io/geocompx/python` (Python 3.12, Debian Bookworm) and runs `dvc repro` as the container command: `docker build -t cenbench . && docker run cenbench`.
+- **Pinned versions.** cityseer `4.24.1`, aequilibrae `1.7.0`, flownet `0.3.0` (R package), madina (`fix-pandas-numpy-compat` branch), sDNA+ `4.1.1` (Cross_platform branch), pandas `>=3.0`, Quarto `1.8.27` (pinned in the Dockerfile) and R from the base image. `requirements.txt` pins the Python stack; the flownet runner is `scripts/run_flownet_assignment.R`.
+- **Random seeds.** The OD sampling in `scripts/bench_cityseer_od.py` uses `np.random.RandomState(42)`; all other runners are deterministic given their inputs.
+- **Ground truth regeneration.** Leeds AADT counts come from `scripts/prepare_leeds_ground_truth.py`; the census OD matrix and MSOA zones are fetched by `scripts/fetch_pct_od.R` via `pct::get_od` (MSOA geography). Leuven Telraam counts are fetched from the Telraam API.
+- **The 10 km clip.** `scripts/clip_leeds_inputs.py` applies the circular 10 km buffer clip to the Leeds networks, DfT AADT points and PCT zones/OD pairs in place (a side-effect DVC stage), so the clipped inputs are exactly the ones benchmarked.
+- **Efficiency score.** Defined in Equation @eq-efficiency; the merged result CSVs carry a precomputed `efficiency_score` column using the same formula.
+- **Rendering this paper.** From the `paper/` directory, with the repository virtualenv active: `quarto render index.qmd --to html`. All tables and figures are computed at render time from `results/`, so re-rendering picks up any updated benchmark outputs.
 
 # Results
 
-Tables @tbl-leuven and @tbl-leeds report, for each tool, the best-performing variant by efficiency score, computed live from the benchmark result files.
+All tables and figures in this section are computed live from `results/leuven_results.csv` and `results/leeds_results.csv` at render time, so they always reflect the current benchmark outputs.
 
 ```{python}
 #| echo: false
@@ -52,14 +99,33 @@ import pandas as pd
 results_dir = os.path.join("..", "results")
 leuven = pd.read_csv(os.path.join(results_dir, "leuven_results.csv"))
 leeds = pd.read_csv(os.path.join(results_dir, "leeds_results.csv"))
+
+# Normalise string columns (arrow-backed dtypes otherwise trip up masking).
+for _df in (leuven, leeds):
+    for _col in ("tool", "mode", "variant"):
+        _df[_col] = _df[_col].astype(str)
+
+# Map each result tool to its LoC family (see Methods, Table tbl-complexity).
+_loC_family = {
+    "cityseer": "cityseer",
+    "cityseer_demand": "cityseer",
+    "cityseer_od": "cityseer",
+    "madina": "madina",
+    "madina_worldpop": "madina",
+    "sdna": "sDNA",
+    "flownet": "flownet",
+    "aequilibrae": "aequilibrae",
+}
 ```
+
+## Walking (Leuven, Telraam)
+
+Table @tbl-leuven reports, for each tool, the best-performing variant by efficiency score on Leuven walk flows.
 
 ```{python}
 #| echo: false
 #| label: tbl-leuven
-#| tbl-cap: "Best variant per tool by efficiency score — Leuven, walk mode (Telraam ground truth). All eight tools have merged Leuven results."
-# Metric caveat: rows in this table use linear R² (Telraam counts). cityseer_od and aequilibrae rows
-# use log-log R² (see the Leeds table), so R² values are not directly comparable across tables.
+#| tbl-cap: "Best variant per tool by efficiency score — Leuven, walk mode (Telraam ground truth). All eight tools have merged Leuven results. R² rows for cityseer_od and aequilibrae use log-log R²; all other rows use linear R², so values are not directly comparable across rows."
 leuven_walk = leuven[leuven["mode"] == "walk"].copy()
 tbl_leuven = (
     leuven_walk.sort_values("efficiency_score", ascending=False)
@@ -77,14 +143,21 @@ tbl_leuven["Efficiency score"] = tbl_leuven["Efficiency score"].round(3)
 tbl_leuven
 ```
 
-On Leuven walk flows the demand-driven tools dominate: cityseer_demand and madina_worldpop, which share the same synthetic gravity demand, achieve the highest R² values (0.68 and 0.88 respectively), while the pure centrality variants of cityseer, madina, sDNA and flownet explain little of the variance in pedestrian counts.
+Four findings stand out for walk flows:
+
+- **Demand explains pedestrian counts; centrality does not.** The two gravity-demand models lead on accuracy: madina_worldpop (linear R² 0.876) and cityseer_demand (0.676), both sharing the same synthetic WorldPop × POI gravity demand. The pure centrality variants of cityseer, madina and flownet explain almost none of the variance in pedestrian counts (R² 0.004–0.145), and even the best centrality-only tool (sDNA+, 0.468) trails the demand-driven models.
+- **The efficiency score reorders the ranking.** cityseer_od tops Table @tbl-leuven (efficiency 3.07) despite an R² of only 0.105 (log-log), because it runs in 0.03 s versus 48.3 s for madina_worldpop — a ~1,600× runtime advantage that the score's log-scale penalty rewards. Accuracy-only ranking would put madina_worldpop first.
+- **Equilibrium helps on walk flows too.** aequilibrae's UE variants (log-log R² up to 0.155) beat its AoN baseline (0.084), though its BPR capacity model assumes vehicles and walk-mode results are therefore approximate (Limitations).
+- **The evidence base is thin:** only 22 Telraam sensors matched the Leuven network, so all Leuven R² values are computed on a small sample.
+
+## Driving (Leeds, DfT AADT)
+
+Table @tbl-leeds reports the best variant per tool by efficiency score on Leeds drive flows, and Table @tbl-leeds-top3 zooms into the top three variants of the best tool (cityseer_od).
 
 ```{python}
 #| echo: false
 #| label: tbl-leeds
-#| tbl-cap: "Best variant per tool by efficiency score — Leeds, drive mode (DfT AADT ground truth). All seven tools are shown, sorted by efficiency score."
-# Metric caveat: cityseer_od and aequilibrae rows use log-log R² (AADT spans orders of magnitude);
-# all other rows use linear R².
+#| tbl-cap: "Best variant per tool by efficiency score — Leeds, drive mode (DfT AADT ground truth). All seven tools are shown, sorted by efficiency score. R² rows for cityseer_od and aequilibrae use log-log R²; all other rows use linear R², so values are not directly comparable across rows. aequilibrae's row is its all-or-nothing variant, which wins on speed even though UE fits better (see text)."
 leeds_drive = leeds[leeds["mode"] == "drive"].copy()
 tbl_leeds = (
     leeds_drive.sort_values("efficiency_score", ascending=False)
@@ -105,7 +178,7 @@ tbl_leeds
 ```{python}
 #| echo: false
 #| label: tbl-leeds-top3
-#| tbl-cap: "Top three variants of the best-performing tool (cityseer_od) on Leeds drive flows."
+#| tbl-cap: "Top three variants of the best-performing tool (cityseer_od) on Leeds drive flows, by efficiency score. All three use census OD demand with importance-weighted centroid dispersion."
 best_tool = tbl_leeds.iloc[0]["Tool"]
 tbl_top3 = (
     leeds_drive[leeds_drive["tool"] == best_tool]
@@ -123,43 +196,197 @@ tbl_top3["Efficiency score"] = tbl_top3["Efficiency score"].round(3)
 tbl_top3
 ```
 
-On Leeds drive flows the best tool is cityseer_od (log-log R² 0.180), followed by aequilibrae, sDNA and the remaining tools. Three findings stand out:
+Five findings stand out for drive flows:
 
-- **Dispersion beats tolerance**: the best cityseer_od variants disperse flow around the OD centroid within a 3–5% tolerance, and the top three variants (Table @tbl-leeds-top3) are all centroid-dispersion runs; zone-based (k3/k5/k10) dispersion performs worse, and the clipped Leeds boundary breaks k-dispersion (Leeds k3 < centroid — the opposite of full-region results).
-- **User equilibrium beats all-or-nothing**: aequilibrae UE reaches R² 0.096 vs 0.083 for AoN.
-- **Demand realism beats algorithm sophistication**: real census OD flows (cityseer_od, R² 0.180) vastly outperform synthetic gravity demand (madina_worldpop, R² 0.022). Note also that flownet's beta/detour hyperparameters were not varied by the runner in these runs, so its path-sized-logit sensitivity is not yet exercised.
+- **Demand realism beats algorithm sophistication.** cityseer_od with the real census OD matrix reaches log-log R² 0.180 at 0.04 s per run — an order of magnitude better than the synthetic gravity demand (madina_worldpop, 0.022) on the same network. The gap between demand inputs (0.022 → 0.180) dwarfs any algorithm-level difference measured here (see below).
+- **Dispersion beats tolerance, and both beat plain assignment.** The top three cityseer_od variants (Table @tbl-leeds-top3) all use importance-weighted *centroid* dispersion at 3% tolerance: R² 0.180 at a 5 km radius. Dispersion around the OD centroid outperforms zone-based k-dispersion (best k3/k5/k10 R² 0.073–0.107), and tolerance effects saturate in the 2–5% range (tol 0.03 ≈ tol 0.0 at fixed radius; tol 0.05 slightly worse).
+- **User equilibrium beats all-or-nothing.** aequilibrae's UE (ue_bfw, log-log R² 0.096) beats its AoN baseline (0.083) — but AoN still wins inside aequilibrae by *efficiency* score, because UE costs ~1 s versus 0.12 s for roughly +0.01 R². This is exactly the accuracy–cost trade-off the efficiency score is designed to surface.
+- **The 10 km clip leaves its fingerprint.** Zone-based k-dispersion reverses its full-region ranking inside the clip (Leeds k3 R² 0.073 < centroid 0.180), and cityseer_od's radius sweep (Figure @fig-dispersion) plateaus from 8–40 km — the clip bounds the reachable network, so larger radii add nothing.
+- **flownet underperforms, and its PSL variants are not yet differentiated.** All six flownet beta/detour variants returned identical R² (0.0039, ~500 s each), because the runner does not yet vary the path-sized-logit hyperparameters; its potential is therefore untested by these results. sDNA+ reaches the best *linear* R² among the non-demand tools (0.123, MCF 200 m) but takes ~93 s and its fit is dominated by high-flow links; per-segment observed-vs-predicted plots are not yet shown because the prediction exports are not aligned with the benchmark metric path (Limitations).
 
 ```{python}
 #| echo: false
-#| label: tbl-complexity
-#| tbl-cap: "Code complexity by tool: integration script LoC, tool source LoC and total (non-blank, non-comment lines). cityseer and aequilibrae totals exclude native (Rust/C++) cores."
-# Verified LoC counts from the benchmark runs (paper outline, 2026-08-07): integration scripts per
-# tool (cityseer 194+913+329, flownet 180+133) and tool source (flownet is R, deparsed, 34 functions;
-# sDNA+ is C++).
-tbl_complexity = pd.DataFrame(
-    {
-        "Tool": ["cityseer", "madina", "sDNA", "flownet", "aequilibrae"],
-        "Integration LoC": [1436, 155, 225, 313, 339],
-        "Tool source LoC": [8715, 3616, 17173, 1847, 16248],
-    }
+#| label: fig-dispersion
+#| fig-cap: "Radius sensitivity of cityseer_od on Leeds drive flows (census OD, centroid dispersion, 3% tolerance, log-log R²). Accuracy peaks at a 5 km radius (R² 0.180) and plateaus at ≈0.173 for radii of 8–40 km, consistent with the 10 km network clip bounding the reachable graph."
+#| fig-format: png
+#| fig-dpi: 150
+#| fig-width: 5
+#| fig-height: 3.6
+#| fig-align: center
+#| warning: false
+import matplotlib.pyplot as plt
+
+_sweep = (
+    leeds_drive[
+        leeds_drive["tool"] == "cityseer_od"
+    ]
+    .copy()
 )
-tbl_complexity["Total LoC"] = tbl_complexity["Integration LoC"] + tbl_complexity["Tool source LoC"]
-tbl_complexity
+_sweep["radius_m"] = _sweep["variant"].str.extract(r"_r(\d+)$").astype(float)
+_sweep = _sweep[_sweep["variant"].str.contains("dimensionless_imp_centroid_tol0.03_")].sort_values("radius_m")
+
+fig, ax = plt.subplots(figsize=(5, 3.6))
+ax.semilogx(_sweep["radius_m"], _sweep["r_squared"], "o-", color="#1f77b4")
+_peak = _sweep.loc[_sweep["r_squared"].idxmax()]
+ax.annotate(
+    f"peak R² {_peak['r_squared']:.3f}\nat 5 km",
+    xy=(_peak["radius_m"], _peak["r_squared"]),
+    xytext=(0.42, 0.62), textcoords="axes fraction",
+    arrowprops=dict(arrowstyle="->", color="0.4"),
+    fontsize=9,
+)
+ax.set_xlabel("Dispersion radius (m, log scale)")
+ax.set_ylabel("Log-log R² (AADT)")
+ax.set_title("cityseer_od radius sweep, Leeds drive", fontsize=10)
+ax.axhline(0, color="0.8", lw=0.8, zorder=0)
+fig.tight_layout()
+```
+
+## Cycling (coverage gap — no per-mode sensor data yet)
+
+Cycle-flow estimates are conspicuously absent from the tables above, and the reason is data, not tooling. Both cities' cycle networks are already generated (`data/leuven_cycle_edges.gpkg`, `data/leeds_cycle_edges.gpkg`, produced by the `generate_networks` stages) and every tool in the suite can run on them, but no per-mode cycle ground truth has been integrated yet: Telraam's Leuven sensors are used for pedestrians, DfT's AADT points for Leeds traffic, and neither provides matched cycle counts in the current data. Closing this gap is a priority — Telraam cycle counts and DfT cycle flow data are both candidate ground truths — and the suite needs only a sensors file and a `config/cities.yaml` entry to add the mode.
+
+## Efficiency frontier
+
+Figure @fig-efficiency plots every benchmarked variant — one point per variant — with runtime on a log x-axis and R² on the y-axis, for Leeds drive (left) and Leuven walk (right). The Pareto frontier of *fast and accurate* sits in the top-left: cityseer_od occupies it on both cities, combining the best fit with millisecond runtimes, while flownet anchors the opposite corner (~500 s for R² 0.004). The efficiency score is the single-number summary of this frontier: it ranks cityseer_od first in both cities precisely because it is the only tool that is both accurate and cheap.
+
+```{python}
+#| echo: false
+#| label: fig-efficiency
+#| fig-cap: "Efficiency frontier: runtime (log x-axis) versus R² for every benchmarked variant, coloured by tool. Left: Leeds drive (log-log R² for cityseer_od and aequilibrae, linear R² otherwise). Right: Leuven walk (same metric split). Best-per-tool variants are labelled. The Pareto frontier of fast + accurate sits top-left; cityseer_od occupies it on both cities, flownet the bottom-right."
+#| fig-format: png
+#| fig-dpi: 150
+#| fig-width: 10
+#| fig-height: 4.4
+#| fig-align: center
+#| warning: false
+
+_tools_all = sorted(set(leeds["tool"]) | set(leuven["tool"]))
+_cmap = {t: plt.cm.tab10(i % 10) for i, t in enumerate(_tools_all)}
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4.4))
+for ax, (title, df) in zip(
+    axes,
+    [("Leeds drive (DfT AADT)", leeds_drive), ("Leuven walk (Telraam)", leuven_walk)],
+):
+    for tool, grp in df.groupby("tool"):
+        ax.scatter(
+            grp["compute_time_s"], grp["r_squared"],
+            s=22, alpha=0.75, color=_cmap[tool],
+            edgecolors="none", label=tool,
+        )
+    _best = (
+        df.sort_values("efficiency_score", ascending=False)
+        .groupby("tool", as_index=False)
+        .first()
+    )
+    _off = {
+        "cityseer_od": (8, 6), "aequilibrae": (8, -14), "sdna": (8, 2),
+        "cityseer": (8, -4), "madina": (8, 4), "madina_worldpop": (8, 6),
+        "flownet": (8, -2), "cityseer_demand": (8, 4),
+    }
+    for _, row in _best.iterrows():
+        _dx, _dy = _off.get(row["tool"], (6, 6))
+        ax.annotate(
+            row["tool"], xy=(row["compute_time_s"], row["r_squared"]),
+            xytext=(_dx, _dy), textcoords="offset points",
+            fontsize=7.5, color=_cmap[row["tool"]],
+        )
+    ax.set_xscale("log")
+    ax.set_xlabel("Compute time (s, log scale)")
+    ax.set_ylabel("R²")
+    ax.set_title(title, fontsize=10)
+    ax.axhline(0, color="0.8", lw=0.8, zorder=0)
+    ax.text(
+        0.03, 0.97, "fast + accurate\n(Pareto frontier)", transform=ax.transAxes,
+        va="top", fontsize=8, color="0.35",
+        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="0.8", lw=0.8),
+    )
+fig.tight_layout()
+```
+
+## Accuracy versus complexity
+
+Figure @fig-complexity places each tool family by its source-code size (log x-axis) and the best R² it achieves on Leeds drive flows, coloured by the efficiency score of that best variant. The headline: the cityseer family — 8.7k lines of Python (Rust core excluded) plus a ~1.4k-line integration, including a small OD-assignment script — delivers the best fit (log-log R² 0.180) at 0.04 s, while aequilibrae's 16.2k-line codebase reaches 0.096 at ~1 s and sDNA+'s 17.2k-line C++ reaches linear R² 0.123 at ~93 s. flownet's 1.8k lines are the cheapest to read but the most expensive to run (~500 s) for the weakest fit. Efficiency — accuracy per unit of compute — correlates with *small* codebases here, not large ones.
+
+```{python}
+#| echo: false
+#| label: fig-complexity
+#| fig-cap: "Accuracy versus complexity on Leeds drive flows: tool source LoC (log x-axis) versus the best R² achieved by that tool family (max over variants), labelled by the best-performing member. Open markers: log-log R² (cityseer_od, aequilibrae); filled: linear R². Colour: efficiency score of the labelled variant. cityseer's Rust core and aequilibrae's C++ core are excluded from the Python LoC counts."
+#| fig-format: png
+#| fig-dpi: 150
+#| fig-width: 6.5
+#| fig-height: 4.6
+#| fig-align: center
+#| warning: false
+
+_loC = tbl_complexity.set_index("Tool")["Tool source LoC"].to_dict()
+_fam_rows = []
+for _fam_name, _fam_grp in leeds_drive.groupby(leeds_drive["tool"].map(_loC_family)):
+    _best_row = _fam_grp.sort_values("r_squared", ascending=False).iloc[0]
+    _fam_rows.append(
+        {
+            "family": _fam_name,
+            "best_tool": _best_row["tool"],
+            "r_squared": _best_row["r_squared"],
+            "efficiency_score": _best_row["efficiency_score"],
+            "compute_time_s": _best_row["compute_time_s"],
+        }
+    )
+_fam = pd.DataFrame(_fam_rows).reset_index(drop=True)
+_fam["source_LoC"] = _fam["family"].map(_loC)
+_fam = _fam.sort_values("source_LoC")
+
+fig, ax = plt.subplots(figsize=(6.5, 4.6))
+_sc = ax.scatter(
+    _fam["source_LoC"], _fam["r_squared"],
+    c=_fam["efficiency_score"], cmap="viridis", norm=plt.matplotlib.colors.LogNorm(),
+    s=90, zorder=3,
+)
+for _, row in _fam.iterrows():
+    _open = row["best_tool"] in ("cityseer_od", "aequilibrae")
+    ax.scatter(
+        row["source_LoC"], row["r_squared"],
+        facecolor="none" if _open else _sc.cmap(_sc.norm(row["efficiency_score"])),
+        edgecolors="k", s=90, zorder=4, lw=1.0,
+    )
+    ax.annotate(
+        f"{row['best_tool']}\n(R² {row['r_squared']:.3f}, {row['compute_time_s']:.1f}s)",
+        xy=(row["source_LoC"], row["r_squared"]),
+        xytext=(8, 5), textcoords="offset points", fontsize=8,
+    )
+ax.set_xscale("log")
+ax.set_xlabel("Tool source LoC (log scale)")
+ax.set_ylabel("Best R², Leeds drive")
+ax.axhline(0, color="0.8", lw=0.8, zorder=0)
+_cbar = fig.colorbar(_sc, ax=ax)
+_cbar.set_label("Efficiency score of best variant", fontsize=8)
+_cbar.ax.tick_params(labelsize=7)
+fig.tight_layout()
 ```
 
 # Discussion
 
-The efficiency score draws a clear accuracy–cost frontier. On drive flows, cityseer_od and aequilibrae sit far ahead of the centrality tools, combining the highest R² with runtimes of milliseconds to seconds; flownet and the sDNA Euclidean variants pay orders of magnitude more compute for weaker fit. Because the score penalises time and memory on a log scale, it rewards tools that are *both* accurate and cheap, which is the combination that matters for city-scale application.
+**Q1 — The route-choice model class matters, but modestly.** On Leeds drive flows, dispersed and equilibrium assignment consistently beat the AoN baseline: aequilibrae UE (log-log R² 0.096) beats AoN (0.083), and cityseer_od's dispersed centroid assignment (0.180) beats its plain shortest-path variant (0.074). Dispersion around the OD centroid matters more than the tolerance setting, which saturates in the 2–5% range. But the most sophisticated class in the suite — flownet's path-sized logit — shows no signal yet: all six variants returned identical predictions (a runner limitation, not evidence against PSL), so the ceiling of the model-class ladder remains untested.
 
-Complexity-adjusted comparison tempers the headline ranking. Aequilibrae's 16.2k lines of source deliver roughly +0.01 R² over a 194-line cityseer centrality script at the assignment level (UE 0.096 vs AoN 0.083), and cityseer's Rust core is deliberately excluded from its 8.7k Python LoC — so apparent differences in code size overstate differences in engineering effort. Whether the extra machinery is worthwhile depends on the application: production traffic models need aequilibrae's equilibrium and matrix tools; rapid screening may not. Mode coverage is currently limited to walk (Leuven) and drive (Leeds), with cycle flows awaiting sensor data and Oxford partial.
+**Q2 — Demand realism dominates algorithm sophistication.** The single largest effect in the benchmark is the demand input. On Leeds, replacing synthetic gravity demand with the real census OD matrix moves log-log R² from 0.022 (madina_worldpop) to 0.180 (cityseer_od) — an eightfold improvement — while the largest algorithm-level effect measured (UE vs AoN) moves R² by only ~0.01. On Leuven walk flows, the pattern inverts in spirit: the gravity demand model explains most of the variance (linear R² 0.68–0.88) because pedestrian counts around Leuven are well predicted by population and POI attractors, and pure centrality explains almost nothing. Demand realism matters most where demand drives the model — and it matters more than the assignment algorithm everywhere.
+
+**Q3 — The efficiency score changes the rankings.** An accuracy-only ranking would lead with madina_worldpop on Leuven (R² 0.876) and cityseer_od on Leeds (0.180). The efficiency score reorders both cities: cityseer_od wins Leuven too (3.07 vs 0.21 for madina_worldpop, a ~1,600× runtime gap), and inside aequilibrae the AoN variant outranks UE despite fitting worse, because UE buys +0.01 R² at ~10× the runtime. flownet drops to last place everywhere: ~500 s per run for R² 0.004. The frontier figure (Figure @fig-efficiency) makes the trade-off visible: the top-left corner belongs to tools that are both accurate and cheap, which is the combination that matters for city-scale application.
+
+**Complexity-adjusted comparison.** The complexity figure (Figure @fig-complexity) tempers the headline ranking. Aequilibrae's 16.2k lines of source deliver roughly +0.01 R² over the cityseer family's 8.7k lines at the assignment level, and cityseer's Rust core is deliberately excluded from its Python LoC — so apparent differences in code size overstate differences in engineering effort. Whether the extra machinery is worthwhile depends on the application: production traffic models need aequilibrae's equilibrium and matrix tools; rapid screening may not.
+
+**Mode coverage.** Results are limited to walk (Leuven) and drive (Leeds); cycle flows await sensor data, with the networks and tooling already in place (Results — Cycling). Rankings are mode-dependent: madina_worldpop leads accuracy on Leuven walk but sits near the bottom on Leeds drive, which is exactly why per-mode benchmarking matters.
 
 # Limitations
 
-- **R² metric mismatch across cities**: linear R² is used for Leuven Telraam walk counts, while log-log R² is used for Leeds AADT (and for the cityseer_od and aequilibrae rows in the Leeds table); R² values are therefore not directly comparable across tables. The metrics helpers (`compute_metrics` vs `compute_metrics_loglog`) should report both scales in future runs.
-- **Demand and mode approximations**: flownet demand is synthetic everywhere, and aequilibrae's walk-mode assignment is an approximation (the BPR capacity model assumes vehicles; the AoN baseline is unaffected).
-- **Leeds clip boundary artefact**: the 10 km buffer clip around central Leeds breaks zone-based k-dispersion, reversing the k3 vs centroid ranking seen on the full region.
+- **R² metric mismatch across cities and tools**: linear R² is used for Leuven Telraam walk counts and for all centrality/gravity tools, while log-log R² is used for Leeds AADT and for the cityseer_od and aequilibrae rows in both tables; R² values are therefore not directly comparable across rows, tables or cities. The metrics helpers (`compute_metrics` vs `compute_metrics_loglog`) should report both scales in future runs.
 - **Single city per mode so far**: walk is only benchmarked in Leuven and drive only in Leeds, so tool rankings may not generalise across urban contexts.
+- **Leeds clip boundary artefact**: the 10 km buffer clip around central Leeds breaks zone-based k-dispersion, reversing the k3 vs centroid ranking seen on the full region, and caps the effective dispersion radius at the clip extent (Figure @fig-dispersion).
+- **flownet is not yet exercised**: its demand is synthetic everywhere, and its PSL beta/detour hyperparameters were not varied by the runner, so all six variants returned identical predictions; the path-sized-logit model class is consequently untested by these results.
+- **Demand and mode approximations**: aequilibrae's walk-mode assignment is an approximation (the BPR capacity model assumes vehicles; the AoN baseline is unaffected).
+- **Small sensor samples**: 22 matched Telraam sensors in Leuven and 181–197 matched AADT links in Leeds (where recorded) bound the statistical power of every R² here.
+- **Per-segment prediction exports are not yet aligned with the benchmark metric path**: the `results/*_best_predictions.csv` files are produced by different code paths (interactive-map and sDNA+ runners) than the metrics in the result tables and are stale relative to the current results, so observed-vs-predicted plots are omitted from this paper until the export paths are aligned with the `compute_metrics` pipeline.
 
 # Conclusion
 
-These results invite extension rather than conclusion. Adding more cities (Oxford is a candidate), more modes (cycle counts), and more tools would sharpen every comparison reported here. The suite is designed to make this cheap: a new city needs a `config/cities.yaml` entry, ground-truth and demand preparation scripts, and a per-tool runner — contributions to the cenbench repository are welcome.
+These results invite extension rather than conclusion. The three questions answered here — route-choice model class matters modestly, demand realism dominates algorithm choice, and the efficiency score reorders the ranking — each deserve more cities, more modes and more tools. Oxford is a candidate city, cycle counts are the obvious missing mode (the networks and tooling are ready), and flownet's PSL class needs a runner that varies its hyperparameters before its model class can be judged. The suite is designed to make this cheap: a new city needs a `config/cities.yaml` entry, ground-truth and demand preparation scripts, and a per-tool runner — contributions to the cenbench repository are welcome.
