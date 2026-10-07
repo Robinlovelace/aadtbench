@@ -91,11 +91,10 @@ The last three are scored exactly like a tool on the uncalibrated track.
 
 ## Metrics
 
-Boards rank by Spearman `rho`. It is scale-free, so the multiplier does not
-change it, and a few zero predictions do not dominate it. Secondary columns:
-`log_r2` (predictive R squared on `log(1 + value)`), `coverage` (share of
-sites with flow above 0), `raw_r2` and `calibration_ratio` (sum of counts over
-sum of unscaled flow). Targets with fewer than 20 sites are shown, not ranked.
+Boards rank by Spearman `rho`: scale-free, so untouched by the multiplier, and
+robust to a few zero predictions. Secondary: `log_r2` (on `log(1 + value)`),
+`coverage` (share of sites with flow > 0), `raw_r2`, `calibration_ratio`.
+Targets with fewer than 20 sites are shown, not ranked.
 
 ## Case format
 

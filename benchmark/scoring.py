@@ -60,10 +60,7 @@ def metrics_from(obs, pred, unscaled_flow) -> dict:
     ok = np.isfinite(obs) & np.isfinite(pred)
     obs, pred, flow = obs[ok], pred[ok], flow[ok]
     out = {"n_sites": int(len(obs)), "rho": np.nan, "log_r2": np.nan, "raw_r2": np.nan,
-           "calibration_ratio": np.nan, "coverage": np.nan}
-    if len(obs) == 0:
-        return out
-    out["coverage"] = float(np.mean(flow > 0))
+           "calibration_ratio": np.nan, "coverage": float(np.mean(flow > 0)) if len(flow) else np.nan}
     if len(obs) < 3:
         return out
 
