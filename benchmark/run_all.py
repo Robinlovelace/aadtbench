@@ -50,7 +50,7 @@ from benchmark.system import write_system
 REPO = Path(__file__).resolve().parents[1]
 BASELINE_TIER = "T1_open_covariates"
 NAN_METRICS = {"n_sites": 0, "rho": np.nan, "log_r2": np.nan, "raw_r2": np.nan,
-               "calibration_ratio": np.nan, "q": np.nan, "ranked": False}
+               "calibration_ratio": np.nan, "coverage": np.nan, "ranked": False}
 
 
 def git_commit() -> str:
@@ -240,7 +240,7 @@ def _row(case: Case, rec: dict, mode: str, track: str, split: str, metrics: dict
         "family": rec.get("family", "other"),
         "options": json.dumps(opts, sort_keys=True) if not isinstance(opts, str) else opts,
         "input_tier": rec["input_tier"], "track": track, "split": split,
-        **{k: metrics[k] for k in ("n_sites", "rho", "log_r2", "raw_r2", "calibration_ratio", "q", "ranked")},
+        **{k: metrics[k] for k in ("n_sites", "rho", "log_r2", "raw_r2", "calibration_ratio", "coverage", "ranked")},
         "wall_time_s": rec.get("wall_time_s", np.nan), "peak_memory_mb": rec.get("peak_memory_mb", np.nan),
         "time_limit_s": rec.get("time_limit_s", np.nan),
         "run_id": rec["run_id"], "git_commit": commit, "timestamp": stamp, "status": status,
@@ -432,7 +432,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"scored {len(all_rows)} rows. leaderboard.csv has {len(df)} rows.")
     ok = log[(log["status"] == "complete")]
     if len(ok):
-        print(ok[["case_id", "mode", "tool", "variant", "track", "split", "n_sites", "rho", "log_r2", "q"]]
+        print(ok[["case_id", "mode", "tool", "variant", "track", "split", "n_sites", "rho", "log_r2", "coverage"]]
               .round(3).to_string(index=False))
     return 0
 

@@ -62,15 +62,14 @@ board = board[board["status"] == "complete"]
 OPEN = ["oxford-v1", "leeds-v1", "melbourne-v1", "zurich-v1", "toronto-v1"]
 CASES = OPEN + ["leuven-v1"]
 go = board[board["split"] == "group_out_pooled"]
-cal = go[go["track"] == "uncalibrated"]  # tools and baselines
-raw = go[go["track"] == "uncalibrated"]
+cal = raw = go[go["track"] == "uncalibrated"]  # tools and baselines
 ENGINES = [("cityseer_od", "default", "T2_synthetic_od", "cityseer"),
            ("aequilibrae", "aon", "T2_synthetic_od", "AequilibraE AoN"),
            ("aequilibrae", "ue_bfw", "T2_synthetic_od", "AequilibraE UE")]
 BASELINES = ["class_only", "centre_distance", "attractor_density", "population_density"]
 
 
-def pick(df, tool, variant, tier, col="q"):
+def pick(df, tool, variant, tier, col="rho"):
     d = df[(df.tool == tool) & (df.variant == variant) & (df.input_tier == tier)]
     return d.set_index(["case_id", "mode"])[col]
 
@@ -272,16 +271,16 @@ shown next to each tool.
 ```{python}
 #| echo: false
 #| label: tbl-main
-#| tbl-cap: "Calibrated track, spatial group-out (five folds of 3 km cells). Values are q = (rho + log R2) / 2. Best baseline is the highest of the four mandatory baselines (T1). Tools use the T2 synthetic OD."
-bl = cal[(cal.tool == "baseline") & cal.q.notna()]
-best = bl.loc[bl.groupby(["case_id", "mode"])["q"].idxmax()].set_index(["case_id", "mode"])
+#| tbl-cap: "Calibrated track, spatial group-out (five folds of 3 km cells). Values are Spearman rho. Best baseline is the highest of the four mandatory baselines (T1). Tools use the T2 synthetic OD."
+bl = cal[(cal.tool == "baseline") & cal.rho.notna()]
+best = bl.loc[bl.groupby(["case_id", "mode"])["rho"].idxmax()].set_index(["case_id", "mode"])
 rows = []
 for (c, m), r in best.iterrows():
     if c not in OPEN:
         continue
     row = {"Case": c, "Mode": m, "Sites": int(r["n_sites"]),
            "Class only": fmt(pick(bl, "baseline", "class_only", "T1_open_covariates").get((c, m))),
-           "Best baseline": f"{fmt(r['q'])} ({r['variant'].replace('_', ' ')})"}
+           "Best baseline": f"{fmt(r['rho'])} ({r['variant'].replace('_', ' ')})"}
     for tool, var, tier, lab in ENGINES:
         row[lab] = fmt(pick(cal, tool, var, tier).get((c, m)))
     rows.append(row)
@@ -291,7 +290,7 @@ Markdown(pd.DataFrame(rows).to_markdown(index=False, disable_numparse=True))
 ```{python}
 #| echo: false
 #| label: fig-main
-#| fig-cap: "Calibrated q by case and mode (spatial group-out). Each row is a target. Higher is better. Points show the best baseline (circle), cityseer (square) and AequilibraE UE or AoN where UE is not defined (triangle). The same values are in Table 2."
+#| fig-cap: "Spearman rho by case and mode (spatial group-out). Each row is a target. Higher is better. Points show the best baseline (circle), cityseer (square) and AequilibraE UE or AoN where UE is not defined (triangle). The same values are in Table 2."
 #| fig-format: png
 #| fig-dpi: 160
 #| fig-width: 6
@@ -309,12 +308,12 @@ fig, ax = plt.subplots(figsize=(6, 4.6))
 y = np.arange(len(order))[::-1]
 ax.axvline(0, color="#b8b8b2", lw=0.8, zorder=0)
 ax.grid(axis="x", color="#ececea", lw=0.6, zorder=0)
-ax.scatter([best.loc[k, "q"] for k in order], y, s=42, marker="o", color="#2a78d6", label="Best baseline", zorder=3, edgecolor="white", linewidth=1)
+ax.scatter([best.loc[k, "rho"] for k in order], y, s=42, marker="o", color="#2a78d6", label="Best baseline", zorder=3, edgecolor="white", linewidth=1)
 ax.scatter([cs.get(k, np.nan) for k in order], y, s=40, marker="s", color="#eb6834", label="cityseer", zorder=3, edgecolor="white", linewidth=1)
 ax.scatter(aeq, y, s=48, marker="^", color="#1baf7a", label="AequilibraE", zorder=3, edgecolor="white", linewidth=1)
 ax.set_yticks(y)
 ax.set_yticklabels(labels, fontsize=8, color="#3d3d3a")
-ax.set_xlabel("Calibrated q (higher is better)", fontsize=9, color="#3d3d3a")
+ax.set_xlabel("Spearman rho (higher is better)", fontsize=9, color="#3d3d3a")
 ax.tick_params(axis="x", labelsize=8, colors="#3d3d3a")
 for s in ["top", "right", "left"]:
     ax.spines[s].set_visible(False)
@@ -383,15 +382,15 @@ improves on AoN for car in Bristol (raw $\rho$ 0.59 against 0.55) and Leeds
 ```{python}
 #| echo: false
 #| label: tbl-loco
-#| tbl-cap: "Leave-one-city-out, calibrated track: the calibrator is fitted on the other open cases for the same mode and scored on the held-out city. Values are q."
+#| tbl-cap: "Leave-one-city-out, calibrated track: the calibrator is fitted on the other open cases for the same mode and scored on the held-out city. Values are Spearman rho."
 lo = board[(board.split == "leave_one_city_out") & (board.track == "uncalibrated")]
 rows = []
 for (c, m), g in lo.groupby(["case_id", "mode"]):
-    b = g[(g.tool == "baseline") & g.q.notna()]
+    b = g[(g.tool == "baseline") & g.rho.notna()]
     if b.empty:
         continue
-    rb = b.loc[b["q"].idxmax()]
-    row = {"Case": c, "Mode": m, "Best baseline": f"{fmt(rb['q'])} ({rb['variant'].replace('_', ' ')})"}
+    rb = b.loc[b["rho"].idxmax()]
+    row = {"Case": c, "Mode": m, "Best baseline": f"{fmt(rb['rho'])} ({rb['variant'].replace('_', ' ')})"}
     for tool, var, tier, lab in ENGINES:
         row[lab] = fmt(pick(g, tool, var, tier).get((c, m)))
     rows.append(row)
