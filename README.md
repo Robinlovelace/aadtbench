@@ -53,7 +53,7 @@ planning, and urban design. Three approaches exist:
 3.  **Spatial Network Analysis** — Graph-based metrics within a GIS
     framework.
 
-*These are overlapping approaches. Centrality and Betweenness are both forms of SNA. Betweenness is a flow model. Gravity is also a form of reach, which is a form of centrality. Gravity just uses a  weighting that continuously varies inversely with distance rather than a step function (i.e. 1 below the radius and 0 above the radius) - CC*
+<!-- These are overlapping approaches. Centrality and betweenness are both forms of SNA. Betweenness is a flow model. Gravity is also a form of reach (a form of centrality). Gravity uses a weighting that continuously varies inversely with distance rather than a step function (i.e. 1 below the radius and 0 above the radius). -->
 
 **cityseer** (Simons 2022) implements high-performance centrality in
 Rust, with shortest-path and angular analysis.
