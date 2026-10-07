@@ -44,7 +44,8 @@ import pandas as pd
 from benchmark import baselines as bl
 from benchmark.case import BENCHMARK_VERSION, Case, load_case
 from benchmark.leaderboard import RECORD_COLUMNS, assemble
-from benchmark.scoring import group_out_pooled, leave_one_city_out, site_table
+from benchmark.scoring import MIN_RANKED_SITES, group_out_pooled, leave_one_city_out, metrics_from, site_table
+from benchmark.system import write_system
 
 REPO = Path(__file__).resolve().parents[1]
 BASELINE_TIER = "T1_open_covariates"
@@ -109,7 +110,8 @@ def read_run(run_dir: Path) -> dict | None:
 def cached(run_dir: Path, h: str) -> bool:
     rec = read_run(run_dir)
     return bool(rec and rec.get("harness_hash") == h and rec.get("status") in ("complete", "unsupported")
-                and (rec["status"] == "unsupported" or (run_dir / "predictions.parquet").exists()))
+                and (rec["status"] == "unsupported" or rec.get("tool_calibrated")
+                     or (run_dir / "predictions.parquet").exists()))
 
 
 # -- running -----------------------------------------------------------------
@@ -141,31 +143,88 @@ def run_baseline(case: Case, name: str, modes: list[str], run_dir: Path, h: str,
     return rec
 
 
+DEFAULT_TIME_LIMIT_S = 60.0
+
+
 def run_adapter_cli(case: Case, blind: Path, tool: str, variant: str | None, tier: str,
-                    modes: list[str], params: dict, threads: int, run_dir: Path, h: str) -> dict:
+                    modes: list[str], params: dict, threads: int, run_dir: Path, h: str,
+                    time_limit_s: float = DEFAULT_TIME_LIMIT_S, train_dir: Path | None = None) -> dict:
+    """Run one adapter process. All modes of a case run in one process, so the
+    time limit is per tool, variant and case (per fold on the tool-calibrated
+    track). On expiry the process is killed and the run is recorded as timeout."""
     run_dir.mkdir(parents=True, exist_ok=True)
     cmd = [sys.executable, "-m", f"adapters.{tool}", "--case", str(blind), "--tier", tier,
            "--modes", ",".join(modes), "--params", json.dumps(params), "--threads", str(threads),
            "--out", str(run_dir)]
     if variant:
         cmd += ["--variant", variant]
+    if train_dir:
+        cmd += ["--train", str(train_dir)]
     env = dict(os.environ, PYTHONPATH=str(REPO) + os.pathsep + os.environ.get("PYTHONPATH", ""))
     t0 = time.perf_counter()
-    res = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO, env=env)
-    rec = read_run(run_dir) or {}
-    if res.returncode != 0 and rec.get("status") not in ("failed",):
-        rec.update(status="failed", message=(res.stderr or "")[-400:])
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO, env=env,
+                             timeout=time_limit_s if time_limit_s and time_limit_s > 0 else None)
+        rec = read_run(run_dir) or {}
+        if res.returncode != 0 and rec.get("status") not in ("failed",):
+            rec.update(status="failed", message=(res.stderr or "")[-400:])
+        rec.setdefault("status", "complete" if res.returncode == 0 else "failed")
+    except subprocess.TimeoutExpired:
+        rec = {"status": "timeout", "message": f"killed after {time_limit_s} s"}
+        (run_dir / "predictions.parquet").unlink(missing_ok=True)
+        write_system(run_dir, tool=tool, tool_version="unknown", harness_commit=git_commit(),
+                     data_release=f"v{case.benchmark_version}", wall_time_s=time.perf_counter() - t0,
+                     cpu_s=0.0, peak_memory_mb=float("nan"), threads=threads)
+    rec["time_limit_s"] = time_limit_s
     rec.setdefault("case_id", case.case_id)
     rec.setdefault("case_version", case.version)
     rec.setdefault("tool", tool)
     rec.setdefault("variant", variant or "default")
     rec.setdefault("family", "other")
     rec.setdefault("input_tier", tier)
-    rec.setdefault("status", "complete" if res.returncode == 0 else "failed")
     rec.setdefault("wall_time_s", round(time.perf_counter() - t0, 3))
     rec["harness_hash"] = h
     rec.setdefault("run_id", f"{tool}-{rec['variant']}-{h}")
     (run_dir / "run.json").write_text(json.dumps(rec, indent=2, sort_keys=True) + "\n")
+    return rec
+
+
+def run_tool_calibrated(case: Case, blind: Path, tool: str, variant: str | None, tier: str,
+                        modes: list[str], params: dict, threads: int, run_dir: Path, h: str,
+                        time_limit_s: float) -> dict:
+    """Tool-calibrated track: one adapter call per fold, given only the other folds' counts.
+
+    Fold ``k``'s call writes ``fold<k>/predictions.parquet``. Only its fold-k
+    sites are scored from it, so a held-out count is never in the tool's input.
+    """
+    sites, xw = case.sites, case.crosswalk
+    recs, wall = [], 0.0
+    for k in sorted(sites["fold"].dropna().unique().astype(int)):
+        train = run_dir / f"fold{k}" / "_train"
+        train.mkdir(parents=True, exist_ok=True)
+        ts = sites[sites["fold"] != k][["site_id", "mode", "value", "x", "y", "fold"]]
+        if ts.merge(sites[sites["fold"] == k][["site_id", "mode"]]).shape[0]:
+            raise RuntimeError("held-out site in training counts")
+        ts.to_csv(train / "training_sites.csv", index=False)
+        xw.merge(ts[["site_id", "mode"]]).to_csv(train / "training_crosswalk.csv", index=False)
+        r = run_adapter_cli(case, blind, tool, variant, tier, modes, params, threads, run_dir / f"fold{k}",
+                            h, time_limit_s, train)
+        recs.append(r)
+        wall += float(r.get("wall_time_s") or 0)
+        if r.get("status") != "complete":
+            break
+    rec = {k: v for k, v in recs[-1].items() if k not in ("wall_time_s", "status", "message")}
+    bad = [r for r in recs if r.get("status") != "complete"]
+    rec.update(status=bad[0]["status"] if bad else "complete", tool_calibrated=True, folds=len(recs),
+               wall_time_s=round(wall, 3), time_limit_s=time_limit_s, harness_hash=h,
+               run_id=f"{tool}-{variant or 'default'}-toolcal-{h}")
+    if bad:
+        rec["message"] = bad[0].get("message", "")
+    (run_dir / "run.json").write_text(json.dumps(rec, indent=2, sort_keys=True) + "\n")
+    write_system(run_dir, tool=tool, tool_version=str(rec.get("tool_version", "unknown")),
+                 harness_commit=git_commit(), data_release=f"v{case.benchmark_version}",
+                 wall_time_s=wall, cpu_s=0.0, peak_memory_mb=max(float(r.get("peak_memory_mb") or 0) for r in recs),
+                 threads=threads)
     return rec
 
 
@@ -183,16 +242,17 @@ def _row(case: Case, rec: dict, mode: str, track: str, split: str, metrics: dict
         "input_tier": rec["input_tier"], "track": track, "split": split,
         **{k: metrics[k] for k in ("n_sites", "rho", "log_r2", "raw_r2", "calibration_ratio", "q", "ranked")},
         "wall_time_s": rec.get("wall_time_s", np.nan), "peak_memory_mb": rec.get("peak_memory_mb", np.nan),
+        "time_limit_s": rec.get("time_limit_s", np.nan),
         "run_id": rec["run_id"], "git_commit": commit, "timestamp": stamp, "status": status,
     }
 
 
 def tracks_for(rec: dict) -> list[tuple[str, bool]]:
     """(track, scale) pairs to score. Baselines only get the calibrated track."""
+    if rec.get("tool_calibrated"):
+        return [("tool_calibrated", False)]
     if rec.get("calibrated_track_only"):
         return [("calibrated", True)]
-    if rec.get("self_calibrated"):
-        return [("raw", False)]
     return [("raw", True), ("calibrated", True)]
 
 
@@ -209,11 +269,18 @@ def score_run(case: Case, rec: dict, run_dir: Path, site_class: pd.Series, commi
     pred = None
     if status == "complete" and (run_dir / "predictions.parquet").exists():
         pred = pd.read_parquet(run_dir / "predictions.parquet")
+    if status == "complete" and rec.get("tool_calibrated"):
+        pred = {int(f.parent.name[4:]): pd.read_parquet(f) for f in run_dir.glob("fold*/predictions.parquet")}
     for mode in modes:
         for track, scale in tracks_for(rec):
             if pred is None:
                 rows.append(_row(case, rec, mode, track, "group_out_pooled", NAN_METRICS,
                                  status, commit, stamp))
+                continue
+            if track == "tool_calibrated":
+                m, scored = tool_calibrated_pooled(case, pred, mode, site_class)
+                scored.to_csv(run_dir / f"sites_{mode}__{track}.csv", index=False)
+                rows.append(_row(case, rec, mode, track, "group_out_pooled", m, "complete", commit, stamp))
                 continue
             t, info = site_table(case.sites, case.crosswalk, pred, mode, site_class)
             info_all[mode] = info
@@ -224,6 +291,19 @@ def score_run(case: Case, rec: dict, run_dir: Path, site_class: pd.Series, commi
     (run_dir / "scores.json").write_text(json.dumps(rows, indent=1, default=_json_default) + "\n")
     (run_dir / "scores_info.json").write_text(json.dumps(info_all, indent=1, default=_json_default) + "\n")
     return rows
+
+
+def tool_calibrated_pooled(case: Case, preds: dict[int, pd.DataFrame], mode: str,
+                           site_class: pd.Series) -> tuple[dict, pd.DataFrame]:
+    """Score each fold's held-out sites with the predictions of the call that did not see them."""
+    parts = []
+    for k, pred in preds.items():
+        t, _ = site_table(case.sites, case.crosswalk, pred, mode, site_class)
+        parts.append(t[t["fold"] == k].assign(oof=lambda d: d["flow"]))
+    t = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=["value", "oof", "flow"])
+    m = metrics_from(t["value"], t["oof"], t["flow"])
+    m["ranked"] = m["n_sites"] >= MIN_RANKED_SITES
+    return m, t
 
 
 def _json_default(o):
@@ -252,6 +332,8 @@ def score_loco(cases: dict[str, Case], results: Path, run_keys: list[tuple], com
         rec0 = next(iter(recs.values()))
         covariate = rec0.get("calibrator_covariate", True)
         for track, scale in tracks_for(rec0):
+            if track == "tool_calibrated":
+                continue  # the tool's own calibration is not refitted across cities
             # Every mode scored in two or more cases (cases without it sit out).
             modes = sorted(set().union(*[set(r.get("modes", [])) - set(r.get("modes_unsupported") or {})
                                          for r in recs.values()]))
@@ -290,6 +372,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--from-dir", default=None, help="local mirror of release assets for fetch")
     p.add_argument("--version", default=BENCHMARK_VERSION)
     p.add_argument("--force", action="store_true", help="ignore cached runs")
+    p.add_argument("--time-limit", type=float, default=DEFAULT_TIME_LIMIT_S,
+                   help="wall time limit in s per tool, variant and case (0 for none)")
+    p.add_argument("--tool-calibrated", action="store_true",
+                   help="run adapters on the tool-calibrated track (one call per fold)")
     a = p.parse_args(argv)
 
     results = Path(a.results_dir)
@@ -313,7 +399,7 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 jobs = [(tool, v, t) for v in (a.variants or [None]) for t in a.tier]
             for jtool, variant, tier in jobs:
-                label = variant or "default"
+                label = (variant or "default") + ("-toolcal" if a.tool_calibrated and jtool != "baseline" else "")
                 rd = run_dir_for(results, cid, jtool, label, tier)
                 h = harness_hash(case, jtool, label, tier, modes, params,
                                  bl.BASELINE_VERSION if jtool == "baseline" else adapter_source_hash(jtool))
@@ -325,8 +411,9 @@ def main(argv: list[str] | None = None) -> int:
                         rec = run_baseline(case, label, modes, rd, h, covs)
                     else:
                         blind = blind or blind_copy(case, results)
-                        rec = run_adapter_cli(case, blind, jtool, variant, tier, modes, params,
-                                              a.threads, rd, h)
+                        run = run_tool_calibrated if a.tool_calibrated else run_adapter_cli
+                        rec = run(case, blind, jtool, variant, tier, modes, params, a.threads, rd, h,
+                                  a.time_limit)
                 else:
                     print(f"[cached] {cid} {jtool} {label} {tier}", flush=True)
                     rec = read_run(rd)

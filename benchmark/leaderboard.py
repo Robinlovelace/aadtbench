@@ -21,7 +21,7 @@ import pandas as pd
 RECORD_COLUMNS = [
     "benchmark_version", "case_id", "case_version", "mode", "tool", "tool_version", "variant",
     "family", "options", "input_tier", "track", "split", "n_sites", "rho", "log_r2", "raw_r2",
-    "calibration_ratio", "q", "ranked", "wall_time_s", "cpu_time_s", "speed_index",
+    "calibration_ratio", "q", "ranked", "time_limit_s", "wall_time_s", "cpu_time_s", "speed_index",
     "peak_memory_mb", "cpu_model", "container_image_digest", "data_release", "run_id",
     "git_commit", "timestamp", "status",
 ]

@@ -196,6 +196,44 @@ class RunAllTest(unittest.TestCase):
         names = {p.name for p in blind.iterdir()}
         self.assertEqual(names, {"case.yaml", "network.parquet", "inputs"})
 
+    def test_time_limit_records_timeout_as_na(self):
+        from benchmark.run_all import main
+        res = self.tmp / "results"
+        args = ["--cases", "synth-a", "--tools", "_echo", "--tier", "T0_network", "--params", '{"sleep": 5}',
+                "--time-limit", "1", "--cases-root", str(self.tmp / "cases"), "--results-dir", str(res)]
+        self.assertEqual(main(args), 0)
+        lb = pd.read_csv(res / "leaderboard.csv")
+        self.assertEqual(set(lb["status"]), {"timeout"})
+        self.assertTrue(lb["q"].isna().all())
+        self.assertEqual(set(lb["time_limit_s"]), {1.0})
+
+    def test_tool_calibrated_cannot_see_held_out_counts(self):
+        from benchmark.run_all import main
+        res = self.tmp / "results"
+        args = ["--cases", "synth-a", "--tools", "_echo", "--tier", "T0_network", "--tool-calibrated",
+                "--cases-root", str(self.tmp / "cases"), "--results-dir", str(res)]
+        self.assertEqual(main(args), 0)
+        case = load_case("synth-a", cases_root=self.tmp / "cases")
+        run = res / "runs" / "synth-a" / "_echo" / "default-toolcal__T0"
+        for k in sorted(case.sites["fold"].unique()):
+            train = pd.read_csv(run / f"fold{k}" / "_train" / "training_sites.csv", dtype={"site_id": str})
+            held = case.sites[case.sites["fold"] == k]
+            self.assertEqual(len(train.merge(held[["site_id", "mode"]])), 0)
+            self.assertFalse((train["fold"] == k).any())
+        # The echo tool copies any count it is given. On held-out sites whose links
+        # carry no training site it can only return 0: the held-out count never leaks.
+        t = pd.read_csv(run / "sites_car__tool_calibrated.csv", dtype={"site_id": str})
+        xw = case.crosswalk[case.crosswalk["mode"] == "car"].merge(case.sites[["site_id", "mode", "fold"]])
+        shared = set()
+        for k in sorted(case.sites["fold"].unique()):
+            shared |= set(xw[xw.fold == k].segment_id) & set(xw[xw.fold != k].segment_id)
+        alone = set(xw.groupby("site_id").filter(lambda g: not set(g.segment_id) & shared).site_id)
+        self.assertTrue(len(alone) > 0)
+        self.assertTrue((t[t["site_id"].isin(alone)]["oof"] == 0).all())
+        lb = pd.read_csv(res / "leaderboard.csv")
+        self.assertEqual(set(lb["track"]), {"tool_calibrated"})
+        self.assertEqual(set(lb["split"]), {"group_out_pooled"})
+
 
 if __name__ == "__main__":
     unittest.main()

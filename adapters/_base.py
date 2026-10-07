@@ -95,6 +95,18 @@ class RunContext:
     out_dir: Path
     _cache: dict = field(default_factory=dict, repr=False)
     unsupported: dict = field(default_factory=dict)
+    train_dir: Path | None = None
+
+    def training_counts(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Tool-calibrated track only: (sites, crosswalk) of this call's training folds.
+
+        The harness calls the adapter once per fold and passes only the counts
+        of the other folds, so a held-out count is never visible.
+        """
+        if self.train_dir is None:
+            raise PermissionError("training counts are only given on the tool-calibrated track")
+        return (pd.read_csv(self.train_dir / "training_sites.csv", dtype={"site_id": str}),
+                pd.read_csv(self.train_dir / "training_crosswalk.csv", dtype={"site_id": str, "segment_id": str}))
 
     def map_modes(self, fn) -> pd.DataFrame:
         """Call ``fn(mode)`` for each run mode and stack the tables it returns.
@@ -324,7 +336,8 @@ def input_hash(case_manifest: dict, tool: str, variant: str, params: dict, tier:
 
 
 def run_adapter(adapter: Adapter, case_dir: Path, tier: str, modes: list[str], out_dir: Path,
-                variant: str | None = None, params: dict | None = None, threads: int = 1) -> dict:
+                variant: str | None = None, params: dict | None = None, threads: int = 1,
+                train_dir: Path | None = None) -> dict:
     """Run one adapter and write ``predictions.parquet`` and ``run.json``.
 
     Returns the run record. Unsupported tiers or modes give a record with
@@ -356,7 +369,8 @@ def run_adapter(adapter: Adapter, case_dir: Path, tier: str, modes: list[str], o
                                       record["tool_version"])
     record["run_id"] = f"{adapter.tool}-{variant}-{record['input_hash']}"
     ctx = RunContext(case_dir=case_dir, manifest=manifest, tier=tier, modes=run_modes,
-                     params=p, threads=threads, out_dir=out_dir)
+                     params=p, threads=threads, out_dir=out_dir,
+                     train_dir=Path(train_dir) if train_dir else None)
     from benchmark.system import cpu_time_s, write_system
     t0, c0 = time.perf_counter(), cpu_time_s()
     status, message, pred = "complete", "", None
@@ -404,8 +418,10 @@ def run_cli(adapter_cls: type[Adapter]) -> None:
     ap.add_argument("--params", default="{}", help="JSON overrides for the variant")
     ap.add_argument("--threads", type=int, default=1)
     ap.add_argument("--out", required=True, type=Path, help="run directory")
+    ap.add_argument("--train", type=Path, default=None,
+                    help="tool-calibrated track: dir with this fold's training counts (given by the harness)")
     a = ap.parse_args()
     rec = run_adapter(adapter_cls(), a.case, a.tier, [m for m in a.modes.split(",") if m],
-                      a.out, a.variant, json.loads(a.params), a.threads)
+                      a.out, a.variant, json.loads(a.params), a.threads, a.train)
     print(json.dumps({k: rec.get(k) for k in ("run_id", "status", "wall_time_s",
                                               "peak_memory_mb", "n_predictions", "message")}))

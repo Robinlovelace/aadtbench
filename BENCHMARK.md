@@ -44,7 +44,7 @@ use or OD) and congestion. Boards group rows by family.
 
 ## Tracks and baselines
 
-Every result is scored twice:
+Every result is scored on two tracks, plus a third for tools that calibrate themselves:
 
 - `raw`: the flow times one scale factor, the geometric mean ratio of counts
   to flows on the training folds.
@@ -58,6 +58,15 @@ Every result is scored twice:
   OLS, Duan smearing on back-transform. Road classes with fewer than five
   training sites merge into `other`, which joins the most common class if it
   is still under five. This track asks what a tool adds beyond road class.
+- `tool_calibrated` (opt in, `run_all --tool-calibrated`): the tool's own
+  calibrated flows, with any terms it likes. The harness calls the adapter
+  once per fold `k` and passes only the counts of the other folds
+  (`training_sites.csv`, `training_crosswalk.csv`). Fold `k`'s sites are
+  scored only from that call's predictions, then pooled. A held-out count is
+  never in the tool's input, so it cannot leak. Same folds, metrics and
+  baselines as the other tracks. These rows sit on their own board and are
+  never ranked against the reference-calibrated track without saying so.
+  They are not on the leave-one-city-out board.
 
 Four mandatory baselines go through the calibrated track with a covariate in
 place of `log(flow + 1)`: `class_only` (none), `centre_distance` (distance to
@@ -166,9 +175,15 @@ wall time over reference time.
 
 Leaderboard rows carry: `benchmark_version, case_id, case_version, mode, tool,
 tool_version, variant, family, options, input_tier, track, split, n_sites,
-rho, log_r2, raw_r2, calibration_ratio, q, ranked, wall_time_s, cpu_time_s,
+rho, log_r2, raw_r2, calibration_ratio, q, ranked, time_limit_s, wall_time_s, cpu_time_s,
 speed_index, peak_memory_mb, cpu_model, container_image_digest, data_release,
 run_id, git_commit, timestamp, status`.
+
+**Time limit.** Each adapter process has a wall time limit (`run_all
+--time-limit`, default 60 s). All modes of a case run in one process, so the
+limit is per tool, variant and case (per fold on the tool-calibrated track).
+On expiry the process is killed and the run is recorded with status `timeout`
+and the limit. Its metrics are NA, never a score.
 
 ## Continuous integration
 
