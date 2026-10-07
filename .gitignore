@@ -1,39 +1,21 @@
-# Python
 __pycache__/
 *.pyc
-*.pyo
 .venv/
-venv/
-*.egg-info/
-
-# Data (base inputs tracked; generated outputs ignored)
-data/*.gpkg
-data/*.geojson
-data/*.graphml
-data/*.duckdb
-
-# Results (keep CSV results, ignore other)
-results/*.gpkg
-results/*.geojson
-results/*.parquet
-
-# IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-
-# Cache
-cache/
-_targets/
-_targets.Rout
-
-# Environment
 .env
-.env.*
-
-# Interactive Map Artifacts
-*.html
-*.js
-
-sdna-plus/
+# Case data, inputs and results live in the GitHub release, not in git.
+# python -m benchmark.fetch downloads case data. The harness writes results/.
+data/
+results/
+results-ci/
+build/
+source-data/
+cache/
+cases/*/*
+!cases/*/case.yaml
+!cases/*/README.md
+# Paper render output
+paper/index.html
+paper/index_files/
+paper/.quarto/
