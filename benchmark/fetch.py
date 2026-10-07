@@ -1,7 +1,7 @@
 """Download AADTBench case data from a GitHub release and check it.
 
-    python -m benchmark.fetch --version v0.2.0 [--case oxford-v1]
-    python -m benchmark.fetch --version v0.2.0 --from-dir /path/to/mirror
+    python -m benchmark.fetch --version v0.3.0 [--case oxford-v1]
+    python -m benchmark.fetch --version v0.3.0 --from-dir /path/to/mirror
 
 Asset naming (agreed with the export script):
 
@@ -27,7 +27,7 @@ import tempfile
 from pathlib import Path
 
 REPO = "Robinlovelace/aadtbench"
-DEFAULT_VERSION = "v0.2.0"
+DEFAULT_VERSION = "v0.3.0"
 CASES_ROOT = Path(__file__).resolve().parents[1] / "cases"
 
 

@@ -1,6 +1,7 @@
 """A tiny synthetic v0.2 case for tests: a 10 by 10 grid network."""
 from __future__ import annotations
 
+from benchmark.case import BENCHMARK_VERSION
 import hashlib
 import json
 from pathlib import Path
@@ -98,7 +99,7 @@ def build_case(root: Path, case_id: str = "synth-v1", seed: int = 1) -> Path:
     return root
 
 
-def write_release(case_dirs: list[Path], mirror: Path, version: str = "v0.2.0") -> Path:
+def write_release(case_dirs: list[Path], mirror: Path, version: str = BENCHMARK_VERSION) -> Path:
     """Write a local mirror of release assets with a manifest."""
     mirror.mkdir(parents=True, exist_ok=True)
     entries = []

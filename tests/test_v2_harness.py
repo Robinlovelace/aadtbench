@@ -10,7 +10,7 @@ import pandas as pd
 
 from benchmark import baselines as bl
 from benchmark.calibrator import fit_calibrator, fit_scale_factor
-from benchmark.case import load_case
+from benchmark.case import BENCHMARK_VERSION, load_case
 from benchmark.fetch import FetchError, fetch
 from benchmark.scoring import group_out_pooled, leave_one_city_out, site_table
 from tests.synthetic_case import build_case, write_release
@@ -142,14 +142,14 @@ class FetchTest(unittest.TestCase):
 
     def test_fetch_ok_and_corruption_fails(self):
         root = self.tmp / "cases"
-        got = fetch("v0.2.0", "synth-v1", root, self.mirror)
+        got = fetch(BENCHMARK_VERSION, "synth-v1", root, self.mirror)
         self.assertTrue((root / "synth-v1" / "inputs" / "pois.parquet").exists())
         self.assertEqual(len(got), len(list(self.src.rglob("*.*"))))
         bad = self.mirror / "synth-v1__sites.csv"
         bad.write_bytes(bad.read_bytes() + b"x")
         root2 = self.tmp / "cases2"
         with self.assertRaises(FetchError):
-            fetch("v0.2.0", "synth-v1", root2, self.mirror)
+            fetch(BENCHMARK_VERSION, "synth-v1", root2, self.mirror)
         self.assertFalse((root2 / "synth-v1" / "sites.csv").exists())
 
     def test_load_case_fetches_missing(self):

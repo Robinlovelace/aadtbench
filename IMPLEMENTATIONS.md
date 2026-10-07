@@ -58,7 +58,7 @@ Tools that need calibration leave it to the calibrated track.
 
 ```bash
 pip install -r requirements.txt my_tool
-python -m benchmark.fetch --version v0.2.0
+python -m benchmark.fetch --version v0.3.0
 python -m benchmark.run_all --cases oxford-v1 --tools my_tool --tier T2_synthetic_od
 python -m benchmark.smoke --tool my_tool          # what CI runs, on oxford-mini-v1
 ```

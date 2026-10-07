@@ -3,7 +3,7 @@
 # While mini_case is PLACEHOLDER, or its assets are not in the release, the smoke steps
 # warn and exit 0. Unit tests and the contract check always run for real.
 mini_case: oxford-mini-v1
-release: v0.2.0
+release: v0.3.0
 
 # Settings used for every tool unless the tool block overrides them.
 defaults:

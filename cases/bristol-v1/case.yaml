@@ -1,6 +1,6 @@
 id: bristol-v1
-version: 1.0.0
-benchmark_version: 0.2.0
+version: 2.0.0
+benchmark_version: 0.3.0
 title: Bristol multimode annual average daily flow
 place: Bristol
 country: GBR
@@ -17,12 +17,10 @@ modes:
 sources:
 - source: dft_manual
   licence: OGL-UK-3.0
-  licence_text: OGL v3 (DfT road traffic statistics AADF)
-  method: short_period
-  n_sites: 659
-excluded_sources:
-  telraam: Telraam data is CC BY-NC 4.0 (non-commercial), not allowed in open cases.
-  vivacity: local authority terms, check per authority
+  url: https://roadtraffic.dft.gov.uk/downloads
+  reviewed: 2026-10-07, OGL v3 as recorded with the data, publisher page check pending
+  n_rows: 659
+excluded_sources: {}
 network_licence: ODbL-1.0 (OpenStreetMap)
 split:
   group_cell_m: 3000.0
@@ -40,4 +38,14 @@ files:
 - inputs/zones.parquet
 - network.parquet
 - sites.csv
-data_size_bytes: 15076158
+- source.osm.pbf
+data_size_bytes: 28284557
+network:
+  source_extract: null
+  source_timestamp: null
+  clipped_sha256: ebf3a224a5c7806d82d8cf8b2c0e13453a32b6058b132123d00f3233a63bd05d
+  links: 163985
+  km: 8480.6
+  components: 275
+  largest_component_share: 0.9961
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'

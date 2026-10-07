@@ -1,0 +1,57 @@
+id: zurich-v1
+version: 1.0.0
+benchmark_version: 0.3.0
+title: Zurich annual average daily flow (Stadt Zuerich counts)
+place: Zurich
+country: CHE
+crs: EPSG:32632
+centre_lon: 8.5410422
+centre_lat: 47.3744489
+radius_m: 15000.0
+modes:
+- cycling
+- car
+split:
+  group_cell_m: 3000.0
+  folds: 5
+  seed: 42
+input_tiers:
+- T0_network
+- T1_open_covariates
+- T2_synthetic_od
+mode_map: {}
+note: Motorised traffic counts are all motor vehicles, scored as car (heavy included).
+  Walking has 3 sites and is left out.
+sources:
+- source: stadt_zuerich_fuss_velo
+  licence: CC0-1.0
+  url: https://data.stadt-zuerich.ch
+  reviewed: 2026-10-08, CC0 per the dataset page, as recorded by the data porting
+    step, recheck pending
+  n_rows: 23
+- source: stadt_zuerich_miv
+  licence: CC0-1.0
+  url: https://data.stadt-zuerich.ch
+  reviewed: 2026-10-08, CC0 per the dataset page, as recorded by the data porting
+    step, recheck pending
+  n_rows: 102
+excluded_sources: {}
+network:
+  source_extract: null
+  source_timestamp: null
+  clipped_sha256: fffca458f6933a319c0aa3dfcc3e8e4041cc68f73c18e83ed041ba64e9e0998a
+  links: 362938
+  km: 14238.1
+  components: 676
+  largest_component_share: 0.9963
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'
+files:
+- crosswalk.csv
+- inputs/od_synthetic.parquet
+- inputs/pois.parquet
+- inputs/population.parquet
+- inputs/zones.parquet
+- network.parquet
+- sites.csv
+- source.osm.pbf
+data_size_bytes: 51102126

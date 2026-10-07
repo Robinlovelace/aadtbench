@@ -1,0 +1,64 @@
+id: toronto-v1
+version: 1.0.0
+benchmark_version: 0.3.0
+title: Toronto annual average daily flow (City of Toronto counts)
+place: Toronto
+country: CAN
+crs: EPSG:32617
+centre_lon: -79.3839347
+centre_lat: 43.6534817
+radius_m: 15000.0
+modes:
+- walking
+- cycling
+- car
+- heavy
+split:
+  group_cell_m: 3000.0
+  folds: 5
+  seed: 42
+input_tiers:
+- T0_network
+- T1_open_covariates
+- T2_synthetic_od
+note: 'Turning movement counts are junction arms: flow entering from the arm, doubled
+  for a two-way value (daily symmetry assumed), placed on the approach link by bearing.'
+sources:
+- source: toronto_bike
+  licence: OGL-Toronto
+  url: https://open.toronto.ca
+  reviewed: 2026-10-08, Open Government Licence Toronto as recorded with the data,
+    recheck pending
+  n_rows: 24
+- source: toronto_svc
+  licence: OGL-Toronto
+  url: https://open.toronto.ca
+  reviewed: 2026-10-08, Open Government Licence Toronto as recorded with the data,
+    recheck pending
+  n_rows: 479
+- source: toronto_tmc
+  licence: OGL-Toronto
+  url: https://open.toronto.ca
+  reviewed: 2026-10-08, Open Government Licence Toronto as recorded with the data,
+    recheck pending
+  n_rows: 44253
+excluded_sources: {}
+network:
+  source_extract: null
+  source_timestamp: null
+  clipped_sha256: 445391f0c24d42895d6be85eb2eb953a938e3c165db4c261446c028ac76d2f61
+  links: 333673
+  km: 13597.5
+  components: 555
+  largest_component_share: 0.9942
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'
+files:
+- crosswalk.csv
+- inputs/od_synthetic.parquet
+- inputs/pois.parquet
+- inputs/population.parquet
+- inputs/zones.parquet
+- network.parquet
+- sites.csv
+- source.osm.pbf
+data_size_bytes: 49341340
