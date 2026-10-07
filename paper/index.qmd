@@ -495,7 +495,7 @@ The benchmark is meant to grow. We invite three kinds of contribution:
 
 # Data and code availability
 
-Code: <https://github.com/Robinlovelace/cenbench>. Case data: release v0.2.0
+Code: <https://github.com/Robinlovelace/aadtbench>. Case data: release v0.2.0
 of the same repository, with a manifest of SHA-256 hashes. Counts are under
 the UK Open Government Licence v3 or CC BY 4.0, networks and points of
 interest under ODbL 1.0, population under CC BY 4.0. The Leuven case uses

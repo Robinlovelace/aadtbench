@@ -7,7 +7,7 @@ statistical models. The spec is [`BENCHMARK.md`](BENCHMARK.md). How to add a
 tool is [`IMPLEMENTATIONS.md`](IMPLEMENTATIONS.md).
 
 Code lives in git. Case data, run outputs and full leaderboards live in the
-[v0.2.0 release](https://github.com/Robinlovelace/cenbench/releases/tag/v0.2.0),
+[v0.2.0 release](https://github.com/Robinlovelace/aadtbench/releases/tag/v0.2.0),
 checked by sha256 on download.
 
 ## Quick start
