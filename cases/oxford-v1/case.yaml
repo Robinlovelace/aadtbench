@@ -1,0 +1,50 @@
+id: oxford-v1
+version: 1.0.0
+benchmark_version: 0.2.0
+title: Oxford multimode annual average daily flow
+place: Oxford
+country: GBR
+crs: EPSG:27700
+centre_lon: -1.2578499
+centre_lat: 51.7520131
+centre_x: 451328.0
+centre_y: 206184.8
+radius_m: 15000.0
+margin_m: 0.0
+zone_m: 1000.0
+modes:
+- walking
+- cycling
+- car
+- heavy
+sources:
+- source: dft_manual
+  licence: OGL-UK-3.0
+  licence_text: OGL v3 (DfT road traffic statistics AADF)
+  method: short_period
+  n_sites: 266
+- source: oxflow
+  licence: OGL-UK-3.0
+  licence_text: Oxfordshire County Council open data, OGL v3
+  method: continuous
+  n_sites: 726
+excluded_sources:
+  telraam: Telraam data is CC BY-NC 4.0 (non-commercial), not allowed in open cases.
+network_licence: ODbL-1.0 (OpenStreetMap)
+split:
+  group_cell_m: 3000.0
+  folds: 5
+  seed: 42
+input_tiers:
+- T0_network
+- T1_open_covariates
+- T2_synthetic_od
+files:
+- crosswalk.csv
+- inputs/od_synthetic.parquet
+- inputs/pois.parquet
+- inputs/population.parquet
+- inputs/zones.parquet
+- network.parquet
+- sites.csv
+data_size_bytes: 9981608
