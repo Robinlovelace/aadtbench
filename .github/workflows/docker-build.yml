@@ -6,12 +6,14 @@ on:
     paths:
       - 'Dockerfile'
       - 'requirements.txt'
+      - 'data/**'
       - 'sdna-plus/**'
   pull_request:
     branches: [main]
     paths:
       - 'Dockerfile'
       - 'requirements.txt'
+      - 'data/**'
   workflow_dispatch:
 
 jobs:

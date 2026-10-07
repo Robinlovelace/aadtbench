@@ -63,11 +63,13 @@ def main():
     cityseer_dem_var, cityseer_dem_r2, cityseer_dem_r = get_best_variant("cityseer_demand", "cs_demand_r800_beta002_all", 0.5432, 0.7370)
     sdna_var, sdna_r2, sdna_r = get_best_variant("sdna", "MAD_angular_400m", 0.3533, 0.5944)
     madina_var, madina_r2, madina_r = get_best_variant("madina", "degree", 0.1453, -0.3812)
-    
+    flownet_var, flownet_r2, flownet_r = get_best_variant("flownet", "psl_beta0.002_detour1.5", 0.0, 0.0)
+
     TOOLS = [
         ("madina_worldpop", madina_wp_var, madina_wp_r2, madina_wp_r, "#f39c12", f"results/{city}_best_predictions.csv"),
         ("cityseer_demand", cityseer_dem_var, cityseer_dem_r2, cityseer_dem_r, "#9b59b6", f"results/{city}_cityseer_demand_best_predictions.csv"),
         ("sdna",            sdna_var,        sdna_r2,        sdna_r,        "#1abc9c", "results/sdna_best_predictions.csv"),
+        ("flownet",         flownet_var,     flownet_r2,     flownet_r,     "#2ecc71", None),
         ("madina",          madina_var,      madina_r2,      madina_r,      "#e74c3c", None),
     ]
     

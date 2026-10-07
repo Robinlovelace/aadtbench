@@ -30,6 +30,9 @@ jobs:
       - name: Run DVC pipeline
         run: dvc repro
 
+      - name: Fix git safe directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Auto-update README.md and results [skip ci]"

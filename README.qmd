@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import geopandas as gpd
 import contextily as ctx
 from IPython.display import display, Markdown
+from tabulate import tabulate
 
 os.makedirs("results", exist_ok=True)
 
@@ -51,17 +52,24 @@ def first_or_na(series, default="N/A"):
     return default if pd.isna(value) else value
 
 
-def results_table(data):
-    lines = ["| Variant | R² | Pearson r | Time (s) | RAM (MB) | Seg/s | Matched |",
-             "|---------|-----|-----------|----------|----------|-------|---------|"]
-    for _, row in data.iterrows():
-        ram = f"{row['peak_memory_mb']:.0f}" if not pd.isna(row['peak_memory_mb']) else "—"
-        sps = f"{row['segments_per_sec']:.0f}" if not pd.isna(row['segments_per_sec']) else "—"
-        lines.append(
-            f"| {row['variant']} | {row['r_squared']:.3f} | {row['pearson_r']:.3f} | "
-            f"{row['compute_time_s']:.1f} | {ram} | {sps} | {int(row['n_matched'])} |"
-        )
-    return "\n".join(lines)
+def fmt_table(data):
+    """Return a copy of data with consistent decimal formatting and display columns."""
+    cols = ["variant", "r_squared", "pearson_r", "compute_time_s",
+            "peak_memory_mb", "segments_per_sec", "n_matched"]
+    d = data[cols].copy()
+    d["r_squared"] = d["r_squared"].round(3)
+    d["pearson_r"] = d["pearson_r"].round(3)
+    d["compute_time_s"] = d["compute_time_s"].round(1)
+    d["peak_memory_mb"] = d["peak_memory_mb"].round(0).astype("Int64")
+    d["segments_per_sec"] = d["segments_per_sec"].round(0).astype("Int64")
+    d["n_matched"] = d["n_matched"].astype("Int64")
+    return d
+
+
+def show_table(data):
+    """Display a formatted DataFrame as a GitHub-flavoured markdown table."""
+    display(Markdown(tabulate(data, headers="keys", tablefmt="github",
+                               numalign="right", stralign="left", showindex="never")))
 
 
 def best_row(data):
@@ -71,6 +79,7 @@ def best_row(data):
 
 
 df = load_results("results/leuven_results.csv")
+df_all = df.copy()  # keep unfiltered for performance stats
 
 # ── Variant culling: keep informative subset (~10 variants) ──
 KEEP_VARIANTS = {
@@ -87,7 +96,8 @@ KEEP_VARIANTS = {
         "cs_demand_r1200_beta002_all",
         "cs_demand_r2000_beta002_all",
     ],
-    "sdna": ["MAD_angular_800m", "MAD_angular_400m"],
+    "sdna": ["MAD_angular_800m", "MAD_angular_400m", "MAD_angular_200m", "NQPDE_euclidean_800m"],
+    "flownet": ["psl_beta0.001_detour1.25", "psl_beta0.002_detour1.5", "psl_beta0.004_detour1.5"],
 }
 keep_mask = df.apply(
     lambda r: r["variant"] in KEEP_VARIANTS.get(r["tool"], []), axis=1
@@ -99,6 +109,7 @@ md_df = tool_results(df, "madina")
 mwp_df = tool_results(df, "madina_worldpop")
 csd_df = tool_results(df, "cityseer_demand")
 sdna_df = tool_results(df, "sdna")
+flownet_df = tool_results(df, "flownet")
 ```
 
 ```{python}
@@ -113,6 +124,7 @@ colors = {
     'madina_worldpop': '#f39c12',
     'cityseer_demand': '#9b59b6',
     'sdna': '#1abc9c',
+    'flownet': '#2ecc71',
 }
 bar_colors = [colors.get(t, '#95a5a6') for t in plot_df['tool']]
 
@@ -171,7 +183,7 @@ if 'peak_memory_mb' in df.columns and df['peak_memory_mb'].notna().any():
     ax2.set_yticks(range(len(ram_df)))
     ax2.set_yticklabels([f"{r['tool']}\n{r['variant']}" for _, r in ram_df.iterrows()], fontsize=8)
     ax2.set_xlabel("% RAM Free (relative to most intensive run)", fontsize=11)
-    ax2.set_title("Memory Efficiency (Bigger is Better)", fontsize=13, fontweight='bold')
+    ax2.set_title("Memory Use", fontsize=13, fontweight='bold')
     ax2.grid(True, axis='x', linestyle=':', alpha=0.5, zorder=0)
     ax2.set_axisbelow(True)
     for i, (_, r) in enumerate(ram_df.iterrows()):
@@ -236,11 +248,15 @@ Pedestrian flow modelling is central to walkability analysis, transport planning
 2. **Gravity / Flow Models** — Trip distribution proportional to attractor weight and distance.
 3. **Spatial Network Analysis** — Graph-based metrics within a GIS framework.
 
+<!-- These are overlapping approaches. Centrality and betweenness are both forms of SNA. Betweenness is a flow model. Gravity is also a form of reach (a form of centrality). Gravity uses a weighting that continuously varies inversely with distance rather than a step function (i.e. 1 below the radius and 0 above the radius). -->
+
 **cityseer** [@simons2022cityseer] implements high-performance centrality in Rust, with shortest-path and angular analysis.
 
 **madina** [@sevtsuk2025madina] implements Urban Network Analysis (UNA) with flow simulation, decay functions, and detour penalties.
 
 **sDNA+** [@cooper2020sdna] provides 3-d spatial network analysis via a C++ library with Python, QGIS, and command-line interfaces, supporting hybrid and angular metrics with OpenMP multi-threading.
+
+**flownet** [@krantz2024flownet] implements path-sized-logit (PSL) stochastic traffic assignment for multimodal transport networks in R, enumerating alternative routes between origin-destination pairs and allocating flows while accounting for route overlap.
 
 <!-- TODO: populate this section -->
 <!-- ### Related Work
@@ -292,6 +308,8 @@ WorldPop population data (100m grid, total population 171,574) serves as origin 
 
 ### Benchmark Design
 
+*the section below doesn't really compare like with like, either for R^2 or for performance. e.g. comparing closeness from sdna+ with betweenness from other tools; using different options (angular vs euclidean vs anything else) or weightings (population, land use). I think it would be better to structure by centrality measure, rather than by tool. Additionally FYI, sDNA does have a gravity reach model - it's labelled NQPD (network quantity penalized by distance) - CC*
+
 **cityseer experiments**:
 
 | Variant | Method | Distance | Description |
@@ -325,8 +343,21 @@ WorldPop population data (100m grid, total population 171,574) serves as origin 
 | wp_r2000_beta002_all | madina_worldpop | 2000m radius, β=0.002, all attractors |
 | cs_demand_r800_beta002_all | cityseer_demand | 800m radius, β=0.02, all attractors |
 | cs_demand_r1200_beta002_all | cityseer_demand | 1200m radius, β=0.02, all attractors |
+| psl_beta0.002_detour1.5 | flownet | PSL assignment (canonical minimal call); β/detour accepted for interface symmetry, currently fixed in flownet |
 
 : Gravity/demand model configurations. {#tbl-gravity-design}
+
+### Multi-mode generalisation
+
+The benchmark suite is mode-aware: each city declares one or more travel
+modes (`walk`, `cycle`, `drive`) in `config/cities.yaml`, each with its own
+network, sensor-validation set, and gravity origins/destinations. Every
+benchmark script (centrality, sDNA+, cityseer demand, madina gravity, and
+flownet) loops over the configured modes and writes a `mode` column into the
+results. For Leuven the walking network is validated against Telraam
+pedestrian counts; cycling and driving networks are generated from OpenStreetMap
+(see `scripts/generate_networks.py`) and are ready to validate once
+per-mode Telraam counts (bicycles, cars) are supplied.
 
 ### Metrics
 
@@ -381,7 +412,7 @@ Centrality methods measure the structural importance of each network edge (or no
 #| label: tbl-cityseer-results
 #| tbl-cap: "Cityseer centrality results."
 #| output: asis
-display(Markdown(results_table(cs_df)))
+show_table(fmt_table(cs_df))
 ```
 
 #### madina
@@ -391,7 +422,7 @@ display(Markdown(results_table(cs_df)))
 #| label: tbl-madina-results
 #| tbl-cap: "Madina centrality results."
 #| output: asis
-display(Markdown(results_table(md_df)))
+show_table(fmt_table(md_df))
 ```
 
 #### sDNA+
@@ -403,7 +434,7 @@ display(Markdown(results_table(md_df)))
 #| output: asis
 sdna_df = tool_results(df, "sdna")
 if len(sdna_df) > 0:
-    display(Markdown(results_table(sdna_df)))
+    show_table(fmt_table(sdna_df))
 ```
 
 ### Gravity / Demand Models
@@ -419,7 +450,7 @@ Gravity models estimate pedestrian flow by simulating trips from population-weig
 #| label: tbl-gravity-madina-results
 #| tbl-cap: "Madina WorldPop gravity results."
 #| output: asis
-display(Markdown(results_table(mwp_df)))
+show_table(fmt_table(mwp_df))
 ```
 
 ```{python}
@@ -427,7 +458,17 @@ display(Markdown(results_table(mwp_df)))
 #| label: tbl-gravity-cityseer-results
 #| tbl-cap: "Cityseer Demand gravity results."
 #| output: asis
-display(Markdown(results_table(csd_df)))
+show_table(fmt_table(csd_df))
+```
+
+#### flownet
+
+```{python}
+#| echo: false
+#| label: tbl-gravity-flownet-results
+#| tbl-cap: "flownet path-sized-logit assignment results."
+#| output: asis
+show_table(fmt_table(flownet_df))
 ```
 
 ### Performance
@@ -437,14 +478,72 @@ display(Markdown(results_table(csd_df)))
 #| label: tbl-performance-summary
 #| tbl-cap: "Runtime summary per tool: min, median, and max wall-clock seconds across all variants."
 #| output: asis
-perf = df.groupby('tool')['compute_time_s'].agg(['min', 'median', 'max']).round(1)
-for _, row in perf.iterrows():
-    print(f"  {row}")
+perf = df_all.groupby('tool')['compute_time_s'].agg(['min', 'median', 'max']).round(1).reset_index()
 
-display(Markdown(perf.to_markdown()))
+show_table(perf)
 ```
 
+
+Full results with all `{python} len(df_all)` variants: [`results/leuven_results.csv`](results/leuven_results.csv)
+
 ![Computational performance: throughput and memory usage](results/fig3_performance.png){#fig-performance}
+
+## Leeds case study (drive mode, DfT AADT validation)
+
+A second case study benchmarks all seven tools on **Leeds** (drive mode), validated against real traffic counts rather than Telraam sensors:
+
+- **Network**: OSM drive network clipped to a 10 km buffer around central Leeds (53.8008, -1.5491); 63,940 directed edges.
+- **Ground truth**: DfT annual average daily traffic (AADT) counts for West Yorkshire (open, OGL), 197 count points of which 187 matched to network edges within 200 m. Because AADT spans ~100 to ~150,000 vehicles/day, accuracy is measured as **log-log R²** (`compute_metrics_loglog`), which is not dominated by the few largest counts.
+- **Demand**: real 2011 Census journey-to-work `car_driver` flows (`pct::get_od()`, 9,701 OD pairs across 103 MSOA zones) for cityseer_od and aequilibrae; the WorldPop + OSM-POI gravity demand (as in Leuven) for madina_worldpop and flownet.
+- **Composite score**: `efficiency_score = max(r_squared, 0) / (log10(1 + compute_time_s) * log10(1 + peak_memory_mb))`, computed identically for every tool (`scripts/csv_utils.py`), rewarding accuracy per unit of log-scaled time and memory.
+
+Walking and cycling are not yet validated for Leeds (no per-mode pedestrian/cycle counts configured), so all Leeds rows are drive mode.
+
+The comparison table shows exactly one run per tool — the variant with the highest `efficiency_score` — except the overall best tool, whose top three runs are shown:
+
+```{python}
+#| echo: false
+#| label: tbl-leeds-results
+#| tbl-cap: "Leeds drive-mode benchmark: best run per tool by efficiency_score (top 3 runs for the overall best tool)."
+#| output: asis
+leeds = pd.read_csv("results/leeds_results.csv")
+leeds = leeds[leeds["r_squared"].notna()].copy()
+
+# Best variant per tool by efficiency_score.
+best_per_tool = (
+    leeds.sort_values("efficiency_score", ascending=False)
+    .groupby("tool", as_index=False)
+    .first()
+)
+overall_best_tool = best_per_tool.loc[best_per_tool["efficiency_score"].idxmax(), "tool"]
+
+# Overall best tool may show its top 3 runs.
+extra = (
+    leeds[leeds["tool"] == overall_best_tool]
+    .sort_values("efficiency_score", ascending=False)
+    .head(3)
+)
+show = pd.concat([best_per_tool, extra]).drop_duplicates(
+    subset=["tool", "mode", "variant"]
+)
+show = show.sort_values("efficiency_score", ascending=False)
+show = show[["tool", "variant", "r_squared", "compute_time_s",
+             "peak_memory_mb", "efficiency_score"]].copy()
+show["r_squared"] = show["r_squared"].round(3)
+show["compute_time_s"] = show["compute_time_s"].round(2)
+show["peak_memory_mb"] = show["peak_memory_mb"].round(0).astype("Int64")
+show["efficiency_score"] = show["efficiency_score"].round(4)
+show_table(show)
+```
+
+Full Leeds results (all variants): [`results/leeds_results.csv`](results/leeds_results.csv)
+
+Key Leeds findings:
+
+- **Capacity-restrained assignment beats all-or-nothing on real counts**: aequilibrae's user-equilibrium variants (bfw/fw/msa) all outperform its AoN baseline on the same census OD demand, and the link-penalisation route-choice variant (a stochastic-assignment proxy for SUE) lands between the two. Tighter BFW convergence (rgap 1e-4) and a higher-congestion BPR parameterisation (alpha=0.5) both scored *worse* than the default BFW run.
+- **cityseer OD betweenness with real census OD is the accuracy leader**: the dimensionless impedance (speed-class-weighted) variant with centroid injection at radius 5 km achieves the highest log-log R² of any tool while running in well under a second.
+- **Zone dispersion (k=3/5/10 injection points) *hurt* on the clipped Leeds network** — the opposite of the full-region criticalissues finding. Investigation: 25 of 103 MSOA zones cross the 10 km clip boundary, and randomly dispersed injection points in those zones snap to distant boundary nodes (mean snap 843 m vs 536 m for centroids in boundary-crossing zones; 76/103 zones have worse mean dispersed snap than centroid snap). On the full (unclipped) network dispersion spreads demand realistically within the zone; on the clipped network it mostly amplifies boundary-clipping artefacts.
+- **flownet PSL with synthetic gravity OD does not reproduce real AADT**: the WorldPop×POI gravity OD (top-150 origins/destinations by weight) assigns flows with R² ≈ 0.004 against DfT counts (plain linear R², as computed by `bench_flownet.py` — the census-OD tools report log-log R²), far below the census-OD tools — synthetic demand, not the assignment algorithm, is the bottleneck. Note all six flownet rows are identical because `run_flownet_assignment.R` currently ignores the `beta`/`detour.max` arguments (they trigger an internal flownet error on this network; see the script header), so each row is an independent ~510 s rerun of the same assignment.
 
 ## Next Steps
 
@@ -452,6 +551,8 @@ display(Markdown(perf.to_markdown()))
 2. K-fold spatial cross-validation
 3. Additional goodness-of-fit metrics and centrality measures
 4. Test adding covariates: e.g. POI density, population, transit stops
+5. Validate cycling and driving modes once per-mode Telraam counts are available
+6. Compare flownet PSL assignment against the gravity/demand models across modes
 
 ## Reproducibility {.unnumbered}
 
@@ -486,7 +587,16 @@ dvc repro
 - **sDNA+**: Edit `scripts/bench_sdna.py`.
 - **Madina gravity**: Edit `scripts/run_madina_demand_experiments.py`.
 - **Cityseer demand**: Edit `scripts/run_cityseer_demand_experiments.py`.
+- **flownet**: Edit `scripts/bench_flownet.py` and `scripts/run_flownet_assignment.R`.
 - **Centrality**: Edit `scripts/bench_centrality.py`.
+- **Modes**: Declare walk/cycle/drive networks and sensors in `config/cities.yaml`;
+  every script accepts `--modes walk cycle drive` to scope a run.
+
+#### 5. Generate mode networks
+
+```bash
+PYTHONPATH=. python scripts/generate_networks.py --city leuven --modes cycle drive
+```
 
 ### Project Structure & Reproducibility
 

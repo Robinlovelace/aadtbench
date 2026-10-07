@@ -9,10 +9,11 @@ import json
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+import networkx as nx
 import psutil
 
 from madina.zonal import Zonal
-from scripts.config import get_path, get_city_config
+from scripts.config import get_path, get_city_config, get_mode_config
 from madina.una import parallel_betweenness
 from scripts.utils.helpers import compute_metrics, filter_stubs, match_sensors_to_edges
 
@@ -27,6 +28,7 @@ def mem_now_mb():
 def main():
     parser = argparse.ArgumentParser(description="Run a single betweenness experiment.")
     parser.add_argument("--city", default="leuven", help="City name")
+    parser.add_argument("--mode", default="walk", help="Travel mode (walk/cycle/drive)")
     parser.add_argument("--name", required=True, help="Variant name")
     parser.add_argument("--search-radius", type=float, required=True, help="Search radius")
     parser.add_argument("--detour-ratio", type=float, required=True, help="Detour ratio")
@@ -36,20 +38,39 @@ def main():
     args = parser.parse_args()
 
     cfg = get_city_config(args.city)
+    mc = get_mode_config(args.city, args.mode)
     crs_project = cfg["crs_project"]
+    sensors_value = mc.get("sensors_value", "avg_daily_pedestrians")
 
     # Load data layers
-    edges = gpd.read_file(get_path(cfg["edges_file"])).to_crs(crs_project)
-    telr = gpd.read_file(get_path(cfg["sensors_file"])).to_crs(crs_project)
-    origins = gpd.read_file(get_path(cfg["origins_file"])).to_crs(crs_project)
-    destinations = gpd.read_file(get_path(cfg["destinations_file"])).to_crs(crs_project)
+    edges = gpd.read_file(get_path(mc["network_file"])).to_crs(crs_project)
+    telr = gpd.read_file(get_path(mc["sensors_file"])).to_crs(crs_project)
+    origins = gpd.read_file(get_path(mc["origins_file"])).to_crs(crs_project)
+    destinations = gpd.read_file(get_path(mc["destinations_file"])).to_crs(crs_project)
+
+    # Keep only the largest weakly-connected component (by u/v node id): edge
+    # clipping (e.g. Leeds' 10km-buffer clip, which keeps/drops edges purely
+    # by centroid-in-buffer) can leave a handful of disconnected boundary
+    # fragments, which otherwise surface as orphaned nodes in madina's own
+    # topology builder and crash create_graph() with a KeyError.
+    if "u" in edges.columns and "v" in edges.columns:
+        comp_graph = nx.Graph()
+        comp_graph.add_edges_from(zip(edges["u"].astype(int), edges["v"].astype(int)))
+        largest_component = max(nx.connected_components(comp_graph), key=len)
+        n0 = len(edges)
+        edges = edges[edges["u"].astype(int).isin(largest_component)
+                      & edges["v"].astype(int).isin(largest_component)].reset_index(drop=True)
+        if len(edges) < n0:
+            print(f"  Dropped {n0 - len(edges)} edges outside the largest connected component", flush=True)
 
     t0 = time.time()
-    
+
     # Initialize Zonal and build network
     z = Zonal()
     z.load_layer(name='streets', source=edges)
-    z.create_street_network(source_layer='streets', weight_attribute='length')
+    # node_snapping_tolerance handles sub-metre floating-point mismatches
+    # between line endpoints that should coincide (same root cause as above).
+    z.create_street_network(source_layer='streets', weight_attribute='length', node_snapping_tolerance=0.1)
     z.load_layer(name='origins', source=origins)
     z.load_layer(name='destinations', source=destinations)
     z.insert_node(layer_name='origins', label='origin', weight_attribute='population')
@@ -83,7 +104,7 @@ def main():
     
     # Get observed and predicted values
     matched_idxs = non_stub_gdf.iloc[idxs[matched]].index
-    obs = telr.iloc[matched]['avg_daily_pedestrians'].values.astype(float)
+    obs = telr.iloc[matched][sensors_value].values.astype(float)
     pred = edge_gdf.loc[matched_idxs, 'betweenness'].values.astype(float)
     
     m = compute_metrics(obs, pred)
@@ -91,6 +112,7 @@ def main():
     
     res = {
         "tool": "madina_worldpop",
+        "mode": args.mode,
         "variant": args.name,
         "r_squared": m["r_squared"],
         "pearson_r": m["pearson_r"],

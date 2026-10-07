@@ -1,16 +1,115 @@
 cities:
   leuven:
     crs_project: 32631
-    edges_file: "data/leuven_walk_edges.gpkg"
-    sensors_file: "data/leuven_telraam_pedestrians_4326.geojson"
-    origins_file: "data/leuven_worldpop_origins.geojson"
-    destinations_file: "data/leuven_attractors.geojson"
-    worldpop_url: "https://data.worldpop.org/GIS/Population/Global_2000_2020/2020/BEL/bel_ppp_2020.tif"
-    worldpop_local_tif: "bel_ppp_2020.tif"
     bbox: [4.6798, 50.8600, 4.7301, 50.9001]
     overpass_bbox: [50.85, 4.66, 50.91, 4.74]
+    worldpop_url: "https://data.worldpop.org/GIS/Population/Global_2000_2020/2020/BEL/bel_ppp_2020.tif"
+    worldpop_local_tif: "bel_ppp_2020.tif"
+    od_file: "data/leuven_gravity_od.csv"
+    zones_file: "data/leuven_gravity_zones.geojson"
+    # Each mode has its own network, sensor validation set, and gravity
+    # origins/destinations. Walking is fully validated; cycling/driving
+    # networks are built (see scripts/generate_networks.py) and are ready
+    # for validation once per-mode Telraam counts are supplied.
+    modes:
+      walk:
+        network_file: "data/leuven_walk_edges.gpkg"
+        sensors_file: "data/leuven_telraam_pedestrians_4326.geojson"
+        sensors_value: "avg_daily_pedestrians"
+        origins_file: "data/leuven_worldpop_origins.geojson"
+        destinations_file: "data/leuven_attractors.geojson"
+        travel_speed: 1.4
+      cycle:
+        network_file: "data/leuven_cycle_edges.gpkg"
+        sensors_file: "data/leuven_telraam_cyclists_4326.geojson"
+        sensors_value: "avg_daily_cyclists"
+        origins_file: "data/leuven_worldpop_origins.geojson"
+        destinations_file: "data/leuven_attractors.geojson"
+        travel_speed: 4.2
+      drive:
+        network_file: "data/leuven_drive_edges.gpkg"
+        sensors_file: "data/leuven_telraam_cars_4326.geojson"
+        sensors_value: "avg_daily_cars"
+        origins_file: "data/leuven_worldpop_origins.geojson"
+        destinations_file: "data/leuven_attractors.geojson"
+        travel_speed: 8.3
+  leeds:
+    crs_project: 27700
+    # Leeds networks are built OFFLINE from a locally-cached geofabrik West
+    # Yorkshire extract (raw .osm.pbf read via GDAL's OSM driver) rather than
+    # an Overpass query, per scripts/generate_networks.py build_from_local_gpkg.
+    # USER DIRECTIVE (2026-08-07): all Leeds inputs are clipped to a 10 km
+    # buffer around central Leeds (53.8008, -1.5491) for tractability -- the
+    # full West Yorkshire network (754k walk edges) was too heavy. The
+    # networks in data/leeds_*_edges.gpkg are ALREADY clipped (centroid within
+    # buffer); network_bbox below scopes any rebuild to the same extent.
+    osm_gpkg: "/mnt/secondary/home/robin/github/robinlovelace/criticalissues/data/cache/osmextract/geofabrik_west-yorkshire-latest.osm.pbf"
+    bbox: [-1.7009, 53.7109, -1.3973, 53.8907]
+    network_bbox: [-1.7009, 53.7109, -1.3973, 53.8907]
+    overpass_bbox: [53.7109, -1.7009, 53.8907, -1.3973]
+    worldpop_url: "https://data.worldpop.org/GIS/Population/Global_2000_2020/2020/GBR/gbr_ppp_2020.tif"
+    worldpop_local_tif: "gbr_ppp_2020.tif"
+    # Demand for the dedicated cityseer OD benchmark (scripts/bench_cityseer_od.py)
+    # comes from real 2011 Census journey-to-work flows via pct::get_od() +
+    # pct::get_pct_zones(geography="msoa") for region "west-yorkshire" --
+    # NOT from the origins_file/destinations_file below (those feed the
+    # generic WorldPop-gravity tools: madina/flownet/cityseer_demand).
+    od_file: "data/leeds_pct_od.csv"
+    zones_file: "data/leeds_pct_zones_msoa.geojson"
+    # City-level defaults consumed by scripts/prepare_demand.py (WorldPop
+    # origins raster crop + OSM POI attractors) -- same paths as each mode's
+    # origins_file/destinations_file below, shared across walk/cycle/drive.
+    origins_file: "data/leeds_worldpop_origins.geojson"
+    destinations_file: "data/leeds_attractors.geojson"
+    # Leeds' 10km-buffer bbox is ~25x the area of Leuven's, so raw ~100m
+    # WorldPop cells would give ~25x more origin points too (78k vs 2.9k) --
+    # intractable for madina/flownet's per-origin path search. Aggregate 5x5
+    # blocks (~500m cells) for a origin density comparable to Leuven's.
+    origins_agg_factor: 5
+    # Ground truth: DfT annual average daily traffic (AADT) counts, West
+    # Yorkshire local authorities, downloaded directly from the open DfT
+    # road traffic statistics API (roadtraffic.dft.gov.uk) -- NOT reused from
+    # the criticalissues IoT/WYCA sensor copy (licensing unverified for that
+    # copy; DfT AADT alone is open (OGL) and sufficient ground truth).
+    modes:
+      walk:
+        network_file: "data/leeds_walk_edges.gpkg"
+        sensors_file: "data/leeds_telraam_pedestrians_4326.geojson"
+        sensors_value: "avg_daily_pedestrians"
+        origins_file: "data/leeds_worldpop_origins.geojson"
+        destinations_file: "data/leeds_attractors.geojson"
+        travel_speed: 1.4
+      cycle:
+        network_file: "data/leeds_cycle_edges.gpkg"
+        sensors_file: "data/leeds_telraam_cyclists_4326.geojson"
+        sensors_value: "avg_daily_cyclists"
+        origins_file: "data/leeds_worldpop_origins.geojson"
+        destinations_file: "data/leeds_attractors.geojson"
+        travel_speed: 4.2
+      drive:
+        network_file: "data/leeds_drive_edges.gpkg"
+        sensors_file: "data/leeds_dft_aadt_27700.geojson"
+        sensors_value: "aadt_all_motor_vehicles"
+        origins_file: "data/leeds_worldpop_origins.geojson"
+        destinations_file: "data/leeds_attractors.geojson"
+        travel_speed: 8.3
   oxford:
     crs_project: 27700
-    edges_file: "data/oxford_walk_edges.gpkg"
-    sensors_file: "data/telraam_pedestrians_27700.geojson"
-    # To be populated when demand data for Oxford is added
+    # Oxford ships pre-built walk + drive networks (data/oxford_walk.graphml,
+    # data/oxford_drive.graphml). Walking sensors are configured; driving can
+    # be validated once per-mode counts are available.
+    modes:
+      walk:
+        network_file: "data/oxford_walk.graphml"
+        sensors_file: "data/telraam_pedestrians_27700.geojson"
+        sensors_value: "avg_daily_pedestrians"
+        origins_file: "data/oxford_worldpop_origins.geojson"
+        destinations_file: "data/oxford_attractors.geojson"
+        travel_speed: 1.4
+      drive:
+        network_file: "data/oxford_drive.graphml"
+        sensors_file: "data/oxford_telraam_cars_27700.geojson"
+        sensors_value: "avg_daily_cars"
+        origins_file: "data/oxford_worldpop_origins.geojson"
+        destinations_file: "data/oxford_attractors.geojson"
+        travel_speed: 8.3

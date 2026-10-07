@@ -9,6 +9,17 @@ stages:
       - data/leuven_worldpop_origins.geojson
       - data/leuven_attractors.geojson
 
+  generate_networks:
+    cmd: PYTHONPATH=. python scripts/generate_networks.py --city leuven
+    deps:
+      - scripts/generate_networks.py
+      - scripts/config.py
+      - config/cities.yaml
+      - data/leuven_walk_edges.gpkg
+    outs:
+      - data/leuven_cycle_edges.gpkg
+      - data/leuven_drive_edges.gpkg
+
   bench_centrality:
     cmd: PYTHONPATH=. python scripts/bench_centrality.py --city leuven
     deps:
@@ -17,18 +28,22 @@ stages:
       - config/cities.yaml
       - scripts/utils/helpers.py
       - data/leuven_walk_edges.gpkg
+      - data/leuven_cycle_edges.gpkg
+      - data/leuven_drive_edges.gpkg
       - data/leuven_telraam_pedestrians_4326.geojson
     outs:
       - results/leuven_centrality_results.csv
 
   bench_cityseer_demand:
-    cmd: PYTHONPATH=. python scripts/run_cityseer_demand_experiments.py
+    cmd: PYTHONPATH=. python scripts/run_cityseer_demand_experiments.py --city leuven
     deps:
       - scripts/run_cityseer_demand_experiments.py
       - scripts/config.py
       - config/cities.yaml
       - scripts/utils/helpers.py
       - data/leuven_walk_edges.gpkg
+      - data/leuven_cycle_edges.gpkg
+      - data/leuven_drive_edges.gpkg
       - data/leuven_telraam_pedestrians_4326.geojson
       - data/leuven_worldpop_origins.geojson
       - data/leuven_attractors.geojson
@@ -46,6 +61,8 @@ stages:
       - config/cities.yaml
       - scripts/utils/helpers.py
       - data/leuven_walk_edges.gpkg
+      - data/leuven_cycle_edges.gpkg
+      - data/leuven_drive_edges.gpkg
       - data/leuven_telraam_pedestrians_4326.geojson
       - data/leuven_worldpop_origins.geojson
       - data/leuven_attractors.geojson
@@ -53,17 +70,192 @@ stages:
       - results/leuven_madina_worldpop_results.csv
 
   bench_sdna:
-    cmd: PYTHONPATH=. python scripts/bench_sdna.py
+    cmd: PYTHONPATH=. python scripts/bench_sdna.py --city leuven
     deps:
       - scripts/bench_sdna.py
       - scripts/config.py
       - config/cities.yaml
       - scripts/utils/helpers.py
       - data/leuven_walk_edges.gpkg
+      - data/leuven_cycle_edges.gpkg
+      - data/leuven_drive_edges.gpkg
       - data/leuven_telraam_pedestrians_4326.geojson
     outs:
-      - results/sdna_results.csv
-      - results/sdna_best_predictions.csv
+      - results/leuven_sdna_results.csv
+      - results/leuven_sdna_best_predictions.csv
+
+  bench_flownet:
+    cmd: PYTHONPATH=. python scripts/bench_flownet.py --city leuven
+    deps:
+      - scripts/bench_flownet.py
+      - scripts/run_flownet_assignment.R
+      - scripts/config.py
+      - config/cities.yaml
+      - scripts/csv_utils.py
+      - data/leuven_walk_edges.gpkg
+      - data/leuven_cycle_edges.gpkg
+      - data/leuven_drive_edges.gpkg
+      - data/leuven_telraam_pedestrians_4326.geojson
+      - data/leuven_worldpop_origins.geojson
+      - data/leuven_attractors.geojson
+    outs:
+      - results/leuven_flownet_results.csv
+
+  prepare_leeds_ground_truth:
+    cmd: PYTHONPATH=. python scripts/prepare_leeds_ground_truth.py
+    deps:
+      - scripts/prepare_leeds_ground_truth.py
+      - scripts/fetch_pct_od.R
+    outs:
+      - data/leeds_dft_aadt_27700.geojson:
+          cache: false
+      - data/leeds_pct_od.csv:
+          cache: false
+      - data/leeds_pct_zones_msoa.geojson:
+          cache: false
+
+  generate_networks_leeds:
+    cmd: PYTHONPATH=. python scripts/generate_networks.py --city leeds
+    deps:
+      - scripts/generate_networks.py
+      - scripts/config.py
+      - config/cities.yaml
+    outs:
+      - data/leeds_walk_edges.gpkg:
+          cache: false
+      - data/leeds_cycle_edges.gpkg:
+          cache: false
+      - data/leeds_drive_edges.gpkg:
+          cache: false
+
+  # User directive (2026-08-07): all Leeds inputs are clipped to a 10 km
+  # buffer around central Leeds (full West Yorkshire networks too heavy).
+  # generate_networks.py builds within network_bbox (the buffer's bounding
+  # box); this stage applies the final circular-buffer clip IN PLACE to the
+  # networks plus the DfT AADT points and the PCT zones/OD pairs, so `dvc
+  # repro` reproduces the committed clipped inputs. Side-effect stage (no
+  # outs): the clipped files remain the outs of their producer stages.
+  clip_leeds_inputs:
+    cmd: PYTHONPATH=. python scripts/clip_leeds_inputs.py
+    deps:
+      - scripts/clip_leeds_inputs.py
+      - data/leeds_walk_edges.gpkg
+      - data/leeds_cycle_edges.gpkg
+      - data/leeds_drive_edges.gpkg
+      - data/leeds_dft_aadt_27700.geojson
+      - data/leeds_pct_zones_msoa.geojson
+      - data/leeds_pct_od.csv
+
+  prepare_demand_leeds:
+    cmd: PYTHONPATH=. python scripts/prepare_demand.py --city leeds
+    deps:
+      - scripts/prepare_demand.py
+      - scripts/config.py
+      - config/cities.yaml
+    outs:
+      - data/leeds_worldpop_origins.geojson:
+          cache: false
+      - data/leeds_attractors.geojson:
+          cache: false
+
+  bench_centrality_leeds:
+    cmd: PYTHONPATH=. python scripts/bench_centrality.py --city leeds
+    deps:
+      - scripts/bench_centrality.py
+      - scripts/config.py
+      - config/cities.yaml
+      - scripts/csv_utils.py
+      - scripts/utils/helpers.py
+      - data/leeds_drive_edges.gpkg
+      - data/leeds_dft_aadt_27700.geojson
+    outs:
+      - results/leeds_centrality_results.csv
+
+  bench_cityseer_od_leeds:
+    cmd: PYTHONPATH=. python scripts/bench_cityseer_od.py --city leeds
+    deps:
+      - scripts/bench_cityseer_od.py
+      - scripts/config.py
+      - config/cities.yaml
+      - scripts/csv_utils.py
+      - scripts/utils/helpers.py
+      - data/leeds_drive_edges.gpkg
+      - data/leeds_dft_aadt_27700.geojson
+      - data/leeds_pct_od.csv
+      - data/leeds_pct_zones_msoa.geojson
+    outs:
+      - results/leeds_cityseer_od_results.csv
+
+  bench_aequilibrae_leeds:
+    cmd: PYTHONPATH=. python scripts/bench_aequilibrae.py --city leeds
+    deps:
+      - scripts/bench_aequilibrae.py
+      - scripts/config.py
+      - config/cities.yaml
+      - scripts/csv_utils.py
+      - scripts/utils/helpers.py
+      - data/leeds_drive_edges.gpkg
+      - data/leeds_dft_aadt_27700.geojson
+      - data/leeds_pct_od.csv
+      - data/leeds_pct_zones_msoa.geojson
+    outs:
+      - results/leeds_aequilibrae_results.csv
+
+  bench_madina_gravity_leeds:
+    cmd: PYTHONPATH=. python scripts/run_madina_demand_experiments.py --city leeds
+    deps:
+      - scripts/run_madina_demand_experiments.py
+      - scripts/run_single_experiment.py
+      - scripts/config.py
+      - config/cities.yaml
+      - scripts/utils/helpers.py
+      - data/leeds_drive_edges.gpkg
+      - data/leeds_dft_aadt_27700.geojson
+      - data/leeds_worldpop_origins.geojson
+      - data/leeds_attractors.geojson
+    outs:
+      - results/leeds_madina_worldpop_results.csv
+
+  bench_sdna_leeds:
+    cmd: PYTHONPATH=. python scripts/bench_sdna.py --city leeds
+    deps:
+      - scripts/bench_sdna.py
+      - scripts/config.py
+      - config/cities.yaml
+      - scripts/utils/helpers.py
+      - data/leeds_drive_edges.gpkg
+      - data/leeds_dft_aadt_27700.geojson
+    outs:
+      - results/leeds_sdna_results.csv
+
+  bench_flownet_leeds:
+    cmd: PYTHONPATH=. python scripts/bench_flownet.py --city leeds
+    deps:
+      - scripts/bench_flownet.py
+      - scripts/run_flownet_assignment.R
+      - scripts/config.py
+      - config/cities.yaml
+      - scripts/csv_utils.py
+      - data/leeds_drive_edges.gpkg
+      - data/leeds_dft_aadt_27700.geojson
+      - data/leeds_worldpop_origins.geojson
+      - data/leeds_attractors.geojson
+    outs:
+      - results/leeds_flownet_results.csv
+
+  merge_results_leeds:
+    cmd: PYTHONPATH=. python scripts/merge_all.py --city leeds
+    deps:
+      - scripts/merge_all.py
+      - scripts/csv_utils.py
+      - results/leeds_centrality_results.csv
+      - results/leeds_cityseer_od_results.csv
+      - results/leeds_aequilibrae_results.csv
+      - results/leeds_madina_worldpop_results.csv
+      - results/leeds_flownet_results.csv
+      - results/leeds_sdna_results.csv
+    outs:
+      - results/leeds_results.csv
 
   generate_interactive_map:
     cmd: PYTHONPATH=. python scripts/generate_interactive_map.py --city leuven
@@ -79,13 +271,15 @@ stages:
       - results/leuven_best_predictions.csv
 
   merge_results:
-    cmd: PYTHONPATH=. python scripts/merge_all.py
+    cmd: PYTHONPATH=. python scripts/merge_all.py --city leuven
     deps:
       - scripts/merge_all.py
+      - scripts/csv_utils.py
       - results/leuven_centrality_results.csv
       - results/leuven_cityseer_demand_results.csv
       - results/leuven_madina_worldpop_results.csv
-      - results/sdna_results.csv
+      - results/leuven_flownet_results.csv
+      - results/leuven_sdna_results.csv
     outs:
       - results/leuven_results.csv
 
@@ -99,6 +293,9 @@ stages:
       - results/leuven_best_predictions.csv
       - results/leuven_cityseer_demand_best_predictions.csv
       - results/sdna_best_predictions.csv
+    outs:
+      - results/leuven_input_datasets.png
+      - results/fig4_tool_panels.png
 
   render_report:
     cmd: quarto render README.qmd --to gfm
@@ -107,6 +304,7 @@ stages:
       - results/leuven_input_datasets.png
       - results/fig4_tool_panels.png
       - results/leuven_results.csv
+      - results/leeds_results.csv
       - appendix-other-tools.qmd
     outs:
       - README.md:

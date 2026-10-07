@@ -44,39 +44,69 @@ def download_worldpop(url, local_filename):
     print("\nDownload complete.")
     return local_path
 
-def process_origins(tif_path, bbox, output_path):
+def process_origins(tif_path, bbox, output_path, agg_factor=1):
+    """Extract non-zero WorldPop population cells within bbox as points.
+
+    agg_factor > 1 sums population over agg_factor x agg_factor blocks of
+    raw ~100m WorldPop cells before emitting a point per block (at the block
+    centroid) -- a standard resolution-coarsening step for bounding boxes
+    large enough that per-cell (~100m) origin injection is intractable for
+    the downstream gravity-model tools (e.g. Leeds' 10km-buffer bbox is ~25x
+    the area of Leuven's, so the raw cell count would be ~25x higher too).
+    """
     print("Processing WorldPop population origins...")
-    
+
     with rasterio.open(tif_path) as src:
         left, bottom, right, top = bbox
         window = from_bounds(left, bottom, right, top, transform=src.transform)
         data = src.read(1, window=window)
         win_transform = src.window_transform(window)
-        
+        nodata = src.nodata
+
+        if agg_factor > 1:
+            rows, cols = data.shape
+            pad_r = (-rows) % agg_factor
+            pad_c = (-cols) % agg_factor
+            valid = (data != nodata) & (data > 0)
+            data_clean = np.where(valid, data, 0.0)
+            data_pad = np.pad(data_clean, ((0, pad_r), (0, pad_c)))
+            block_sum = data_pad.reshape(
+                data_pad.shape[0] // agg_factor, agg_factor,
+                data_pad.shape[1] // agg_factor, agg_factor,
+            ).sum(axis=(1, 3))
+            data = block_sum
+            nodata = 0.0
+            # Block (r, c) covers raw cells [r*f:(r+1)*f, c*f:(c+1)*f]; use its
+            # centroid (r*f + f/2, c*f + f/2) as the representative point.
+
         points = []
         rows, cols = data.shape
         for r in range(rows):
             for c in range(cols):
                 val = data[r, c]
-                if val > 0 and val != src.nodata:
-                    lon, lat = win_transform * (c + 0.5, r + 0.5)
+                if val > 0 and val != nodata:
+                    if agg_factor > 1:
+                        lon, lat = win_transform * (c * agg_factor + agg_factor / 2, r * agg_factor + agg_factor / 2)
+                    else:
+                        lon, lat = win_transform * (c + 0.5, r + 0.5)
                     points.append({
                         "geometry": Point(lon, lat),
                         "properties": {"population": float(val)}
                     })
-        
+
         if not points:
             print("ERROR: No population points extracted!")
             sys.exit(1)
-            
+
         gdf = gpd.GeoDataFrame(
             [p["properties"] for p in points],
             geometry=[p["geometry"] for p in points],
             crs="EPSG:4326"
         )
-        
+
         gdf.to_file(output_path, driver="GeoJSON")
-        print(f"Saved {len(gdf)} population origin cells to {output_path}")
+        print(f"Saved {len(gdf)} population origin cells to {output_path}"
+              + (f" (aggregated {agg_factor}x{agg_factor})" if agg_factor > 1 else ""))
 
 def fetch_attractors(overpass_bbox, output_path, city_name):
     print(f"Fetching {city_name} trip attractors from OSM Overpass API...")
@@ -224,7 +254,7 @@ def main():
     # Check if WorldPop URL exists for this city
     if "worldpop_url" in cfg and "worldpop_local_tif" in cfg:
         tif_path = download_worldpop(cfg["worldpop_url"], cfg["worldpop_local_tif"])
-        process_origins(tif_path, cfg["bbox"], origins_file)
+        process_origins(tif_path, cfg["bbox"], origins_file, agg_factor=cfg.get("origins_agg_factor", 1))
     else:
         print(f"WorldPop URL not configured for {city}, skipping origins preparation.")
         

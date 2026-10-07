@@ -330,8 +330,8 @@ stages:
     deps:
     - path: README.qmd
       hash: md5
-      md5: 8142e4b2c1bf7eebebf9654c8eb9473b
-      size: 20952
+      md5: 3e8950a2be11eaf5bc1d762ee6dd77c9
+      size: 21268
     - path: appendix-other-tools.qmd
       hash: md5
       md5: 25d1f5c1cba71c7b573bca8e43c93e13
@@ -346,17 +346,17 @@ stages:
       size: 5685408
     - path: results/leuven_results.csv
       hash: md5
-      md5: 4545f5a28b5b46baa86b898e0aa055db
-      size: 4921
+      md5: 61f0344d292df5b111f4eb9a634b51ff
+      size: 5290
     outs:
     - path: README.md
       hash: md5
-      md5: 08509be74a3cb6c6a79cad1d56a603bb
-      size: 14876
+      md5: cb954a34e7b6f0bb21bc218bc7890d38
+      size: 14369
     - path: results/fig1_barplot.png
       hash: md5
-      md5: 6926919482186f52ea788dcc162f7fa2
-      size: 94197
+      md5: 652186c1f9562ea5d799ab235c71f83b
+      size: 105601
     - path: results/fig_gravity_barplot.png
       hash: md5
       md5: f7b6107c446f8630b2bfab1369767db8
@@ -455,8 +455,8 @@ stages:
       size: 1177
     - path: results/sdna_results.csv
       hash: md5
-      md5: 476083222c368bb52c72e6b392b70ab4
-      size: 1820
+      md5: fd88d02034b6332b363447489b838e59
+      size: 2202
     - path: scripts/merge_all.py
       hash: md5
       md5: 35415ee7e14b122cf10b8f113d67ac54
@@ -465,5 +465,5 @@ stages:
     outs:
     - path: results/leuven_results.csv
       hash: md5
-      md5: 4545f5a28b5b46baa86b898e0aa055db
-      size: 4921
+      md5: 61f0344d292df5b111f4eb9a634b51ff
+      size: 5290

@@ -24,6 +24,34 @@ def compute_metrics(observed, predicted):
         "spearman_r": float(sr)
     }
 
+def compute_metrics_loglog(observed, predicted):
+    """Log-log variant of compute_metrics: R2/Pearson/Spearman computed on
+    log1p-transformed observed & predicted values. Appropriate for ground
+    truth spanning orders of magnitude (e.g. DfT AADT: ~100 to ~150,000
+    vehicles/day), where linear R2 is dominated by the handful of largest
+    values. Spearman is rank-based so it is identical under a log transform
+    and is included only for consistency with compute_metrics' output shape.
+    """
+    obs = np.array(observed, dtype=float)
+    pred = np.array(predicted, dtype=float)
+    mask = ~(np.isnan(obs) | np.isnan(pred)) & (obs >= 0) & (pred >= 0)
+    obs, pred = obs[mask], pred[mask]
+    n = len(obs)
+    if n < 3 or np.all(pred == pred[0]):
+        return {"n": n, "r_squared": np.nan, "pearson_r": np.nan, "spearman_r": np.nan}
+
+    log_obs, log_pred = np.log1p(obs), np.log1p(pred)
+    r2 = stats.linregress(log_pred, log_obs).rvalue ** 2
+    pr, _ = stats.pearsonr(log_obs, log_pred)
+    sr, _ = stats.spearmanr(obs, pred)
+
+    return {
+        "n": n,
+        "r_squared": float(r2),
+        "pearson_r": float(pr),
+        "spearman_r": float(sr)
+    }
+
 def filter_stubs(edge_gdf, graph, length_col="length", start_col="start", end_col="end", min_length=15.0):
     """Identify and filter stubs (degree-1 nodes or short edges) in the network."""
     degree = dict(graph.degree())
