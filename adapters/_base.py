@@ -274,7 +274,8 @@ class Adapter:
     # "time", "radius_or_decay": "radius 5000 m" or "exp decay 1 km",
     # "weighting": "none" or "population" or "land use" or "od",
     # "congestion": "none" or "user equilibrium"}. A variant may override them
-    # through an "options" entry in its parameters.
+    # through an "options" entry in its parameters. A variant may also set
+    # "family" in its parameters, for tools that offer measures of two families.
     options: dict = {}
     tiers: tuple[str, ...] = TIERS
     modes: tuple[str, ...] = MODES
@@ -328,7 +329,7 @@ def run_adapter(adapter: Adapter, case_dir: Path, tier: str, modes: list[str], o
     record = {
         "case_id": manifest["id"], "case_version": str(manifest["version"]),
         "tool": adapter.tool, "tool_version": adapter.tool_version(), "variant": variant,
-        "family": adapter.family,
+        "family": p.get("family", adapter.family),
         "options": {**{k: "unspecified" for k in OPTION_KEYS}, **adapter.options,
                     **p.get("options", {})},
         "input_tier": tier, "modes": run_modes, "parameters": p, "threads": threads,

@@ -30,3 +30,6 @@ tools:
     variant: default
   aequilibrae:
     variant: aon
+  sdna:
+    # Angular betweenness (flow family). The reach family NQPD variants are covered by the unit test.
+    variant: betweenness_angular
