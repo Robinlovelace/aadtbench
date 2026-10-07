@@ -248,6 +248,8 @@ Pedestrian flow modelling is central to walkability analysis, transport planning
 2. **Gravity / Flow Models** — Trip distribution proportional to attractor weight and distance.
 3. **Spatial Network Analysis** — Graph-based metrics within a GIS framework.
 
+<!-- These are overlapping approaches. Centrality and betweenness are both forms of SNA. Betweenness is a flow model. Gravity is also a form of reach (a form of centrality). Gravity uses a weighting that continuously varies inversely with distance rather than a step function (i.e. 1 below the radius and 0 above the radius). -->
+
 **cityseer** [@simons2022cityseer] implements high-performance centrality in Rust, with shortest-path and angular analysis.
 
 **madina** [@sevtsuk2025madina] implements Urban Network Analysis (UNA) with flow simulation, decay functions, and detour penalties.
@@ -305,6 +307,8 @@ WorldPop population data (100m grid, total population 171,574) serves as origin 
 ## Methods
 
 ### Benchmark Design
+
+*the section below doesn't really compare like with like, either for R^2 or for performance. e.g. comparing closeness from sdna+ with betweenness from other tools; using different options (angular vs euclidean vs anything else) or weightings (population, land use). I think it would be better to structure by centrality measure, rather than by tool. Additionally FYI, sDNA does have a gravity reach model - it's labelled NQPD (network quantity penalized by distance) - CC*
 
 **cityseer experiments**:
 
