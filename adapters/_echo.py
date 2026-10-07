@@ -21,6 +21,11 @@ class Echo(Adapter):
     variants = {"default": {"sleep": 0}}
 
     def predict(self, ctx: RunContext) -> pd.DataFrame:
+        if ctx.params.get("child"):  # a child process, as some tools start, to test the timeout kill
+            import subprocess
+            import sys
+            child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+            (ctx.out_dir / "child.pid").write_text(str(child.pid))
         time.sleep(float(ctx.params.get("sleep", 0)))
         seg = ctx.network["segment_id"].astype(str)
         known = pd.Series(dtype=float)

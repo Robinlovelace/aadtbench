@@ -2,4 +2,4 @@ case_id,mode,track,tool,variant,input_tier,n_sites,rho,log_r2,coverage
 oxford-v1,car,uncalibrated,sdna,nqpd_angular,T0_network,292,0.013,-0.525,1.0
 oxford-v1,cycling,uncalibrated,sdna,nqpd_angular,T0_network,240,0.478,0.316,1.0
 oxford-v1,heavy,uncalibrated,sdna,nqpd_angular,T0_network,290,-0.053,-0.496,1.0
-oxford-v1,walking,uncalibrated,sdna,nqpd_angular,T0_network,124,0.502,0.259,1.0
+oxford-v1,walking,uncalibrated,sdna,nqpd_euclidean,T0_network,124,0.603,0.333,1.0

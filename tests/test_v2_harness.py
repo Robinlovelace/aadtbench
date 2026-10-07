@@ -160,13 +160,20 @@ class RunAllTest(unittest.TestCase):
     def test_time_limit_records_timeout_as_na(self):
         from benchmark.run_all import main
         res = self.tmp / "results"
-        args = ["--cases", "synth-a", "--tools", "_echo", "--tier", "T0_network", "--params", '{"sleep": 5}',
-                "--time-limit", "1", "--cases-root", str(self.tmp / "cases"), "--results-dir", str(res)]
+        args = ["--cases", "synth-a", "--tools", "_echo", "--tier", "T0_network", "--params",
+                '{"sleep": 30, "child": true}', "--time-limit", "3",
+                "--cases-root", str(self.tmp / "cases"), "--results-dir", str(res)]
         self.assertEqual(main(args), 0)
+        pid = int(next(res.glob("runs/synth-a/_echo/*/child.pid")).read_text())
+        import os
+        import time
+        time.sleep(0.5)
+        with self.assertRaises(ProcessLookupError):  # the tool's child process was killed too
+            os.kill(pid, 0)
         lb = pd.read_csv(res / "leaderboard.csv")
         self.assertEqual(set(lb["status"]), {"timeout"})
         self.assertTrue(lb["rho"].isna().all())
-        self.assertEqual(set(lb["time_limit_s"]), {1.0})
+        self.assertEqual(set(lb["time_limit_s"]), {3.0})
 
     def test_tool_calibrated_cannot_see_held_out_counts(self):
         from benchmark.run_all import main
