@@ -19,3 +19,10 @@ cases/*/*
 paper/index.html
 paper/index_files/
 paper/.quarto/
+_site/
+.quarto/
+/index_files/
+_freeze/
+
+/.quarto/
+**/*.quarto_ipynb
