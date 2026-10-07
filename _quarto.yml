@@ -1,0 +1,43 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - index.qmd
+    - results.qmd
+    - paper/index.qmd
+    - BENCHMARK.md
+    - IMPLEMENTATIONS.md
+  resources:
+    - leaderboard-summary.csv
+
+execute:
+  freeze: auto
+
+website:
+  title: "AADTBench"
+  site-url: https://robinlovelace.net/aadtbench
+  repo-url: https://github.com/Robinlovelace/aadtbench
+  repo-branch: main
+  repo-actions: [edit, issue]
+  navbar:
+    background: primary
+    search: true
+    left:
+      - text: "Home"
+        href: index.qmd
+      - text: "Paper"
+        href: paper/index.qmd
+      - text: "Specification"
+        href: BENCHMARK.md
+      - text: "Add a tool"
+        href: IMPLEMENTATIONS.md
+      - text: "Results"
+        href: results.qmd
+    right:
+      - icon: github
+        href: https://github.com/Robinlovelace/aadtbench
+        aria-label: GitHub
+
+format:
+  html:
+    theme: cosmo

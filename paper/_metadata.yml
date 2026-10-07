@@ -1,0 +1,13 @@
+# Paper format settings, picked up by the site build (root _quarto.yml).
+# The html format is the paper page. The docx format is linked from it under
+# "Other Formats" (https://quarto.org/docs/websites/website-navigation.html#other-formats).
+bibliography: references.bib
+
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+  docx:
+    toc: true
+    number-sections: false
