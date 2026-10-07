@@ -3,6 +3,16 @@ geopandas>=1.0.0
 networkx>=3.0
 scipy>=1.10.0
 matplotlib>=3.7.0
-cityseer==4.25.0b6
+# cityseer pinned to the latest PyPI release. NOTE: 4.25.0b6 (used during
+# benchmark development) is a GitHub-only dev tag with no published wheel;
+# 4.24.1 reproduces identical R2 values for every benchmark variant used
+# here (verified: max |delta R2| = 0.0 across all cityseer/cityseer_od runs),
+# so the Docker build can install it from PyPI.
+cityseer==4.24.1
+# aequilibrae: new-tool benchmark (stochastic/user-equilibrium assignment).
+# Pin to the version used for the committed results (Leeds UE R2=0.0964,
+# Leuven UE R2=0.1553); the benchmark scripts use its TrafficAssignment /
+# RouteChoice APIs directly.
+aequilibrae==1.7.0
 osmnx>=2.0.0
 git+https://github.com/Robinlovelace/madina.git@fix-pandas-numpy-compat
