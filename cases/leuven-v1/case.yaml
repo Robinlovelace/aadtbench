@@ -1,0 +1,42 @@
+id: leuven-v1
+version: 1.0.0
+benchmark_version: 0.2.0
+title: Leuven multimode flow from Telraam sensors (non-commercial)
+place: Leuven
+country: BEL
+crs: EPSG:31370
+centre_lon: 4.701
+centre_lat: 50.879
+centre_x: 173382.6
+centre_y: 174345.2
+radius_m: 15000.0
+modes:
+- walking
+- cycling
+- car
+licence_class: non_commercial
+attribution: 'Source: Telraam (telraam.net), CC BY-NC 4.0'
+sources:
+- source: telraam
+  licence: CC-BY-NC-4.0
+  licence_text: CC BY-NC 4.0
+  method: short_period_7day
+  n_sites: 112
+network_licence: ODbL-1.0 (OpenStreetMap)
+split:
+  group_cell_m: 3000.0
+  folds: 5
+  seed: 42
+input_tiers:
+- T0_network
+- T1_open_covariates
+- T2_synthetic_od
+files:
+- crosswalk.csv
+- inputs/od_synthetic.parquet
+- inputs/pois.parquet
+- inputs/population.parquet
+- inputs/zones.parquet
+- network.parquet
+- sites.csv
+data_size_bytes: 1392308
