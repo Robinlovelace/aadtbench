@@ -1,6 +1,6 @@
 id: melbourne-v1
-version: 1.0.0
-benchmark_version: 0.2.0
+version: 2.0.0
+benchmark_version: 0.3.0
 title: Melbourne multimode annual average daily flow
 place: Melbourne
 country: AUS
@@ -17,14 +17,16 @@ modes:
 sources:
 - source: melbourne_ped
   licence: CC-BY-4.0
-  licence_text: CC-BY-4.0
-  method: continuous
-  n_sites: 100
+  url: https://data.melbourne.vic.gov.au
+  reviewed: 2026-10-07, CC BY 4.0 as recorded with the data, publisher page check
+    pending
+  n_rows: 100
 - source: vic_dtp_aadt
   licence: CC-BY-4.0
-  licence_text: CC-BY-4.0
-  method: short_period
-  n_sites: 7467
+  url: https://discover.data.vic.gov.au
+  reviewed: 2026-10-07, CC BY 4.0 as recorded with the data, publisher page check
+    pending
+  n_rows: 4113
 excluded_sources: {}
 network_licence: ODbL-1.0 (OpenStreetMap)
 split:
@@ -43,4 +45,14 @@ files:
 - inputs/zones.parquet
 - network.parquet
 - sites.csv
-data_size_bytes: 21030210
+- source.osm.pbf
+data_size_bytes: 55280258
+network:
+  source_extract: null
+  source_timestamp: null
+  clipped_sha256: 14d339fe47b789f5a9b95db90538c9c0f9baec596172857ba1350f2766ba0b00
+  links: 484294
+  km: 21438.4
+  components: 971
+  largest_component_share: 0.9956
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'

@@ -1,6 +1,6 @@
 id: leuven-v1
-version: 1.0.0
-benchmark_version: 0.2.0
+version: 2.0.0
+benchmark_version: 0.3.0
 title: Leuven multimode flow from Telraam sensors (non-commercial)
 place: Leuven
 country: BEL
@@ -19,9 +19,10 @@ attribution: 'Source: Telraam (telraam.net), CC BY-NC 4.0'
 sources:
 - source: telraam
   licence: CC-BY-NC-4.0
-  licence_text: CC BY-NC 4.0
-  method: short_period_7day
-  n_sites: 112
+  url: https://faq.telraam.net/article/9/telraam-data-license-what-can-i-do-with-the-telraam-data
+  reviewed: 2026-10-07, CC BY-NC 4.0 per Telraam FAQ, accepted for this non-commercial
+    benchmark by Robin Lovelace
+  n_rows: 112
 network_licence: ODbL-1.0 (OpenStreetMap)
 split:
   group_cell_m: 3000.0
@@ -39,4 +40,15 @@ files:
 - inputs/zones.parquet
 - network.parquet
 - sites.csv
-data_size_bytes: 1392308
+- source.osm.pbf
+data_size_bytes: 16327337
+excluded_sources: {}
+network:
+  source_extract: null
+  source_timestamp: null
+  clipped_sha256: 903e1076897d7f69246364ba3f8d46204d6e43d49f355fd8b862b6d516cc6d88
+  links: 110159
+  km: 7252.9
+  components: 247
+  largest_component_share: 0.9944
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'

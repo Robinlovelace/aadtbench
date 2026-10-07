@@ -1,65 +1,57 @@
 id: leeds-v1
-version: 0.2.0
-title: Leeds two-way motor-vehicle AADT
-target:
-  quantity: aadt
-  directionality: two_way
-  vehicle_definition: all_motor_vehicles
-  year: 2024
-network:
-  source: data/leeds_drive_edges.gpkg
-  crs: EPSG:27700
-  crs_epsg: 27700
-observations:
-  source: data/leeds_dft_aadt_27700.geojson
-  count_id_field: count_point_id
-  count_value_field: aadt_all_motor_vehicles
-  year_field: year
-  max_distance_m: 200
-observation_matching:
-  method: nearest_two_way_segment_geometry
-  max_distance_m: 200
-files:
-- crosswalk.csv
-- inputs/od_observed.parquet
-- inputs/od_synthetic.parquet
-- inputs/pois.parquet
-- inputs/population.parquet
-- inputs/zones.parquet
-- inputs/zones_observed.parquet
-- network.parquet
-- sites.csv
-input_tiers:
-- T0_network
-- T1_open_covariates
-- T2_synthetic_od
-- T3_observed_od
-demand:
-  synthetic_od_file: data/leeds_gravity_od.csv
-  synthetic_zones_file: data/leeds_gravity_zones.geojson
-  observed_od_file: data/leeds_pct_od.csv
-  observed_zones_file: data/leeds_pct_zones_msoa.geojson
-scoring:
-  command: PYTHONPATH=. python benchmark/score_aadt.py --case cases/leeds-v1 --predictions
-    <predictions.csv>
-benchmark_version: 0.2.0
-layout: v0.2
+version: 2.0.0
+benchmark_version: 0.3.0
+title: Leeds multimode annual average daily flow (DfT and Leeds City Council footfall
+  cameras)
+place: Leeds
+country: GBR
 crs: EPSG:27700
 centre_lon: -1.5437941
 centre_lat: 53.7974185
 radius_m: 15000.0
 modes:
-- motor
-sources:
-- source: dft_aadf
-  licence: OGL-UK-3.0
-  licence_text: DfT road traffic statistics AADF, OGL v3
-  method: aadf_published
-  n_sites: 197
-network_licence: ODbL-1.0 (OpenStreetMap)
+- walking
+- cycling
+- car
+- heavy
 split:
   group_cell_m: 3000.0
   folds: 5
   seed: 42
-  legacy: legacy_split column in sites.csv, 49 held out
-data_size_bytes: 3740398
+input_tiers:
+- T0_network
+- T1_open_covariates
+- T2_synthetic_od
+note: New definition in v0.3.0. Replaces the v0.2.0 leeds-v1 (motor only, 49-link
+  legacy board) and leeds-v2.
+sources:
+- source: dft_manual
+  licence: OGL-UK-3.0
+  url: https://roadtraffic.dft.gov.uk/downloads
+  reviewed: 2026-10-07, OGL v3 as recorded with the data, publisher page check pending
+  n_rows: 1194
+- source: leeds_footfall
+  licence: OGL-UK-3.0
+  url: https://datamillnorth.org/dataset/leeds-city-centre-footfall-2kx4d
+  reviewed: 2026-10-08, Open Government Licence v3 shown on the dataset page
+  n_rows: 8
+excluded_sources: {}
+network:
+  source_extract: null
+  source_timestamp: null
+  clipped_sha256: 475bfbcadd9cc3307d170c3ac47f690508df871e2fa1f10e3860c847ab3b6078
+  links: 230330
+  km: 11038.8
+  components: 292
+  largest_component_share: 0.997
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'
+files:
+- crosswalk.csv
+- inputs/od_synthetic.parquet
+- inputs/pois.parquet
+- inputs/population.parquet
+- inputs/zones.parquet
+- network.parquet
+- sites.csv
+- source.osm.pbf
+data_size_bytes: 36075287

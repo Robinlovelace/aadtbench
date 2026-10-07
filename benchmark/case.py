@@ -9,7 +9,7 @@ import pandas as pd
 import yaml
 
 CASES_ROOT = Path(__file__).resolve().parents[1] / "cases"
-BENCHMARK_VERSION = "v0.2.0"
+BENCHMARK_VERSION = "v0.3.0"
 V2_REQUIRED = ["case.yaml", "network.parquet", "sites.csv", "crosswalk.csv"]
 ROAD_CLASSES = ["motorway", "trunk", "primary", "secondary", "tertiary", "minor",
                 "service", "cycleway", "footway", "other"]

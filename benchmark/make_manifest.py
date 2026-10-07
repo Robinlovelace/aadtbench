@@ -29,7 +29,7 @@ def sha256(path: Path) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=DEFAULT_ROOT)
-    ap.add_argument("--version", default="v0.2.0", help="directory name under root, also the release tag")
+    ap.add_argument("--version", default="v0.3.0", help="directory name under root, also the release tag")
     a = ap.parse_args()
     vdir = Path(a.root) / a.version
     assets = vdir / "assets"

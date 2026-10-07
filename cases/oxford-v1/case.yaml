@@ -1,6 +1,6 @@
 id: oxford-v1
-version: 1.0.0
-benchmark_version: 0.2.0
+version: 2.0.0
+benchmark_version: 0.3.0
 title: Oxford multimode annual average daily flow
 place: Oxford
 country: GBR
@@ -20,16 +20,15 @@ modes:
 sources:
 - source: dft_manual
   licence: OGL-UK-3.0
-  licence_text: OGL v3 (DfT road traffic statistics AADF)
-  method: short_period
-  n_sites: 266
+  url: https://roadtraffic.dft.gov.uk/downloads
+  reviewed: 2026-10-07, OGL v3 as recorded with the data, publisher page check pending
+  n_rows: 266
 - source: oxflow
   licence: OGL-UK-3.0
-  licence_text: Oxfordshire County Council open data, OGL v3
-  method: continuous
-  n_sites: 726
-excluded_sources:
-  telraam: Telraam data is CC BY-NC 4.0 (non-commercial), not allowed in open cases.
+  url: https://www.oxfordshire.gov.uk (open data, OGL v3)
+  reviewed: 2026-10-07, confirmed by Robin Lovelace (PR 17 review)
+  n_rows: 685
+excluded_sources: {}
 network_licence: ODbL-1.0 (OpenStreetMap)
 split:
   group_cell_m: 3000.0
@@ -47,4 +46,14 @@ files:
 - inputs/zones.parquet
 - network.parquet
 - sites.csv
-data_size_bytes: 9981608
+- source.osm.pbf
+data_size_bytes: 16941853
+network:
+  source_extract: null
+  source_timestamp: null
+  clipped_sha256: b5efb6765e3efb53e4ce35a904caad8b5f020f6526b1b296ce57bc4298af94dd
+  links: 83546
+  km: 5381.5
+  components: 319
+  largest_component_share: 0.9901
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'

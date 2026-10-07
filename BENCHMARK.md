@@ -1,4 +1,4 @@
-# AADTBench specification (v0.2)
+# AADTBench specification (v0.3)
 
 AADTBench scores methods that estimate **two-way annual average daily flow**
 on the links of a street network: routing and assignment engines, centrality
@@ -92,6 +92,21 @@ are shown, not ranked.
 | `crosswalk.csv` | `site_id`, `mode`, `segment_id`, `weight`, `dist_m`, `rule`. A site's prediction is the weighted sum of its links' flows. |
 | `inputs/` | T1 `population.parquet`, `pois.parquet`. T2 `zones.parquet`, `od_synthetic.parquet`. T3 `od_observed.parquet`, `zones_observed.parquet` |
 
+**Network (v0.3).** Raw OpenStreetMap, built by
+`benchmark/build_osm_network.py` from a dated Geofabrik extract with
+osmium-tool and pyosmium. Ways with a routable `highway` tag are split at
+every node shared by two or more ways. Nothing is merged, deduplicated or
+dropped. `segment_id` is `<osm way id>-<k>`, `u` and `v` are OSM node ids.
+Access and direction per mode come from OSM tags. The clipped highway
+extract ships as `source.osm.pbf` so the network can be rebuilt exactly.
+Adapters snap OD zones to the largest connected component of each mode's
+network. Release v0.2.0 used cleaned networks and stays available.
+
+**Sites.** Sources that report one direction per sensor (listed in
+`benchmark/rebuild_case_osm.py`) are paired: two sensors of the same source
+and mode that are each other's nearest within 30 m become one two-way site
+with the summed value. Published two-way counts (DfT) are not paired.
+
 Road classes: `motorway`, `trunk`, `primary`, `secondary`, `tertiary`, `minor`,
 `service`, `cycleway`, `footway`, `other`. Any change to a file makes a new case
 version.
@@ -106,10 +121,17 @@ placed each row.
    road name or number match is preferred. Motor counts take the most
    important class within 10 m of the nearest candidate. Walking and cycling
    take the nearest. Ties within 1 m go to a name match, then the longest link.
-3. **Direction pairing.** If the matched link has a `pair_segment`, the
-   partner is added with weight 1, so two-way counts meet two-way flows.
-4. **Junction arms.** Turning counts become arm flows matched by bearing
-   (not yet implemented).
+3. **Direction pairing.** Two-way counts meet two-way flows. If the
+   matched link has a `pair_segment`, the partner is added with weight 1. If
+   not and the link is one way for the mode, the partner is the nearest link
+   within 50 m that is one way for the mode, runs the opposite way (more than
+   135 degrees apart at the points nearest the count) and shares a name or
+   ref (or the road class if the matched link has neither).
+4. **Junction arms.** A turning count gives, per arm, the flow entering the
+   junction from that arm. The two-way value is twice that (daily flows taken
+   as symmetric). The arm is placed on the link within 30 m of the junction,
+   open to the mode, whose direction away from the junction is within 45
+   degrees of the arm bearing (motor counts: most important class first).
 5. **Segment counts.** Largest overlap within a 15 m buffer, the most
    important class among overlaps within 20 percent.
 6. **Unmatched counts** stay in `sites.csv` and are reported, not scored.
@@ -128,7 +150,7 @@ placed each row.
 
 ## Distribution
 
-`python -m benchmark.fetch --version v0.2.0` downloads case assets
+`python -m benchmark.fetch --version v0.3.0` downloads case assets
 (`<case_id>__<path>`) into `cases/<case_id>/` and fails on any sha256
 mismatch. Results are assets named `results__<file>` (full leaderboard, legacy
 board). The paper reads them with `benchmark.fetch.fetch_result`.

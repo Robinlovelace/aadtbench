@@ -7,57 +7,49 @@ statistical models. The spec is [`BENCHMARK.md`](BENCHMARK.md). How to add a
 tool is [`IMPLEMENTATIONS.md`](IMPLEMENTATIONS.md).
 
 Code lives in git. Case data, run outputs and full leaderboards live in the
-[v0.2.0 release](https://github.com/Robinlovelace/aadtbench/releases/tag/v0.2.0),
+[v0.3.0 release](https://github.com/Robinlovelace/aadtbench/releases/tag/v0.3.0),
 checked by sha256 on download.
 
 ## Quick start
 
 ```bash
 pip install -r requirements.txt cityseer==4.24.1 aequilibrae==1.7.0
-python -m benchmark.fetch --version v0.2.0
+python -m benchmark.fetch --version v0.3.0
 python -m benchmark.run_all --cases oxford-v1 --tools baselines
 python -m benchmark.run_all --cases oxford-v1 --tools cityseer_od aequilibrae --tier T2_synthetic_od
 cat results/LEADERBOARD.md
 ```
 
-`scripts/run_board.sh` runs every case and writes `leaderboard-summary.csv`
-(best variant per case, mode, track and tool), the only result kept in git.
+`scripts/run_board.sh` runs the default case set and writes
+`leaderboard-summary.csv` (best variant per case, mode, track and tool), the
+only result kept in git.
 
-## Cases (v0.2.0)
+## Cases (v0.3.0)
 
-| Case | Modes | Counts licence |
-|---|---|---|
-| oxford-v1, oxford-mini-v1 (CI) | walking, cycling, car, heavy | OGL v3 |
-| leeds-v2 | cycling, car, heavy | OGL v3 (DfT) |
-| bristol-v1 | cycling, car, heavy | OGL v3 (DfT) |
-| melbourne-v1 | walking, car, heavy | CC BY 4.0 |
-| leeds-v1 | motor (legacy v0.1 case) | OGL v3 (DfT) |
-| leuven-v1 | walking, cycling, car | CC BY-NC 4.0 (Telraam), non-commercial |
+All networks are raw OpenStreetMap (no cleaning), built by
+`benchmark/build_osm_network.py`. Release v0.2.0 (cleaned networks) stays
+available.
 
-Networks and POIs: OpenStreetMap (ODbL). Population: WorldPop (CC BY 4.0).
-Licences come from the reviewed table in `benchmark/licences.py`.
+| Case | Modes (sites) | Counts licence | Default set |
+|---|---|---|---|
+| oxford-v1 | walking 124, cycling 241, car 294, heavy 292 | OGL v3 | yes |
+| leeds-v1 | walking 8, cycling 362, car 417, heavy 415 | OGL v3 (DfT, Leeds City Council footfall) | yes |
+| melbourne-v1 | walking 100, car 2165, heavy 1948 | CC BY 4.0 | yes |
+| zurich-v1 | cycling 23, car 102 (all motor vehicles) | CC0 | yes |
+| toronto-v1 | walking 11626, cycling 10778, car 11628, heavy 10724 | OGL Toronto | yes |
+| leuven-v1 | walking 38, cycling 37, car 37 | CC BY-NC 4.0 (Telraam), non-commercial | yes, own board |
+| bristol-v1 | cycling 200, car 230, heavy 229 | OGL v3 | no |
+| oxford-mini-v1 | walking 60, cycling 90, car 96, heavy 96 | OGL v3 | CI only |
+
+leeds-v1 in v0.3.0 is a new definition (DfT plus openly licensed camera data
+on a raw OSM network). It replaces the v0.2.0 leeds-v1 (motor only) and
+leeds-v2. Networks and POIs: OpenStreetMap (ODbL). Population: WorldPop (CC
+BY 4.0). Licences come from the reviewed table in `benchmark/licences.py`.
 
 ## Current results
 
-Calibrated track, spatial group-out, q = (Spearman rho + log R2) / 2. Tools use
-the T2 synthetic OD.
-
-| Case | Mode | Class only | Best baseline | cityseer | AequilibraE AoN | AequilibraE UE |
-|---|---|---|---|---|---|---|
-| oxford-v1 | walking | -0.18 | 0.54 (attractor density) | -0.21 | -0.14 | |
-| oxford-v1 | cycling | -0.33 | 0.35 (population density) | -0.12 | -0.18 | |
-| oxford-v1 | car | 0.67 | 0.67 (attractor density) | 0.68 | 0.67 | 0.67 |
-| oxford-v1 | heavy | 0.42 | 0.48 (centre distance) | 0.41 | 0.42 | 0.42 |
-| leeds-v2 | cycling | -0.10 | 0.19 (centre distance) | 0.09 | -0.05 | |
-| leeds-v2 | car | 0.55 | 0.60 (population density) | 0.57 | 0.59 | 0.58 |
-| leeds-v2 | heavy | 0.49 | 0.52 (attractor density) | 0.49 | 0.51 | 0.51 |
-| bristol-v1 | cycling | -0.13 | 0.30 (attractor density) | 0.14 | 0.05 | |
-| bristol-v1 | car | 0.63 | 0.63 (class only) | 0.65 | 0.62 | 0.65 |
-| bristol-v1 | heavy | 0.68 | 0.68 (attractor density) | 0.66 | 0.67 | 0.67 |
-| melbourne-v1 | walking | -0.17 | 0.29 (population density) | -0.28 | -0.16 | |
-| melbourne-v1 | car | 0.58 | 0.59 (population density) | 0.59 | 0.59 | 0.59 |
-| melbourne-v1 | heavy | 0.49 | 0.49 (population density) | 0.49 | 0.49 | 0.49 |
-| leeds-v1 | motor | 0.50 | 0.53 (population density) | 0.52 | 0.48 | 0.51 |
+See `leaderboard-summary.csv` (calibrated, raw and tool tracks, spatial
+group-out) and the `results__leaderboard.csv` asset of the release.
 
 ## Contributing
 

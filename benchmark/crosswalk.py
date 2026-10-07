@@ -8,8 +8,17 @@ Rules, applied in order:
    of the nearest candidate wins. Walking and cycling take the nearest. Ties
    within 1 m go to a name or ref match, then the longest link.
 3. Direction pairing: if the matched link has a `pair_segment`, the partner is
-   added with weight 1.
-4. Junction arms: not implemented yet.
+   added with weight 1. If it has none and the matched link is one way for the
+   count's mode, the partner is searched per count: the nearest link within
+   50 m of the count that allows the mode, is one way for it, runs the
+   opposite way (travel directions more than 135 degrees apart, measured at the
+   points nearest the count) and shares a name or ref (or, if the matched link
+   has neither, the road class).
+4. Junction arms: the count has the junction point and the arm's compass
+   bearing. Candidates are links within 30 m of the junction, open to the
+   mode, whose direction away from the junction (over its first 20 m) is
+   within 45 degrees of the arm bearing. Motor counts take the most
+   important class, then the nearest.
 5. Segment counts: line overlap with a 15 m buffer. The largest overlap wins,
    but the most important class wins among overlaps within 20 percent.
 6. Unmatched counts get no row.
@@ -45,6 +54,9 @@ TIE_M = 1.0
 MOTOR_MODES = {"car", "heavy", "motor"}
 SEGMENT_BUFFER_M = 15.0
 SEGMENT_TIE_SHARE = 0.20
+PAIR_RADIUS_M = 50.0
+PAIR_MIN_ANGLE = 135.0
+DIR_COLUMN = {"cycling": "dir_cycling", "car": "dir_car", "heavy": "dir_car", "motor": "dir_car"}
 
 
 def _norm(s) -> str:
@@ -82,19 +94,18 @@ def build_crosswalk(network_gdf, sites_df, source_rules=None) -> pd.DataFrame:
             if isinstance(p, str) and p in index_of:
                 pair_idx[i] = index_of[p]
 
+    dirs = {m: net[c].fillna("both").astype(str).values for m, c in DIR_COLUMN.items() if c in net}
     rows = []
     for rec in sites_df.itertuples(index=False):
         rule = source_rules.get(rec.source, {})
         kind = rule.get("kind", "point")
-        if kind == "junction":
-            raise NotImplementedError(
-                "Rule 4 (junction arms) is not implemented. Convert turning "
-                "counts to arm flows and add the bearing match here."
-            )
         mode_ok = allow.get(rec.mode)
         if mode_ok is None:
             continue
-        if kind == "segment":
+        if kind == "junction":
+            hit = _match_junction(rec, tree, geoms, rank, mode_ok)
+            label = "junction"
+        elif kind == "segment":
             hit = _match_segment(rec, tree, geoms, rank, mode_ok)
             label = "segment"
         else:
@@ -106,6 +117,9 @@ def build_crosswalk(network_gdf, sites_df, source_rules=None) -> pd.DataFrame:
         i, dist = hit
         rows.append((rec.site_id, rec.mode, seg_ids[i], 1.0, round(float(dist), 2), label))
         j = pair_idx[i]
+        if j < 0:
+            j = _find_partner(rec, i, tree, geoms, rank, mode_ok, name_keys,
+                              dirs.get(rec.mode))
         if j >= 0:
             rows.append((rec.site_id, rec.mode, seg_ids[j], 1.0,
                          round(float(shapely.distance(geoms[j], shapely.points(rec.x, rec.y))), 2),
@@ -162,3 +176,75 @@ def _match_segment(rec, tree, geoms, rank, mode_ok):
     cand, overlap = cand[top], overlap[top]
     k = int(np.argmax(overlap))
     return int(cand[k]), float(shapely.distance(geoms[cand[k]], line))
+
+
+def _travel_bearing(geom, pt, direction: str) -> float:
+    """Bearing (degrees) of travel along a link at the point nearest ``pt``."""
+    d = shapely.line_locate_point(geom, pt)
+    L = shapely.length(geom)
+    a = shapely.line_interpolate_point(geom, max(d - 5.0, 0.0))
+    b = shapely.line_interpolate_point(geom, min(d + 5.0, L))
+    dx, dy = shapely.get_x(b) - shapely.get_x(a), shapely.get_y(b) - shapely.get_y(a)
+    ang = np.degrees(np.arctan2(dy, dx))
+    return ang + 180.0 if direction == "backward" else ang
+
+
+def _find_partner(rec, i, tree, geoms, rank, mode_ok, name_keys, dirs) -> int:
+    """Opposite carriageway of a one-way matched link, or -1 (rule 3)."""
+    if dirs is None or dirs[i] == "both":
+        return -1
+    pt = shapely.points(rec.x, rec.y)
+    cand = tree.query(pt, predicate="dwithin", distance=PAIR_RADIUS_M)
+    cand = cand[(cand != i) & mode_ok[cand]]
+    cand = cand[dirs[cand] != "both"]
+    if len(cand) == 0:
+        return -1
+    if name_keys[i]:
+        cand = cand[[bool(name_keys[i] & name_keys[c]) for c in cand]]
+    else:
+        cand = cand[rank[cand] == rank[i]]
+    if len(cand) == 0:
+        return -1
+    b0 = _travel_bearing(geoms[i], pt, dirs[i])
+    ok = []
+    for c in cand:
+        diff = abs((_travel_bearing(geoms[c], pt, dirs[c]) - b0 + 180.0) % 360.0 - 180.0)
+        ok.append(diff > PAIR_MIN_ANGLE)
+    cand = cand[np.array(ok, bool)]
+    if len(cand) == 0:
+        return -1
+    return int(cand[np.argmin(shapely.distance(geoms[cand], pt))])
+
+
+ARM_RADIUS_M = 30.0
+ARM_MAX_ANGLE = 45.0
+
+
+def _match_junction(rec, tree, geoms, rank, mode_ok):
+    """Rule 4: the approach link of a junction arm, by bearing."""
+    pt = shapely.points(rec.x, rec.y)
+    cand = tree.query(pt, predicate="dwithin", distance=ARM_RADIUS_M)
+    cand = cand[mode_ok[cand]]
+    if len(cand) == 0 or not np.isfinite(getattr(rec, "bearing", np.nan)):
+        return None
+    ok, dist = [], []
+    for c in cand:
+        g = geoms[c]
+        L = shapely.length(g)
+        start = shapely.get_point(g, 0)
+        from_start = shapely.distance(start, pt) <= shapely.distance(shapely.get_point(g, -1), pt)
+        a = start if from_start else shapely.get_point(g, -1)
+        b = shapely.line_interpolate_point(g, min(20.0, L) if from_start else max(L - 20.0, 0.0))
+        brg = np.degrees(np.arctan2(shapely.get_x(b) - shapely.get_x(a), shapely.get_y(b) - shapely.get_y(a))) % 360
+        diff = abs((brg - rec.bearing + 180.0) % 360.0 - 180.0)
+        ok.append(diff <= ARM_MAX_ANGLE)
+        dist.append(float(shapely.distance(a, pt)))
+    ok, dist = np.array(ok, bool), np.array(dist)
+    cand, dist = cand[ok], dist[ok]
+    if len(cand) == 0:
+        return None
+    if rec.mode in MOTOR_MODES:
+        top = rank[cand] == rank[cand].max()
+        cand, dist = cand[top], dist[top]
+    k = int(np.argmin(dist))
+    return int(cand[k]), float(dist[k])

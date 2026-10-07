@@ -38,14 +38,48 @@ REVIEWED_SOURCES: dict[str, dict] = {
         "url": "https://data.melbourne.vic.gov.au",
         "reviewed": "2026-10-07, CC BY 4.0 as recorded with the data, publisher page check pending",
     },
+    "leeds_footfall": {
+        "licence": "OGL-UK-3.0",
+        "publisher": "Leeds City Council, city centre footfall cameras (Data Mill North)",
+        "url": "https://datamillnorth.org/dataset/leeds-city-centre-footfall-2kx4d",
+        "reviewed": "2026-10-08, Open Government Licence v3 shown on the dataset page",
+    },
+    "stadt_zuerich_miv": {
+        "licence": "CC0-1.0",
+        "publisher": "Stadt Zuerich, motorised traffic counts (all motor vehicles)",
+        "url": "https://data.stadt-zuerich.ch",
+        "reviewed": "2026-10-08, CC0 per the dataset page, as recorded by the data porting step, recheck pending",
+    },
+    "stadt_zuerich_fuss_velo": {
+        "licence": "CC0-1.0",
+        "publisher": "Stadt Zuerich, automatic pedestrian and bicycle counts",
+        "url": "https://data.stadt-zuerich.ch",
+        "reviewed": "2026-10-08, CC0 per the dataset page, as recorded by the data porting step, recheck pending",
+    },
+    **{src: {
+        "licence": "OGL-Toronto",
+        "publisher": f"City of Toronto open data ({what})",
+        "url": "https://open.toronto.ca",
+        "reviewed": "2026-10-08, Open Government Licence Toronto as recorded with the data, recheck pending",
+    } for src, what in (("toronto_tmc", "turning movement counts"), ("toronto_svc", "speed and volume counts"),
+                        ("toronto_bike", "permanent bicycle counters"))},
+}
+
+# Non-commercial sources, allowed only in cases with licence_class non_commercial.
+NON_COMMERCIAL_SOURCES: dict[str, dict] = {
+    "telraam": {
+        "licence": "CC-BY-NC-4.0",
+        "publisher": "Telraam citizen traffic sensors",
+        "url": "https://faq.telraam.net/article/9/telraam-data-license-what-can-i-do-with-the-telraam-data",
+        "reviewed": "2026-10-07, CC BY-NC 4.0 per Telraam FAQ, accepted for this non-commercial benchmark by Robin Lovelace",
+    },
 }
 
 # Sources checked and found not open. Listed so the reason is on record.
 REJECTED_SOURCES: dict[str, str] = {
     "wyca_tam": "WYCA traffic and active mode counts are not open data.",
-    "leeds_footfall": "licence not confirmed as open with a source link.",
     "telraam": "CC BY-NC 4.0: only in cases labelled licence_class non_commercial (leuven-v1).",
-    "vivacity": "local authority terms, check per authority.",
+    "vivacity": "no open publication found (Data Mill North searched 2026-10-08).",
 }
 
 
