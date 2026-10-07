@@ -79,8 +79,12 @@ def harness_hash(case: Case, tool: str, variant: str, tier: str, modes: list[str
 
 
 def adapter_source_hash(tool: str) -> str:
-    f = REPO / "adapters" / f"{tool}.py"
-    return hashlib.sha256(f.read_bytes()).hexdigest()[:16] if f.exists() else ""
+    """Hash of the adapter file and the shared contract it builds on."""
+    h = hashlib.sha256()
+    for f in (REPO / "adapters" / f"{tool}.py", REPO / "adapters" / "_base.py"):
+        if f.exists():
+            h.update(f.read_bytes())
+    return h.hexdigest()[:16]
 
 
 def blind_copy(case: Case, results: Path) -> Path:

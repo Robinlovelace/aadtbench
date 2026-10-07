@@ -147,6 +147,21 @@ class RunContext:
             edges["time_s"] = edges["length_m"] / (kmh / 3.6)
         return edges.reset_index(drop=True)
 
+    def main_component_nodes(self, mode: str) -> np.ndarray:
+        """Node ids in the largest (weakly) connected component of the mode's network."""
+        key = f"lcc_{mode}"
+        if key not in self._cache:
+            from scipy.sparse import coo_matrix
+            from scipy.sparse.csgraph import connected_components
+            e = self.directed_edges(mode)
+            ids = np.unique(e[["u", "v"]].values)
+            idx = pd.Series(np.arange(len(ids)), index=ids)
+            g = coo_matrix((np.ones(len(e)), (idx[e["u"]].values, idx[e["v"]].values)),
+                           shape=(len(ids), len(ids)))
+            _, lab = connected_components(g, directed=True, connection="weak")
+            self._cache[key] = ids[lab == np.bincount(lab).argmax()]
+        return self._cache[key]
+
     def node_xy(self) -> pd.DataFrame:
         """Node coordinates (index ``node``, columns ``x``, ``y``) from segment ends."""
         if "nodes" not in self._cache:
@@ -211,14 +226,15 @@ class RunContext:
     def od_nodes(self, mode: str, max_snap_m: float = 500.0) -> pd.DataFrame:
         """OD snapped to network nodes open to ``mode``: ``o_node``, ``d_node``, ``trips``.
 
-        Each zone goes to the node nearest its representative point. Zones
+        Each zone goes to the nearest node of the largest connected component
+        of the mode's network (raw networks have small disconnected pieces,
+        and a zone snapped to one would lose its trips). Zones
         further than ``max_snap_m`` from the mode's network are dropped, and
         intrazonal pairs (same node) are dropped.
         """
         from scipy.spatial import cKDTree
         zones = self.zones()
-        edges = self.directed_edges(mode)
-        nodes = self.node_xy().loc[np.unique(edges[["u", "v"]].values)]
+        nodes = self.node_xy().loc[self.main_component_nodes(mode)]
         tree = cKDTree(nodes[["x", "y"]].values)
         pts = zones.geometry.representative_point()
         dist, idx = tree.query(np.c_[pts.x.values, pts.y.values])
