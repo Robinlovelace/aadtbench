@@ -34,8 +34,10 @@ import pandas as pd
 
 from adapters._base import Adapter, RunContext, Unsupported, run_cli
 
-# Radius (m) per mode, set from typical trip lengths and not tuned on counts.
-RADIUS_M = {"walking": 2000, "cycling": 5000, "car": 10000, "heavy": 10000, "motor": 10000}
+# Radius (m) per mode. Fixed before any scoring, not tuned on counts. sDNA cost grows with the
+# square of the radius, so these stay short enough for a whole city on one thread
+# (2 km walking took about 70 s on the 15 000 link mini case).
+RADIUS_M = {"walking": 1000, "cycling": 2000, "car": 2500, "heavy": 2500, "motor": 2500}
 METRIC_LETTER = {"ANGULAR": "A", "EUCLIDEAN": "E", "HYBRID": "H"}
 
 
