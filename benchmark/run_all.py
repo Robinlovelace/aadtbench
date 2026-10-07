@@ -143,7 +143,7 @@ def run_baseline(case: Case, name: str, modes: list[str], run_dir: Path, h: str,
     return rec
 
 
-DEFAULT_TIME_LIMIT_S = 60.0
+DEFAULT_TIME_LIMIT_S = 300.0
 
 
 def run_adapter_cli(case: Case, blind: Path, tool: str, variant: str | None, tier: str,

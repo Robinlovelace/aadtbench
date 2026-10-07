@@ -56,7 +56,7 @@ Tools that need calibration leave it to the calibrated track, or use the
 tool-calibrated track: run with `run_all --tool-calibrated`, and in `predict`
 call `ctx.training_counts()` for `(sites, crosswalk)` of the training folds of
 this call. The harness calls `predict` once per fold. Return calibrated flows.
-Each run is killed after `--time-limit` seconds (default 60) and shown as NA.
+Each run is killed after `--time-limit` seconds (default 300) and shown as NA.
 
 ## Run it
 
