@@ -180,7 +180,15 @@ def run_adapter_cli(case: Case, blind: Path, tool: str, variant: str | None, tie
     rec.setdefault("case_version", case.version)
     rec.setdefault("tool", tool)
     rec.setdefault("variant", variant or "default")
-    rec.setdefault("family", "other")
+    if "family" not in rec:  # the adapter wrote no record (timeout or crash): take its declaration
+        try:
+            import importlib
+            from adapters._base import Adapter
+            mod = importlib.import_module(f"adapters.{tool}")
+            cls = next(c for c in vars(mod).values() if isinstance(c, type) and issubclass(c, Adapter) and c is not Adapter)
+            rec["family"] = cls.variants.get(variant or next(iter(cls.variants)), {}).get("family", cls.family)
+        except Exception:
+            rec["family"] = "other"
     rec.setdefault("input_tier", tier)
     rec.setdefault("wall_time_s", round(time.perf_counter() - t0, 3))
     rec["harness_hash"] = h
