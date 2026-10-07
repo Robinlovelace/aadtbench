@@ -1,1 +1,0 @@
-# cenbench script utilities
