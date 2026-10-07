@@ -1,0 +1,32 @@
+# Continuous integration settings (see IMPLEMENTATIONS.md, "Continuous integration").
+# The smoke tests run each open tool on one small frozen case fetched from the release.
+# While mini_case is PLACEHOLDER, or its assets are not in the release, the smoke steps
+# warn and exit 0. Unit tests and the contract check always run for real.
+mini_case: oxford-mini-v1
+release: v0.2.0
+
+# Settings used for every tool unless the tool block overrides them.
+defaults:
+  tier: T2_synthetic_od
+  # Scored modes. Modes the case does not have are skipped.
+  modes: [walking, cycling, car, heavy]
+  # Share of crosswalked sites with a predicted flow above 0, per mode.
+  min_coverage: 0.5
+  # The tool's calibrated q must reach the class_only baseline q, less the tolerance,
+  # in at least this many modes. Road class is hard to beat for motor traffic, so a
+  # sound tool sits close to it and a broken one falls well below.
+  min_modes_beating_class_only: 1
+  class_only_tolerance: 0.05
+  # Raw track Spearman rho floor per mode: the flows must carry signal before calibration.
+  min_raw_rho:
+    car: 0.3
+  # Smallest number of sites a mode needs to count towards the checks.
+  min_sites: 20
+  # Wall time limit for the tool run in seconds.
+  max_wall_time_s: 900
+
+tools:
+  cityseer_od:
+    variant: default
+  aequilibrae:
+    variant: aon

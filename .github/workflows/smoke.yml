@@ -1,0 +1,66 @@
+name: Smoke tests
+
+# Unit tests, the adapter contract check, and one smoke test per open tool.
+# Each tool runs in its own Docker image on the small mini case from the release.
+# See IMPLEMENTATIONS.md, "Continuous integration". Settings: config/ci.yaml.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install harness dependencies
+        run: pip install -r requirements.txt
+      - name: Unit tests
+        run: python -m unittest discover -s tests -t . -v
+      - name: Adapter contract check
+        run: python -m benchmark.contract_check
+
+  smoke:
+    needs: unit
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # To add a tool: add its name here, add containers/<tool>/Dockerfile
+        # and add a block for it under `tools` in config/ci.yaml.
+        tool: [cityseer_od, aequilibrae]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install harness dependencies
+        run: pip install -r requirements.txt
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the tool image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: containers/${{ matrix.tool }}/Dockerfile
+          load: true
+          push: false
+          tags: aadtbench-${{ matrix.tool }}:ci
+          cache-from: type=gha,scope=${{ matrix.tool }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.tool }}
+      - name: Smoke test
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python -m benchmark.smoke --tool ${{ matrix.tool }} --image aadtbench-${{ matrix.tool }}:ci
