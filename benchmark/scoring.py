@@ -1,4 +1,4 @@
-"""Scoring: site tables, raw and calibrated tracks, group-out and leave-one-city-out.
+"""Scoring: site tables, one scale factor per mode and fold, group-out and leave-one-city-out.
 
 This module knows nothing about individual tools. It joins predictions to the
 case crosswalk and calculates every published metric.
@@ -9,10 +9,9 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from benchmark.calibrator import fit_calibrator, fit_scale_factor
 
 MIN_RANKED_SITES = 20
-TRACKS = ("raw", "calibrated")
+TRACKS = ("uncalibrated", "own_calibration")
 METRIC_COLUMNS = ["n_sites", "rho", "log_r2", "raw_r2", "calibration_ratio", "q"]
 
 
@@ -79,28 +78,40 @@ def metrics_from(obs, pred, unscaled_flow) -> dict:
     return out
 
 
-def _fit_predict(train: pd.DataFrame, test: pd.DataFrame, track: str, covariate: bool,
-                 scale: bool) -> tuple[np.ndarray, dict]:
-    if track == "calibrated":
-        cal = fit_calibrator(train["flow"], train["road_class"], train["value"], covariate=covariate)
-        return cal.predict(test["flow"], test["road_class"]), cal.coefficients()
-    if track == "raw":
-        if not scale:
-            return np.maximum(test["flow"].to_numpy(float), 0.0), {"scale_factor": 1.0}
-        sf = fit_scale_factor(train["flow"], train["value"])
-        return sf.predict(test["flow"]), sf.coefficients()
-    raise ValueError(f"unknown track {track}")
+def fit_scale_factor(flow, count) -> float:
+    """exp(mean log(count / flow)) over training sites with flow > 0 and count > 0 (1 if none)."""
+    flow, count = np.asarray(flow, float), np.asarray(count, float)
+    ok = np.isfinite(flow) & np.isfinite(count) & (flow > 0) & (count > 0)
+    return float(np.exp(np.mean(np.log(count[ok] / flow[ok])))) if ok.any() else 1.0
 
 
-def group_out_pooled(table: pd.DataFrame, track: str, covariate: bool = True,
-                     scale: bool = True) -> tuple[dict, pd.DataFrame, list[dict]]:
+def class_lookup(train: pd.DataFrame, test: pd.DataFrame) -> np.ndarray:
+    """class_only baseline: geometric mean training count of the site's road class.
+
+    Classes with no positive training count fall back to the geometric mean of all training counts.
+    """
+    pos = train[train["value"] > 0]
+    gm = np.exp(np.log(pos["value"]).groupby(pos["road_class"]).mean())
+    overall = float(np.exp(np.log(pos["value"]).mean())) if len(pos) else 0.0
+    return test["road_class"].map(gm).fillna(overall).to_numpy(float)
+
+
+def _fit_predict(train: pd.DataFrame, test: pd.DataFrame, scale: bool = True,
+                 by_class: bool = False) -> tuple[np.ndarray, dict]:
+    """Out-of-sample prediction: the class lookup, one scale factor, or the flow as submitted."""
+    if by_class:
+        return class_lookup(train, test), {"rule": "class geometric mean"}
+    flow = np.maximum(test["flow"].to_numpy(float), 0.0)
+    k = fit_scale_factor(train["flow"], train["value"]) if scale else 1.0
+    return k * flow, {"scale_factor": k}
+
+
+def group_out_pooled(table: pd.DataFrame, scale: bool = True, by_class: bool = False) -> tuple[dict, pd.DataFrame, list[dict]]:
     """Spatial group-out scoring on the pre-assigned folds.
 
-    For each fold the calibrator (or scale factor) is fitted on the other
+    For each fold the scale factor (or class lookup) is fitted on the other
     folds and predicts the held-out fold. Predictions are pooled and scored
     once. Returns (metrics, table with an ``oof`` column, per-fold coefficients).
-    ``scale=False`` on the raw track uses the flow as submitted (for
-    self-calibrated flows).
     """
     t = table.dropna(subset=["fold", "value", "flow"]).copy()
     t["oof"] = np.nan
@@ -110,7 +121,7 @@ def group_out_pooled(table: pd.DataFrame, track: str, covariate: bool = True,
         train = t[~test]
         if len(train) < 3:
             continue
-        pred, c = _fit_predict(train, t[test], track, covariate, scale)
+        pred, c = _fit_predict(train, t[test], scale, by_class)
         t.loc[test, "oof"] = pred
         coefs.append({"fold": f, **c})
     m = metrics_from(t["value"], t["oof"], t["flow"])
@@ -118,8 +129,7 @@ def group_out_pooled(table: pd.DataFrame, track: str, covariate: bool = True,
     return m, t, coefs
 
 
-def leave_one_city_out(tables: dict[str, pd.DataFrame], track: str, covariate: bool = True,
-                       scale: bool = True) -> dict[str, tuple[dict, pd.DataFrame, dict]]:
+def leave_one_city_out(tables: dict[str, pd.DataFrame], scale: bool = True, by_class: bool = False) -> dict[str, tuple[dict, pd.DataFrame, dict]]:
     """For one mode: fit on every other case's sites, score the held-out case.
 
     ``tables`` maps case id to its site table (all folds are used). Needs at
@@ -131,7 +141,7 @@ def leave_one_city_out(tables: dict[str, pd.DataFrame], track: str, covariate: b
     for cid, test in tables.items():
         train = pd.concat([t for k, t in tables.items() if k != cid], ignore_index=True)
         test = test.dropna(subset=["value", "flow"]).copy()
-        pred, c = _fit_predict(train, test, track, covariate, scale)
+        pred, c = _fit_predict(train, test, scale, by_class)
         test["oof"] = pred
         m = metrics_from(test["value"], test["oof"], test["flow"])
         m["ranked"] = bool(m["n_sites"] >= MIN_RANKED_SITES)

@@ -9,11 +9,8 @@ the benchmark scorer and apply the sanity bounds in ``config/ci.yaml``.
 Checks per tool:
 
 * the run completes and writes valid predictions,
-* the calibrated track q reaches the ``class_only`` baseline q, less
-  ``class_only_tolerance``, in at least ``min_modes_beating_class_only`` modes
-  (a broken tool falls well below road class alone),
-* the raw track rank correlation reaches ``min_raw_rho`` for the listed modes
-  (the flows carry signal before any calibration),
+* the uncalibrated rank correlation reaches ``min_raw_rho`` for the listed
+  modes (the flows carry signal),
 * coverage (share of crosswalked sites with a flow above 0) is at least
   ``min_coverage`` in every checked mode,
 * the wall time is within ``max_wall_time_s``.
@@ -112,12 +109,6 @@ def coverage(case, pred: pd.DataFrame, mode: str) -> tuple[float, int]:
     return (float((t["flow"] > 0).mean()) if len(t) else float("nan")), int(len(t))
 
 
-def q_by_mode(rows: list[dict], tool: str, variant: str) -> dict[str, float]:
-    return {r["mode"]: r["q"] for r in rows
-            if r["tool"] == tool and r["variant"] == variant and r["track"] == "calibrated"
-            and r["split"] == "group_out_pooled"}
-
-
 def evaluate(case, rec: dict, run_dir: Path, rows: list[dict], settings: dict, tool: str,
              variant: str) -> tuple[list[dict], list[str]]:
     """Apply the sanity bounds. Returns (table rows, failure messages)."""
@@ -127,36 +118,24 @@ def evaluate(case, rec: dict, run_dir: Path, rows: list[dict], settings: dict, t
     pred = pd.read_parquet(run_dir / "predictions.parquet")
     if pred.empty or not (pred["flow"] > 0).any():
         fails.append("predictions are empty or all zero")
-    tool_q = q_by_mode(rows, tool, variant)
-    base_q = q_by_mode(rows, "baseline", "class_only")
-    raw_rho = {r["mode"]: r["rho"] for r in rows
-               if r["tool"] == tool and r["variant"] == variant and r["track"] == "raw"
-               and r["split"] == "group_out_pooled"}
-    tol = float(settings.get("class_only_tolerance", 0.0))
+    rho = {r["mode"]: r["rho"] for r in rows
+           if r["tool"] == tool and r["variant"] == variant and r["track"] == "uncalibrated"
+           and r["split"] == "group_out_pooled"}
     for mode, floor in (settings.get("min_raw_rho") or {}).items():
-        v = raw_rho.get(mode, np.nan)
+        v = rho.get(mode, np.nan)
         if mode in rec.get("modes", []) and not (np.isfinite(v) and v >= floor):
-            fails.append(f"{mode}: raw rho {v:.2f} below {floor}")
-    table, beating = [], 0
+            fails.append(f"{mode}: uncalibrated rho {v:.2f} below {floor}")
+    table = []
     for mode in rec.get("modes", []):
         cov, n = coverage(case, pred, mode)
-        row = {"mode": mode, "n_sites": n, "coverage": cov, "q_tool": tool_q.get(mode, np.nan),
-               "q_class_only": base_q.get(mode, np.nan)}
+        row = {"mode": mode, "n_sites": n, "coverage": cov, "rho": rho.get(mode, np.nan)}
         if n < settings["min_sites"]:
             row["note"] = f"skipped, fewer than {settings['min_sites']} sites"
-            table.append(row)
-            continue
-        if not np.isfinite(cov) or cov < settings["min_coverage"]:
+        elif not np.isfinite(cov) or cov < settings["min_coverage"]:
             fails.append(f"{mode}: coverage {cov:.2f} below {settings['min_coverage']}")
-        if np.isfinite(row["q_tool"]) and np.isfinite(row["q_class_only"]) and row["q_tool"] >= row["q_class_only"] - tol:
-            beating += 1
         table.append(row)
-    checked = [r for r in table if "note" not in r]
-    if not checked:
+    if not [r for r in table if "note" not in r]:
         fails.append("no mode had enough sites to check")
-    elif beating < settings["min_modes_beating_class_only"]:
-        fails.append(f"calibrated q beats class_only in {beating} mode(s), need "
-                     f"{settings['min_modes_beating_class_only']}")
     wall = rec.get("wall_time_s")
     if wall is not None and wall > settings["max_wall_time_s"]:
         fails.append(f"wall time {wall:.0f} s above {settings['max_wall_time_s']} s")

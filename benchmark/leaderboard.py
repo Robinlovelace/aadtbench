@@ -21,7 +21,7 @@ import pandas as pd
 RECORD_COLUMNS = [
     "benchmark_version", "case_id", "case_version", "mode", "tool", "tool_version", "variant",
     "family", "options", "input_tier", "track", "split", "n_sites", "rho", "log_r2", "raw_r2",
-    "calibration_ratio", "q", "ranked", "wall_time_s", "cpu_time_s", "speed_index",
+    "calibration_ratio", "q", "ranked", "time_limit_s", "wall_time_s", "cpu_time_s", "speed_index",
     "peak_memory_mb", "cpu_model", "container_image_digest", "data_release", "run_id",
     "git_commit", "timestamp", "status",
 ]
@@ -102,8 +102,11 @@ def assemble(results_dir: str | Path = "results") -> pd.DataFrame:
     df.to_csv(rd / "leaderboard.csv", index=False)
     boards = rd / "leaderboards"
     boards.mkdir(exist_ok=True)
+    # Baselines are on the uncalibrated track. The own-calibration board shows them too.
+    base = df[df["family"] == "baseline"]
     for (case, mode, track), g in df.groupby(["case_id", "mode", "track"]):
-        g.to_csv(boards / f"{case}__{mode}__{track}.csv", index=False)
+        b = base[(base["case_id"] == case) & (base["mode"] == mode)] if track == "own_calibration" else None
+        pd.concat([g, b]).to_csv(boards / f"{case}__{mode}__{track}.csv", index=False)
     (rd / "LEADERBOARD.md").write_text(markdown(df) + "\n")
     summary(df).to_csv(rd / "summary.csv", index=False)
     return df

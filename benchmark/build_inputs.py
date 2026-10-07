@@ -11,7 +11,7 @@ Synthetic OD (origin-constrained gravity, a shape and not a forecast):
 
 Each origin sends exactly population * trip_rate trips. Distances are between
 zone centroids. The intrazonal distance is half the cell size (500 m for 1 km cells). Pairs under 0.01 trips are
-dropped. The scale is arbitrary. Calibrators handle scale.
+dropped. The scale is arbitrary. The scale factor handles it.
 """
 from __future__ import annotations
 
