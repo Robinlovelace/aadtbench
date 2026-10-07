@@ -1,4 +1,4 @@
-"""Tests for the v0.2 harness: calibrator, scoring, fetch and run_all."""
+"""Tests for the harness: scale factor, scoring, fetch and run_all."""
 import json
 import shutil
 import tempfile
@@ -9,64 +9,24 @@ import numpy as np
 import pandas as pd
 
 from benchmark import baselines as bl
-from benchmark.calibrator import fit_calibrator, fit_scale_factor
 from benchmark.case import BENCHMARK_VERSION, load_case
 from benchmark.fetch import FetchError, fetch
-from benchmark.scoring import group_out_pooled, leave_one_city_out, site_table
+from benchmark.scoring import class_lookup, fit_scale_factor, group_out_pooled, leave_one_city_out, site_table
 from tests.synthetic_case import build_case, write_release
 
 
-class CalibratorTest(unittest.TestCase):
-    def test_recovers_coefficients(self):
-        rng = np.random.RandomState(0)
-        n = 4000
-        flow = rng.uniform(1, 1000, n)
-        cls = rng.choice(["a", "b", "c"], n)
-        eff = {"a": 0.0, "b": 0.7, "c": -0.4}
-        y = 1.0 + 0.6 * np.log1p(flow) + np.array([eff[c] for c in cls]) + rng.normal(0, 0.1, n)
-        cal = fit_calibrator(flow, cls, np.expm1(y))
-        self.assertAlmostEqual(cal.slope, 0.6, places=2)
-        d = cal.class_effects
-        ref = cal.coefficients()["reference_class"]
-        for c in "abc":
-            self.assertAlmostEqual(d[c] - d[ref], eff[c] - eff[ref], places=1)
-
-    def test_smearing_is_mean_exp_residual(self):
-        rng = np.random.RandomState(1)
-        flow = rng.uniform(1, 100, 500)
-        cls = np.array(["a"] * 500)
-        y = 2 + 0.5 * np.log1p(flow) + rng.normal(0, 0.5, 500)
-        cal = fit_calibrator(flow, cls, np.expm1(y))
-        self.assertGreater(cal.smearing, 1.0)
-        self.assertAlmostEqual(cal.smearing, np.exp(0.5**2 / 2), delta=0.08)
-        # mean prediction is close to the mean count on the training data
-        self.assertAlmostEqual(cal.predict(flow, cls).mean() / np.expm1(y).mean(), 1.0, delta=0.1)
-
-    def test_rare_classes_merge_into_other(self):
-        flow = np.arange(1, 31, dtype=float)
-        cls = np.array(["a"] * 20 + ["b"] * 6 + ["rare"] * 4)
-        cal = fit_calibrator(flow, cls, flow * 10)
-        self.assertEqual(cal.merged_classes, ["rare"])
-        # Four sites in "other" is still under five, so they join the reference class "a".
-        self.assertNotIn("other", cal.class_effects)
-        self.assertEqual(cal.coefficients()["reference_class"], "a")
-        self.assertEqual(len(cal.predict([5.0], ["never_seen"])), 1)
-        # Two rare classes of three make an "other" of six, which keeps its own effect.
-        cls5 = np.array(["a"] * 18 + ["b"] * 6 + ["r1"] * 3 + ["r2"] * 3)
-        self.assertIn("other", fit_calibrator(flow, cls5, flow * 10).class_effects)
-
-    def test_class_only_has_no_slope(self):
-        cal = fit_calibrator(np.ones(20), ["a"] * 10 + ["b"] * 10, np.r_[np.ones(10) * 10, np.ones(10) * 100],
-                             covariate=False)
-        self.assertIsNone(cal.slope)
-        p = cal.predict([1.0, 1.0], ["a", "b"])
-        self.assertLess(p[0], p[1])
-
+class ScaleTest(unittest.TestCase):
     def test_scale_factor_zero_rule(self):
-        sf = fit_scale_factor([0.0, 10.0, 20.0], [5.0, 100.0, 200.0])
-        self.assertAlmostEqual(sf.factor, 10.0)
-        self.assertEqual(sf.predict([0.0])[0], 0.0)
-        self.assertEqual(fit_scale_factor([0.0], [5.0]).factor, 1.0)
+        self.assertAlmostEqual(fit_scale_factor([0.0, 10.0, 20.0], [5.0, 100.0, 200.0]), 10.0)
+        self.assertEqual(fit_scale_factor([0.0], [5.0]), 1.0)
+
+    def test_class_lookup_is_class_geometric_mean(self):
+        train = pd.DataFrame({"road_class": ["a", "a", "b"], "value": [10.0, 1000.0, 5.0]})
+        test = pd.DataFrame({"road_class": ["a", "b", "z"]})
+        p = class_lookup(train, test)
+        self.assertAlmostEqual(p[0], 100.0)
+        self.assertAlmostEqual(p[1], 5.0)
+        self.assertAlmostEqual(p[2], (10 * 1000 * 5) ** (1 / 3))
 
 
 class ScoringTest(unittest.TestCase):
@@ -92,12 +52,12 @@ class ScoringTest(unittest.TestCase):
 
     def test_no_leak_across_folds(self):
         t, _, _ = self._table()
-        for track in ("calibrated", "raw"):
-            _, base, _ = group_out_pooled(t, track)
+        for by_class in (True, False):
+            _, base, _ = group_out_pooled(t, by_class=by_class)
             i = 3
             t2 = t.copy()
             t2.loc[i, "value"] = t2.loc[i, "value"] * 50 + 1000
-            _, alt, _ = group_out_pooled(t2, track)
+            _, alt, _ = group_out_pooled(t2, by_class=by_class)
             same_fold = t["fold"] == t.loc[i, "fold"]
             # held-out predictions of the site's own fold are fitted without it
             self.assertAlmostEqual(base.loc[i, "oof"], alt.loc[i, "oof"], places=8)
@@ -106,20 +66,20 @@ class ScoringTest(unittest.TestCase):
 
     def test_metrics_and_ranking_gate(self):
         t, _, _ = self._table()
-        m, _, _ = group_out_pooled(t, "calibrated")
+        m, _, _ = group_out_pooled(t)
         self.assertEqual(m["n_sites"], len(t))
         self.assertTrue(m["ranked"])
         self.assertAlmostEqual(m["q"], (m["rho"] + m["log_r2"]) / 2)
-        m2, _, _ = group_out_pooled(t.head(15), "calibrated")
+        m2, _, _ = group_out_pooled(t.head(15))
         self.assertFalse(m2["ranked"])
 
     def test_loco(self):
         t, _, _ = self._table()
-        out = leave_one_city_out({"a": t, "b": t.assign(value=t["value"] * 1.1)}, "calibrated")
+        out = leave_one_city_out({"a": t, "b": t.assign(value=t["value"] * 1.1)}, by_class=True)
         self.assertEqual(set(out), {"a", "b"})
         self.assertGreater(out["a"][0]["rho"], 0.0)
         with self.assertRaises(ValueError):
-            leave_one_city_out({"a": t}, "raw")
+            leave_one_city_out({"a": t})
 
     def test_baselines_shapes(self):
         for name in bl.BASELINES:
@@ -178,12 +138,13 @@ class RunAllTest(unittest.TestCase):
         lb = pd.read_csv(res / "leaderboard.csv")
         self.assertEqual(set(lb["split"]), {"group_out_pooled", "leave_one_city_out"})
         self.assertEqual(set(lb["family"]), {"baseline"})
-        self.assertEqual(set(lb["track"]), {"calibrated"})
+        self.assertEqual(set(lb["track"]), {"uncalibrated"})
         self.assertEqual(len(lb), 2 * 2 * 4 * 2)  # cases x modes x baselines x splits
-        self.assertTrue((res / "leaderboards" / "synth-a__car__calibrated.csv").exists())
+        self.assertTrue((res / "leaderboards" / "synth-a__car__uncalibrated.csv").exists())
         self.assertIn("baseline", (res / "LEADERBOARD.md").read_text())
         q = lb[(lb["split"] == "group_out_pooled") & (lb["mode"] == "car") & (lb["case_id"] == "synth-a")].set_index("variant")["q"]
-        self.assertGreater(q["centre_distance"], q["class_only"] - 0.2)
+        self.assertGreater(q["class_only"], 0.3)  # the synthetic counts are mostly road class
+        self.assertGreater(q["centre_distance"], 0.0)
         # second run reuses the cache and appends to the log
         n_log = len(pd.read_csv(res / "log.csv"))
         self.assertEqual(main(args), 0)
@@ -222,7 +183,7 @@ class RunAllTest(unittest.TestCase):
             self.assertFalse((train["fold"] == k).any())
         # The echo tool copies any count it is given. On held-out sites whose links
         # carry no training site it can only return 0: the held-out count never leaks.
-        t = pd.read_csv(run / "sites_car__tool_calibrated.csv", dtype={"site_id": str})
+        t = pd.read_csv(run / "sites_car__own_calibration.csv", dtype={"site_id": str})
         xw = case.crosswalk[case.crosswalk["mode"] == "car"].merge(case.sites[["site_id", "mode", "fold"]])
         shared = set()
         for k in sorted(case.sites["fold"].unique()):
@@ -231,7 +192,7 @@ class RunAllTest(unittest.TestCase):
         self.assertTrue(len(alone) > 0)
         self.assertTrue((t[t["site_id"].isin(alone)]["oof"] == 0).all())
         lb = pd.read_csv(res / "leaderboard.csv")
-        self.assertEqual(set(lb["track"]), {"tool_calibrated"})
+        self.assertEqual(set(lb["track"]), {"own_calibration"})
         self.assertEqual(set(lb["split"]), {"group_out_pooled"})
 
 

@@ -105,17 +105,17 @@ def _get_asset(name: str, dest_dir: Path, version: str, from_dir: Path | None, r
 
 def fetch_result(name: str, version: str = DEFAULT_VERSION, dest: Path | str = "results",
                  repo: str = REPO) -> Path:
-    """Path to a published results file (release asset ``results__<name>``).
+    """Path to a published results file (manifest case ``results``, asset ``results__<name>``).
 
     Uses ``dest/<name>`` if it exists (for example after a local run), else
-    downloads it from the release.
+    downloads it from the release and checks its sha256.
     """
     out = Path(dest) / name
-    if out.exists():
-        return out
-    Path(dest).mkdir(parents=True, exist_ok=True)
-    got = _get_asset(f"results__{name}", Path(dest), version, None, repo)
-    got.rename(out)
+    if not out.exists():
+        with tempfile.TemporaryDirectory() as tmp:
+            got = fetch(version, "results", tmp, repo=repo, files={name})[0]
+            out.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(got), str(out))
     return out
 
 
@@ -135,6 +135,8 @@ def fetch(version: str = DEFAULT_VERSION, case: str | None = None,
         entries = read_manifest(man_path)
         if case:
             entries = [e for e in entries if e["case"] == case]
+        else:
+            entries = [e for e in entries if e["case"] != "results"]  # results via fetch_result
             if not entries:
                 raise FetchError(f"case {case} not in manifest {version}")
         if files:

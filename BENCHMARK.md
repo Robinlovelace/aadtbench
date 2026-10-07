@@ -42,44 +42,50 @@ interaction), `assignment` (OD assignment with route choice or congestion),
 (metric, angular or time), radius or decay, weighting (none, population, land
 use or OD) and congestion. Boards group rows by family.
 
-## Tracks and baselines
+## Scoring rule, tracks and baselines
 
-Every result is scored on two tracks, plus a third for tools that calibrate themselves:
+One rule for everything: a prediction is the submitted value times one scale
+factor per mode, fitted per fold on the training counter sites:
 
-- `raw`: the flow times one scale factor, the geometric mean ratio of counts
-  to flows on the training folds.
-- `calibrated`: the flow through the shared reference calibrator, fitted on
-  the training folds:
+```text
+k = exp( mean over training sites with flow > 0 and count > 0 of log(count / flow) )
+prediction = k * flow
+```
 
-  ```text
-  log(count + 1) = a + b * log(flow + 1) + road class effects + error
-  ```
+Only counter sites enter the fit, so unobserved links are never used. The
+geometric mean matches the log-scale metrics and is robust to a few very busy
+roads. Sites with zero flow are left out of the fit but still scored (as
+zero). Rank correlation does not depend on `k`. There is no other calibration
+model.
 
-  OLS, Duan smearing on back-transform. Road classes with fewer than five
-  training sites merge into `other`, which joins the most common class if it
-  is still under five. This track asks what a tool adds beyond road class.
-- `tool_calibrated` (opt in, `run_all --tool-calibrated`): the tool's own
-  calibrated flows, with any terms it likes. The harness calls the adapter
-  once per fold `k` and passes only the counts of the other folds
+Tracks for tools:
+
+- `uncalibrated`: the tool's flow under the rule above.
+- `own_calibration` (opt in, `run_all --tool-calibrated`): the tool's own
+  calibrated flows, scored as submitted. The harness calls the adapter once
+  per fold `k` and passes only the counts of the other folds
   (`training_sites.csv`, `training_crosswalk.csv`). Fold `k`'s sites are
-  scored only from that call's predictions, then pooled. A held-out count is
-  never in the tool's input, so it cannot leak. Same folds, metrics and
-  baselines as the other tracks. These rows sit on their own board and are
-  never ranked against the reference-calibrated track without saying so.
-  They are not on the leave-one-city-out board.
+  scored only from that call's predictions, then pooled, so a held-out count
+  cannot leak. Not on the leave-one-city-out board.
 
-Four mandatory baselines go through the calibrated track with a covariate in
-place of `log(flow + 1)`: `class_only` (none), `centre_distance` (distance to
-the case centre), `attractor_density` (POI weight within 500 m of the link
-midpoint) and `population_density` (population within 1 km). They are T1.
+Four mandatory baselines (family `baseline`, tier T1) are on every board:
+
+- `class_only`: the geometric mean training count of the site's road class (a
+  lookup, fitted per fold, no regression).
+- `centre_distance`: `1000 / (1000 + d)`, d the distance in metres from the
+  link midpoint to the case centre (larger means closer, so busier).
+- `attractor_density`: POI weight within 500 m of the link midpoint.
+- `population_density`: population within 1 km of the link midpoint.
+
+The last three are scored exactly like a tool on the uncalibrated track.
 
 ## Splits
 
 - **Spatial group-out (main board).** Sites are grouped into square cells
   (3 km, or as set in `case.yaml`), cells into five folds (seed 42). Each fold
-  is predicted by a calibrator fitted on the other four. Pooled out-of-fold
+  is predicted from a scale factor (or class lookup) fitted on the other four. Pooled out-of-fold
   predictions are scored once.
-- **Leave-one-city-out.** For each mode the calibrator is fitted on all other
+- **Leave-one-city-out.** For each mode the scale factor or class lookup is fitted on all other
   open cases and scored on the held-out one. No per-city tuning.
 - **Legacy.** The v0.1 Leeds board (49 held-out links) is a release asset.
 
@@ -161,8 +167,9 @@ placed each row.
 
 `python -m benchmark.fetch --version v0.3.0` downloads case assets
 (`<case_id>__<path>`) into `cases/<case_id>/` and fails on any sha256
-mismatch. Results are assets named `results__<file>` (full leaderboard, legacy
-board). The paper reads them with `benchmark.fetch.fetch_result`.
+mismatch. Results are assets named `results__<file>` (full leaderboard, log,
+legacy board), listed in the manifest under case `results`. The paper reads
+them with `benchmark.fetch.fetch_result`, which checks sha256 too.
 
 ## Runs, hardware and provenance
 
@@ -181,7 +188,7 @@ run_id, git_commit, timestamp, status`.
 
 **Time limit.** Each adapter process has a wall time limit (`run_all
 --time-limit`, default 300 s). All modes of a case run in one process, so the
-limit is per tool, variant and case (per fold on the tool-calibrated track).
+limit is per tool, variant and case (per fold on the own-calibration track).
 On expiry the process is killed and the run is recorded with status `timeout`
 and the limit. Its metrics are NA, never a score.
 
@@ -190,8 +197,7 @@ and the limit. Its metrics are NA, never a score.
 On every pull request: unit tests, the adapter contract check, and a smoke
 test per open tool in its own container on the `oxford-mini-v1` case from the
 release (`config/ci.yaml`). The smoke test checks valid predictions, coverage,
-a raw rank correlation floor and calibrated q close to the class-only
-baseline. Full cases run locally (`scripts/run_board.sh`).
+and an uncalibrated rank correlation floor. Full cases run locally (`scripts/run_board.sh`).
 
 ## Out of scope
 

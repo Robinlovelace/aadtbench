@@ -1,4 +1,4 @@
-"""Run tools on cases, score every run on both tracks, write the leaderboards.
+"""Run tools on cases, score every run, write the leaderboards.
 
     python -m benchmark.run_all --cases oxford-v1 leeds-v1 --tools baselines \
         [other adapters] --tier T1_open_covariates
@@ -129,7 +129,7 @@ def run_baseline(case: Case, name: str, modes: list[str], run_dir: Path, h: str,
         "options": {"distance": "n/a", "radius_or_decay": "n/a", "weighting": "n/a",
                     "congestion": "n/a", "covariate": name},
         "input_tier": BASELINE_TIER, "modes": modes, "parameters": {},
-        "calibrator_covariate": bl.USES_COVARIATE[name], "calibrated_track_only": True,
+        "class_lookup": name == "class_only",
         "wall_time_s": round(time.perf_counter() - t0, 3),
         "peak_memory_mb": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1),
         "status": "complete", "n_predictions": int(len(pred)), "harness_hash": h,
@@ -248,12 +248,10 @@ def _row(case: Case, rec: dict, mode: str, track: str, split: str, metrics: dict
 
 
 def tracks_for(rec: dict) -> list[tuple[str, bool]]:
-    """(track, scale) pairs to score. Baselines only get the calibrated track."""
+    """(track, scale) pairs to score: own calibration as submitted, else one scale factor."""
     if rec.get("tool_calibrated"):
-        return [("tool_calibrated", False)]
-    if rec.get("calibrated_track_only"):
-        return [("calibrated", True)]
-    return [("raw", True), ("calibrated", True)]
+        return [("own_calibration", False)]
+    return [("uncalibrated", True)]
 
 
 def score_run(case: Case, rec: dict, run_dir: Path, site_class: pd.Series, commit: str,
@@ -265,7 +263,7 @@ def score_run(case: Case, rec: dict, run_dir: Path, site_class: pd.Series, commi
     # not a zero flow).
     modes = [m for m in modes if m not in (rec.get("modes_unsupported") or {})]
     status = rec.get("status", "failed")
-    covariate = rec.get("calibrator_covariate", True)
+    by_class = bool(rec.get("class_lookup"))
     pred = None
     if status == "complete" and (run_dir / "predictions.parquet").exists():
         pred = pd.read_parquet(run_dir / "predictions.parquet")
@@ -277,14 +275,14 @@ def score_run(case: Case, rec: dict, run_dir: Path, site_class: pd.Series, commi
                 rows.append(_row(case, rec, mode, track, "group_out_pooled", NAN_METRICS,
                                  status, commit, stamp))
                 continue
-            if track == "tool_calibrated":
+            if track == "own_calibration":
                 m, scored = tool_calibrated_pooled(case, pred, mode, site_class)
                 scored.to_csv(run_dir / f"sites_{mode}__{track}.csv", index=False)
                 rows.append(_row(case, rec, mode, track, "group_out_pooled", m, "complete", commit, stamp))
                 continue
             t, info = site_table(case.sites, case.crosswalk, pred, mode, site_class)
             info_all[mode] = info
-            m, scored, coefs = group_out_pooled(t, track, covariate, scale)
+            m, scored, coefs = group_out_pooled(t, scale, by_class)
             scored.to_csv(run_dir / f"sites_{mode}__{track}.csv", index=False)
             rows.append(_row(case, rec, mode, track, "group_out_pooled", m, "complete", commit, stamp))
             info_all[f"{mode}__{track}__coefficients"] = coefs
@@ -330,9 +328,9 @@ def score_loco(cases: dict[str, Case], results: Path, run_keys: list[tuple], com
         if any(r is None or r.get("status") != "complete" for r in recs.values()):
             continue
         rec0 = next(iter(recs.values()))
-        covariate = rec0.get("calibrator_covariate", True)
+        by_class = bool(rec0.get("class_lookup"))
         for track, scale in tracks_for(rec0):
-            if track == "tool_calibrated":
+            if track == "own_calibration":
                 continue  # the tool's own calibration is not refitted across cities
             # Every mode scored in two or more cases (cases without it sit out).
             modes = sorted(set().union(*[set(r.get("modes", [])) - set(r.get("modes_unsupported") or {})
@@ -346,7 +344,7 @@ def score_loco(cases: dict[str, Case], results: Path, run_keys: list[tuple], com
                             ["site_id", "value", "flow", "road_class"]]
                 if len(tables) < 2:
                     continue
-                for cid, (m, _, _) in leave_one_city_out(tables, track, covariate, scale).items():
+                for cid, (m, _, _) in leave_one_city_out(tables, scale, by_class).items():
                     rows.append(_row(cases[cid], recs[cid], mode, track, "leave_one_city_out", m,
                                      "complete", commit, stamp))
         for cid, d in dirs.items():

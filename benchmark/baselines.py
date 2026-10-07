@@ -1,27 +1,18 @@
-"""The four mandatory baselines.
-
-Each baseline is a covariate per segment. It is written as a predictions
-table like any tool (``segment_id``, ``mode``, ``flow``). The reference
-calibrator then applies ``log(flow + 1)`` to it, so the covariate is stored
-on a positive scale and the calibrator sees what the spec asks for:
+"""The four mandatory baselines, scored like any tool (uncalibrated track).
 
 ``class_only``
-    No covariate. The table holds ``flow = 1`` and the scorer is told to drop
-    the flow term (``calibrator_covariate = false`` in the run record).
+    No flow. The scorer predicts the geometric mean training count of the
+    site's road class (``class_lookup`` in the run record).
 ``centre_distance``
-    ``flow`` is the distance in metres from the link midpoint to the case
-    centre. The calibrator uses ``log(1 + distance)``, which is the spec's
-    log distance to within a metre.
+    ``flow = 1000 / (1000 + d)``, d the distance in metres from the link
+    midpoint to the case centre, so larger means closer and busier.
 ``attractor_density``
-    ``flow`` is the sum of point-of-interest weights within 500 m of the link
-    midpoint. The calibrator uses ``log(1 + weight)``, as in the spec.
+    ``flow`` is the point-of-interest weight within 500 m of the link midpoint.
 ``population_density``
-    ``flow`` is the population within 1 km of the link midpoint. The
-    calibrator uses ``log(1 + population)``, as in the spec.
+    ``flow`` is the population within 1 km of the link midpoint.
 
-The same value is written for every mode a segment allows. Baselines are
-meant for the calibrated track only. On the raw track they are not scored
-because the covariate has no unit of vehicles per day.
+The last three are multiplied by one scale factor per mode and fold, like a
+tool's flow. The same value is written for every mode a segment allows.
 """
 from __future__ import annotations
 
@@ -30,12 +21,9 @@ import pandas as pd
 from scipy.spatial import cKDTree
 
 BASELINES = ["class_only", "centre_distance", "attractor_density", "population_density"]
-BASELINE_VERSION = "1"
+BASELINE_VERSION = "2"
 POI_RADIUS_M = 500.0
 POP_RADIUS_M = 1000.0
-# Which covariate baselines drop from the calibrator.
-USES_COVARIATE = {"class_only": False, "centre_distance": True,
-                  "attractor_density": True, "population_density": True}
 
 
 def midpoints(network) -> np.ndarray:
@@ -63,7 +51,7 @@ def segment_covariates(case) -> pd.DataFrame:
     mid = midpoints(net)
     cx, cy = case.centre_xy()
     df = pd.DataFrame({"segment_id": net["segment_id"].astype(str).values})
-    df["centre_distance"] = np.hypot(mid[:, 0] - cx, mid[:, 1] - cy)
+    df["centre_distance"] = 1000.0 / (1000.0 + np.hypot(mid[:, 0] - cx, mid[:, 1] - cy))
     df["attractor_density"] = weight_within(mid, case.pois, POI_RADIUS_M)
     df["population_density"] = weight_within(mid, case.population, POP_RADIUS_M)
     return df

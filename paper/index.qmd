@@ -62,8 +62,8 @@ board = board[board["status"] == "complete"]
 OPEN = ["oxford-v1", "leeds-v1", "melbourne-v1", "zurich-v1", "toronto-v1"]
 CASES = OPEN + ["leuven-v1"]
 go = board[board["split"] == "group_out_pooled"]
-cal = go[go["track"] == "calibrated"]
-raw = go[go["track"] == "raw"]
+cal = go[go["track"] == "uncalibrated"]  # tools and baselines
+raw = go[go["track"] == "uncalibrated"]
 ENGINES = [("cityseer_od", "default", "T2_synthetic_od", "cityseer"),
            ("aequilibrae", "aon", "T2_synthetic_od", "AequilibraE AoN"),
            ("aequilibrae", "ue_bfw", "T2_synthetic_od", "AequilibraE UE")]
@@ -384,7 +384,7 @@ improves on AoN for car in Bristol (raw $\rho$ 0.59 against 0.55) and Leeds
 #| echo: false
 #| label: tbl-loco
 #| tbl-cap: "Leave-one-city-out, calibrated track: the calibrator is fitted on the other open cases for the same mode and scored on the held-out city. Values are q."
-lo = board[(board.split == "leave_one_city_out") & (board.track == "calibrated")]
+lo = board[(board.split == "leave_one_city_out") & (board.track == "uncalibrated")]
 rows = []
 for (c, m), g in lo.groupby(["case_id", "mode"]):
     b = g[(g.tool == "baseline") & g.q.notna()]

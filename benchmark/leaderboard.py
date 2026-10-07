@@ -102,8 +102,11 @@ def assemble(results_dir: str | Path = "results") -> pd.DataFrame:
     df.to_csv(rd / "leaderboard.csv", index=False)
     boards = rd / "leaderboards"
     boards.mkdir(exist_ok=True)
+    # Baselines are on the uncalibrated track. The own-calibration board shows them too.
+    base = df[df["family"] == "baseline"]
     for (case, mode, track), g in df.groupby(["case_id", "mode", "track"]):
-        g.to_csv(boards / f"{case}__{mode}__{track}.csv", index=False)
+        b = base[(base["case_id"] == case) & (base["mode"] == mode)] if track == "own_calibration" else None
+        pd.concat([g, b]).to_csv(boards / f"{case}__{mode}__{track}.csv", index=False)
     (rd / "LEADERBOARD.md").write_text(markdown(df) + "\n")
     summary(df).to_csv(rd / "summary.csv", index=False)
     return df

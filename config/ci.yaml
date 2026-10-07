@@ -12,12 +12,7 @@ defaults:
   modes: [walking, cycling, car, heavy]
   # Share of crosswalked sites with a predicted flow above 0, per mode.
   min_coverage: 0.5
-  # The tool's calibrated q must reach the class_only baseline q, less the tolerance,
-  # in at least this many modes. Road class is hard to beat for motor traffic, so a
-  # sound tool sits close to it and a broken one falls well below.
-  min_modes_beating_class_only: 1
-  class_only_tolerance: 0.05
-  # Raw track Spearman rho floor per mode: the flows must carry signal before calibration.
+  # Uncalibrated Spearman rho floor per mode: the flows must carry signal.
   min_raw_rho:
     car: 0.3
   # Smallest number of sites a mode needs to count towards the checks.

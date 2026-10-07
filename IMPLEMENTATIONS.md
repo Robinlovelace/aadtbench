@@ -1,7 +1,7 @@
 # Adding a tool to AADTBench
 
 A tool never sees the counts. Its adapter writes flows. The harness matches,
-calibrates and scores them (`BENCHMARK.md`).
+scales and scores them (`BENCHMARK.md`).
 
 ## The contract
 
@@ -52,8 +52,9 @@ Shared defaults for assignment tools: `CLASS_CAPACITY_VPH` and
 or mode the tool cannot handle.
 
 Variants are fixed before scoring and are not chosen by looking at the board.
-Tools that need calibration leave it to the calibrated track, or use the
-tool-calibrated track: run with `run_all --tool-calibrated`, and in `predict`
+Raw flows are scored on the uncalibrated track (one scale factor per mode).
+Tools that calibrate themselves use the own-calibration track: run with
+`run_all --tool-calibrated`, and in `predict`
 call `ctx.training_counts()` for `(sites, crosswalk)` of the training folds of
 this call. The harness calls `predict` once per fold. Return calibrated flows.
 Each run is killed after `--time-limit` seconds (default 300) and shown as NA.

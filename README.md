@@ -48,7 +48,7 @@ BY 4.0). Licences come from the reviewed table in `benchmark/licences.py`.
 
 ## Current results
 
-See `leaderboard-summary.csv` (calibrated, raw and tool tracks, spatial
+See `leaderboard-summary.csv` (uncalibrated, own-calibration and baseline tracks, spatial
 group-out) and the `results__leaderboard.csv` asset of the release.
 
 ## Contributing
