@@ -12,7 +12,7 @@ from scipy import stats
 
 MIN_RANKED_SITES = 20
 TRACKS = ("uncalibrated", "own_calibration")
-METRIC_COLUMNS = ["n_sites", "rho", "log_r2", "raw_r2", "calibration_ratio", "q"]
+METRIC_COLUMNS = ["n_sites", "rho", "log_r2", "raw_r2", "calibration_ratio", "coverage"]
 
 
 def site_table(sites: pd.DataFrame, crosswalk: pd.DataFrame, predictions: pd.DataFrame,
@@ -60,7 +60,7 @@ def metrics_from(obs, pred, unscaled_flow) -> dict:
     ok = np.isfinite(obs) & np.isfinite(pred)
     obs, pred, flow = obs[ok], pred[ok], flow[ok]
     out = {"n_sites": int(len(obs)), "rho": np.nan, "log_r2": np.nan, "raw_r2": np.nan,
-           "calibration_ratio": np.nan, "q": np.nan}
+           "calibration_ratio": np.nan, "coverage": float(np.mean(flow > 0)) if len(flow) else np.nan}
     if len(obs) < 3:
         return out
 
@@ -74,7 +74,6 @@ def metrics_from(obs, pred, unscaled_flow) -> dict:
     out["raw_r2"] = r2(obs, pred)
     if flow.sum() > 0:
         out["calibration_ratio"] = float(obs.sum() / flow.sum())
-    out["q"] = float((out["rho"] + out["log_r2"]) / 2)
     return out
 
 

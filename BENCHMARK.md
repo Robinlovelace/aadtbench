@@ -91,10 +91,10 @@ The last three are scored exactly like a tool on the uncalibrated track.
 
 ## Metrics
 
-Per target: `n_sites`, Spearman `rho`, `log_r2` (predictive R squared on
-`log(1 + value)`), `raw_r2`, `calibration_ratio` (sum of counts over sum of
-unscaled flow) and `q = (rho + log_r2) / 2`. Targets with fewer than 20 sites
-are shown, not ranked.
+Boards rank by Spearman `rho`: scale-free, so untouched by the multiplier, and
+robust to a few zero predictions. Secondary: `log_r2` (on `log(1 + value)`),
+`coverage` (share of sites with flow > 0), `raw_r2`, `calibration_ratio`.
+Targets with fewer than 20 sites are shown, not ranked.
 
 ## Case format
 
@@ -182,7 +182,7 @@ wall time over reference time.
 
 Leaderboard rows carry: `benchmark_version, case_id, case_version, mode, tool,
 tool_version, variant, family, options, input_tier, track, split, n_sites,
-rho, log_r2, raw_r2, calibration_ratio, q, ranked, time_limit_s, wall_time_s, cpu_time_s,
+rho, log_r2, raw_r2, calibration_ratio, coverage, ranked, time_limit_s, wall_time_s, cpu_time_s,
 speed_index, peak_memory_mb, cpu_model, container_image_digest, data_release,
 run_id, git_commit, timestamp, status`.
 

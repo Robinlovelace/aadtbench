@@ -69,7 +69,7 @@ class ScoringTest(unittest.TestCase):
         m, _, _ = group_out_pooled(t)
         self.assertEqual(m["n_sites"], len(t))
         self.assertTrue(m["ranked"])
-        self.assertAlmostEqual(m["q"], (m["rho"] + m["log_r2"]) / 2)
+        self.assertTrue(0 <= m["coverage"] <= 1)
         m2, _, _ = group_out_pooled(t.head(15))
         self.assertFalse(m2["ranked"])
 
@@ -142,7 +142,7 @@ class RunAllTest(unittest.TestCase):
         self.assertEqual(len(lb), 2 * 2 * 4 * 2)  # cases x modes x baselines x splits
         self.assertTrue((res / "leaderboards" / "synth-a__car__uncalibrated.csv").exists())
         self.assertIn("baseline", (res / "LEADERBOARD.md").read_text())
-        q = lb[(lb["split"] == "group_out_pooled") & (lb["mode"] == "car") & (lb["case_id"] == "synth-a")].set_index("variant")["q"]
+        q = lb[(lb["split"] == "group_out_pooled") & (lb["mode"] == "car") & (lb["case_id"] == "synth-a")].set_index("variant")["rho"]
         self.assertGreater(q["class_only"], 0.3)  # the synthetic counts are mostly road class
         self.assertGreater(q["centre_distance"], 0.0)
         # second run reuses the cache and appends to the log
@@ -165,7 +165,7 @@ class RunAllTest(unittest.TestCase):
         self.assertEqual(main(args), 0)
         lb = pd.read_csv(res / "leaderboard.csv")
         self.assertEqual(set(lb["status"]), {"timeout"})
-        self.assertTrue(lb["q"].isna().all())
+        self.assertTrue(lb["rho"].isna().all())
         self.assertEqual(set(lb["time_limit_s"]), {1.0})
 
     def test_tool_calibrated_cannot_see_held_out_counts(self):
