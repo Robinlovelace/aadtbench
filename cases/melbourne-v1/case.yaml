@@ -1,0 +1,46 @@
+id: melbourne-v1
+version: 1.0.0
+benchmark_version: 0.2.0
+title: Melbourne multimode annual average daily flow
+place: Melbourne
+country: AUS
+crs: EPSG:32755
+centre_lon: 144.9631732
+centre_lat: -37.8142454
+centre_x: 320712.5
+centre_y: 5812840.2
+radius_m: 15000.0
+modes:
+- walking
+- car
+- heavy
+sources:
+- source: melbourne_ped
+  licence: CC-BY-4.0
+  licence_text: CC-BY-4.0
+  method: continuous
+  n_sites: 100
+- source: vic_dtp_aadt
+  licence: CC-BY-4.0
+  licence_text: CC-BY-4.0
+  method: short_period
+  n_sites: 7467
+excluded_sources: {}
+network_licence: ODbL-1.0 (OpenStreetMap)
+split:
+  group_cell_m: 3000.0
+  folds: 5
+  seed: 42
+input_tiers:
+- T0_network
+- T1_open_covariates
+- T2_synthetic_od
+files:
+- crosswalk.csv
+- inputs/od_synthetic.parquet
+- inputs/pois.parquet
+- inputs/population.parquet
+- inputs/zones.parquet
+- network.parquet
+- sites.csv
+data_size_bytes: 21030210
