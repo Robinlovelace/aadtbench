@@ -53,6 +53,8 @@ planning, and urban design. Three approaches exist:
 3.  **Spatial Network Analysis** — Graph-based metrics within a GIS
     framework.
 
+<!-- These are overlapping approaches. Centrality and betweenness are both forms of SNA. Betweenness is a flow model. Gravity is also a form of reach (a form of centrality). Gravity uses a weighting that continuously varies inversely with distance rather than a step function (i.e. 1 below the radius and 0 above the radius). -->
+
 **cityseer** (Simons 2022) implements high-performance centrality in
 Rust, with shortest-path and angular analysis.
 
@@ -122,6 +124,8 @@ with moderate volumes on arterial routes and suburban streets
 ## Methods
 
 ### Benchmark Design
+
+*the section below doesn't really compare like with like, either for R^2 or for performance. e.g. comparing closeness from sdna+ with betweenness from other tools; using different options (angular vs euclidean vs anything else) or weightings (population, land use). I think it would be better to structure by centrality measure, rather than by tool. Additionally FYI, sDNA does have a gravity reach model - it's labelled NQPD (network quantity penalized by distance) - CC*
 
 **cityseer experiments**:
 
