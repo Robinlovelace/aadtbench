@@ -33,6 +33,8 @@ import hashlib
 import json
 import os
 import resource
+import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -143,7 +145,7 @@ def run_baseline(case: Case, name: str, modes: list[str], run_dir: Path, h: str,
     return rec
 
 
-DEFAULT_TIME_LIMIT_S = 300.0
+DEFAULT_TIME_LIMIT_S = float(__import__("yaml").safe_load((REPO / "config" / "limits.yaml").read_text())["full_case_time_limit_s"])
 
 
 def run_adapter_cli(case: Case, blind: Path, tool: str, variant: str | None, tier: str,
@@ -162,16 +164,23 @@ def run_adapter_cli(case: Case, blind: Path, tool: str, variant: str | None, tie
         cmd += ["--train", str(train_dir)]
     env = dict(os.environ, PYTHONPATH=str(REPO) + os.pathsep + os.environ.get("PYTHONPATH", ""))
     t0 = time.perf_counter()
+    # Own process group, so a timeout kills the tool's child processes too.
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=REPO,
+                            env=env, start_new_session=True)
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO, env=env,
-                             timeout=time_limit_s if time_limit_s and time_limit_s > 0 else None)
+        out, err = proc.communicate(timeout=time_limit_s if time_limit_s and time_limit_s > 0 else None)
+        res = subprocess.CompletedProcess(cmd, proc.returncode, out, err)
         rec = read_run(run_dir) or {}
         if res.returncode != 0 and rec.get("status") not in ("failed",):
             rec.update(status="failed", message=(res.stderr or "")[-400:])
         rec.setdefault("status", "complete" if res.returncode == 0 else "failed")
     except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.communicate()
         rec = {"status": "timeout", "message": f"killed after {time_limit_s} s"}
         (run_dir / "predictions.parquet").unlink(missing_ok=True)
+        for d in run_dir.glob("tmp*"):  # temporary files the killed tool left behind
+            shutil.rmtree(d, ignore_errors=True)
         write_system(run_dir, tool=tool, tool_version="unknown", harness_commit=git_commit(),
                      data_release=f"v{case.benchmark_version}", wall_time_s=time.perf_counter() - t0,
                      cpu_s=0.0, peak_memory_mb=float("nan"), threads=threads)
@@ -180,7 +189,15 @@ def run_adapter_cli(case: Case, blind: Path, tool: str, variant: str | None, tie
     rec.setdefault("case_version", case.version)
     rec.setdefault("tool", tool)
     rec.setdefault("variant", variant or "default")
-    rec.setdefault("family", "other")
+    if "family" not in rec:  # the adapter wrote no record (timeout or crash): take its declaration
+        try:
+            import importlib
+            from adapters._base import Adapter
+            mod = importlib.import_module(f"adapters.{tool}")
+            cls = next(c for c in vars(mod).values() if isinstance(c, type) and issubclass(c, Adapter) and c is not Adapter)
+            rec["family"] = cls.variants.get(variant or next(iter(cls.variants)), {}).get("family", cls.family)
+        except Exception:
+            rec["family"] = "other"
     rec.setdefault("input_tier", tier)
     rec.setdefault("wall_time_s", round(time.perf_counter() - t0, 3))
     rec["harness_hash"] = h

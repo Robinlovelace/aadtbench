@@ -1,0 +1,9 @@
+# Allow list. Case data, results and everything else stay out of the build context.
+*
+!adapters
+!benchmark/__init__.py
+!benchmark/system.py
+!requirements.txt
+**/__pycache__
+**/*.pyc
+adapters/legacy_v01

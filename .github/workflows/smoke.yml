@@ -39,7 +39,7 @@ jobs:
       matrix:
         # To add a tool: add its name here, add containers/<tool>/Dockerfile
         # and add a block for it under `tools` in config/ci.yaml.
-        tool: [cityseer_od, aequilibrae]
+        tool: [cityseer_od, aequilibrae, sdna]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

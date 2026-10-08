@@ -17,11 +17,12 @@ defaults:
     car: 0.3
   # Smallest number of sites a mode needs to count towards the checks.
   min_sites: 20
-  # Wall time limit for the tool run in seconds.
-  max_wall_time_s: 900
 
 tools:
   cityseer_od:
     variant: default
   aequilibrae:
     variant: aon
+  sdna:
+    # Angular betweenness (flow family). The reach family NQPD variants are covered by the unit test.
+    variant: betweenness_angular

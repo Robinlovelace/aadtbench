@@ -186,8 +186,8 @@ rho, log_r2, raw_r2, calibration_ratio, coverage, ranked, time_limit_s, wall_tim
 speed_index, peak_memory_mb, cpu_model, container_image_digest, data_release,
 run_id, git_commit, timestamp, status`.
 
-**Time limit.** Each adapter process has a wall time limit (`run_all
---time-limit`, default 300 s). All modes of a case run in one process, so the
+**Time limit.** Each adapter process has a wall time limit, set in
+`config/limits.yaml`: 600 s on full cases, 300 s on the CI mini case. All modes of a case run in one process, so the
 limit is per tool, variant and case (per fold on the own-calibration track).
 On expiry the process is killed and the run is recorded with status `timeout`
 and the limit. Its metrics are NA, never a score.

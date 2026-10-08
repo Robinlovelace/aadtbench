@@ -13,7 +13,7 @@ Checks per tool:
   modes (the flows carry signal),
 * coverage (share of crosswalked sites with a flow above 0) is at least
   ``min_coverage`` in every checked mode,
-* the wall time is within ``max_wall_time_s``.
+* the wall time is within ``mini_case_time_limit_s`` (``config/limits.yaml``).
 
 Exit code 0 on pass. Non-zero on a failed check. If the case id is the
 placeholder or its assets are missing from the release, the smoke step emits a
@@ -137,8 +137,9 @@ def evaluate(case, rec: dict, run_dir: Path, rows: list[dict], settings: dict, t
     if not [r for r in table if "note" not in r]:
         fails.append("no mode had enough sites to check")
     wall = rec.get("wall_time_s")
-    if wall is not None and wall > settings["max_wall_time_s"]:
-        fails.append(f"wall time {wall:.0f} s above {settings['max_wall_time_s']} s")
+    limit = yaml.safe_load((CONFIG.parent / "limits.yaml").read_text())["mini_case_time_limit_s"]
+    if wall is not None and wall > limit:
+        fails.append(f"wall time {wall:.0f} s above {limit} s")
     return table, fails
 
 
