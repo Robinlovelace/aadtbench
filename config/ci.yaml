@@ -17,8 +17,6 @@ defaults:
     car: 0.3
   # Smallest number of sites a mode needs to count towards the checks.
   min_sites: 20
-  # Wall time limit for the tool run in seconds.
-  max_wall_time_s: 900
 
 tools:
   cityseer_od:

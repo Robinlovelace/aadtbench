@@ -1,0 +1,4 @@
+# Wall time limits per tool, variant and case, in seconds. A run that hits the
+# limit is killed and recorded as timeout with NA metrics (BENCHMARK.md).
+full_case_time_limit_s: 600   # benchmark.run_all on full cases
+mini_case_time_limit_s: 300   # CI smoke tests on the mini case

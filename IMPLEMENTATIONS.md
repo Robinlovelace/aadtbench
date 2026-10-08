@@ -57,7 +57,7 @@ Tools that calibrate themselves use the own-calibration track: run with
 `run_all --tool-calibrated`, and in `predict`
 call `ctx.training_counts()` for `(sites, crosswalk)` of the training folds of
 this call. The harness calls `predict` once per fold. Return calibrated flows.
-Each run is killed after `--time-limit` seconds (default 300) and shown as NA.
+Each run is killed after the limit in `config/limits.yaml` (600 s, 300 s in CI) and shown as NA.
 
 ## Run it
 
