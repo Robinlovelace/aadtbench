@@ -17,6 +17,9 @@ Variants (fixed before any scoring):
 All four count links (``weight_type=Link``, no origin or destination weights),
 so no population or land use enters. Radii are metres of Euclidean distance.
 
+Threads: the ``--threads`` value is passed to sDNA as ``OMP_NUM_THREADS``. The output is the
+same for any thread count. Nothing else in sDNA speeds a run up without changing the measures.
+
 Usage:
   python -m adapters.sdna --case cases/oxford-v1 --tier T0_network \
       --modes car,cycling --out results/runs/oxford-v1/sdna/betweenness_angular
@@ -24,6 +27,7 @@ Usage:
 from __future__ import annotations
 
 import importlib.metadata
+import os
 import subprocess
 import sys
 import tempfile
@@ -35,8 +39,9 @@ import pandas as pd
 from adapters._base import Adapter, RunContext, Unsupported, run_cli
 
 # Radius (m) per mode. Fixed before any scoring, not tuned on counts. sDNA cost grows with the
-# square of the radius, so these stay short enough for a whole city on one thread
-# (2 km walking took about 70 s on the 15 000 link mini case).
+# square of the radius, so these stay short enough for a whole city. sDNA 5.2.0 on Linux runs
+# its inner loops with OpenMP, so wall time falls almost linearly with ``--threads``.
+# On oxford-v1 one thread needs many minutes and 16 threads need a few.
 RADIUS_M = {"walking": 1000, "cycling": 2000, "car": 2500, "heavy": 2500, "motor": 2500}
 METRIC_LETTER = {"ANGULAR": "A", "EUCLIDEAN": "E", "HYBRID": "H"}
 
@@ -88,7 +93,8 @@ class SDNA(Adapter):
                     [sys.executable, "-c",
                      "import sys; from sDNA.bin.sdnaintegral import main; sys.exit(main())",
                      "-i", str(tmp / "in.shp"), "-o", str(tmp / "out.shp"), config],
-                    capture_output=True, text=True)
+                    capture_output=True, text=True,
+                    env=dict(os.environ, OMP_NUM_THREADS=str(max(1, int(ctx.threads)))))
                 if proc.returncode != 0:
                     raise RuntimeError(f"sdnaintegral failed: {(proc.stdout + proc.stderr)[-500:]}")
                 import geopandas as gpd

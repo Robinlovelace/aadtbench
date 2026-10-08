@@ -12,6 +12,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /workspace
 
 COPY requirements.txt /tmp/requirements.txt
+# 5.2.0 is the first PyPI release with the OpenMP Linux build (sdna_plus PR 122, merged 29 June 2026).
 RUN pip install -r /tmp/requirements.txt sdna-plus==5.2.0
 
 COPY adapters ./adapters
