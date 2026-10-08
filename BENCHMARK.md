@@ -186,6 +186,8 @@ rho, log_r2, raw_r2, calibration_ratio, coverage, ranked, time_limit_s, wall_tim
 speed_index, peak_memory_mb, cpu_model, container_image_digest, data_release,
 run_id, git_commit, timestamp, status`.
 
+**Threads.** Every tool gets the same thread budget from `config/limits.yaml` (8 on full cases, 2 in CI), passed as `ctx.threads` and `OMP_NUM_THREADS` and recorded in `system.json`.
+
 **Time limit.** Each adapter process has a wall time limit, set in
 `config/limits.yaml`: 600 s on full cases, 300 s on the CI mini case. All modes of a case run in one process, so the
 limit is per tool, variant and case (per fold on the own-calibration track).

@@ -154,7 +154,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--release", default=None)
     p.add_argument("--from-dir", default=None, help="local mirror of release assets")
     p.add_argument("--cases-root", default=None)
-    p.add_argument("--threads", type=int, default=2)
+    p.add_argument("--threads", type=int, default=int(yaml.safe_load((CONFIG.parent / "limits.yaml").read_text())["mini_case_threads"]))
     p.add_argument("--results-dir", default=None, help="default: a new temporary directory")
     a = p.parse_args(argv)
 

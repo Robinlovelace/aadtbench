@@ -2,3 +2,8 @@
 # limit is killed and recorded as timeout with NA metrics (BENCHMARK.md).
 full_case_time_limit_s: 600   # benchmark.run_all on full cases
 mini_case_time_limit_s: 300   # CI smoke tests on the mini case
+
+# Thread budget per run, the same for every tool. Passed to adapters as
+# ctx.threads and OMP_NUM_THREADS, and recorded in system.json.
+full_case_threads: 8          # benchmark.run_all on full cases
+mini_case_threads: 2          # CI smoke tests (GitHub runners have 2 to 4 cores)
