@@ -437,6 +437,8 @@ leg.columns = ["Tool", "Tier", "Variant", "Raw R2", "log1p R2", "Time (s)"]
 Markdown(leg.round(3).to_markdown(index=False, disable_numparse=True))
 ```
 
+<!-- - Mention the shared 8-thread budget for every tool on full cases, and why: single-thread runs penalise tools that parallelise (sDNA with OpenMP is 3 to 6 times faster at 8 threads). -->
+
 # Discussion
 
 Three findings stand out. First, for motor traffic in these cities, the

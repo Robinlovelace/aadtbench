@@ -145,7 +145,8 @@ def run_baseline(case: Case, name: str, modes: list[str], run_dir: Path, h: str,
     return rec
 
 
-DEFAULT_TIME_LIMIT_S = float(__import__("yaml").safe_load((REPO / "config" / "limits.yaml").read_text())["full_case_time_limit_s"])
+LIMITS = __import__("yaml").safe_load((REPO / "config" / "limits.yaml").read_text())
+DEFAULT_TIME_LIMIT_S = float(LIMITS["full_case_time_limit_s"])
 
 
 def run_adapter_cli(case: Case, blind: Path, tool: str, variant: str | None, tier: str,
@@ -381,7 +382,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--modes", default=None, help="comma separated, default every case mode")
     p.add_argument("--variants", nargs="*", default=None, help="adapter variants (default: adapter's first)")
     p.add_argument("--params", default="{}", help="JSON overrides passed to adapters")
-    p.add_argument("--threads", type=int, default=1)
+    p.add_argument("--threads", type=int, default=int(LIMITS["full_case_threads"]))
     p.add_argument("--results-dir", default=str(REPO / "results"))
     p.add_argument("--cases-root", default=None)
     p.add_argument("--from-dir", default=None, help="local mirror of release assets for fetch")
