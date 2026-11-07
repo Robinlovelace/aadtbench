@@ -1,5 +1,0 @@
----
-title: "AADTBench"
----
-
-{{< include README.md >}}

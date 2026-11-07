@@ -2,8 +2,7 @@ project:
   type: website
   output-dir: _site
   render:
-    - index.qmd
-    - results.qmd
+    - README.md
     - paper/index.qmd
     - BENCHMARK.md
     - IMPLEMENTATIONS.md
@@ -24,7 +23,7 @@ website:
     search: true
     left:
       - text: "Home"
-        href: index.qmd
+        href: README.md
       - text: "Paper"
         href: paper/index.qmd
       - text: "Specification"
@@ -32,7 +31,7 @@ website:
       - text: "Add a tool"
         href: IMPLEMENTATIONS.md
       - text: "Results"
-        href: results.qmd
+        href: https://github.com/Robinlovelace/aadtbench/releases/tag/v0.1.0
     right:
       - icon: github
         href: https://github.com/Robinlovelace/aadtbench

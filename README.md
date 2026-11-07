@@ -45,7 +45,10 @@ Licences come from the reviewed table in `benchmark/licences.py`.
 
 ## Current results
 
-See `leaderboard-summary.csv` and the `results__leaderboard.csv` asset of the release.
+- [Leaderboard summary (CSV)](leaderboard-summary.csv), kept in git
+- [Full leaderboard (CSV)](https://github.com/Robinlovelace/aadtbench/releases/download/v0.1.0/results__leaderboard.csv), a release asset
+- [Release v0.1.0 and all assets](https://github.com/Robinlovelace/aadtbench/releases/tag/v0.1.0)
+- [Manifest (`manifest-v0.1.0.json`)](https://github.com/Robinlovelace/aadtbench/releases/download/v0.1.0/manifest-v0.1.0.json), with sha256 checksums
 
 ## Contributing
 
