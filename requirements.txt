@@ -1,0 +1,11 @@
+# Harness: case loading, scoring, smoke runner. Tools install in their own
+# containers (containers/<tool>/Dockerfile): cityseer==5.8.0, aequilibrae==1.7.2, urban-network-analysis==2.7.2.
+pandas>=3.0.0
+geopandas>=1.0.0
+pyarrow
+shapely>=2.0
+scipy>=1.10.0
+networkx>=3.0
+numpy
+pyyaml
+psutil

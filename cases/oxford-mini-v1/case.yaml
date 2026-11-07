@@ -1,0 +1,59 @@
+id: oxford-mini-v1
+version: 1.0.0
+benchmark_version: 0.1.0
+title: Oxford multimode annual average daily flow
+place: Oxford
+country: GBR
+crs: EPSG:27700
+centre_lon: -1.2578
+centre_lat: 51.7519
+centre_x: 451331.5
+centre_y: 206172.3
+radius_m: 3000.0
+margin_m: 2000.0
+zone_m: 500.0
+modes:
+- walking
+- cycling
+- car
+- heavy
+sources:
+- source: dft_manual
+  licence: OGL-UK-3.0
+  url: https://roadtraffic.dft.gov.uk/downloads
+  reviewed: 2026-10-07, OGL v3 as recorded with the data, publisher page check pending
+  n_rows: 41
+- source: oxflow
+  licence: OGL-UK-3.0
+  url: https://www.oxfordshire.gov.uk (open data, OGL v3)
+  reviewed: 2026-10-07, confirmed by Robin Lovelace (PR 17 review)
+  n_rows: 301
+excluded_sources: {}
+network_licence: ODbL-1.0 (OpenStreetMap)
+split:
+  group_cell_m: 1000.0
+  folds: 5
+  seed: 42
+input_tiers:
+- T0_network
+- T1_open_covariates
+- T2_synthetic_od
+files:
+- crosswalk.csv
+- inputs/od_synthetic.parquet
+- inputs/pois.parquet
+- inputs/population.parquet
+- inputs/zones.parquet
+- network.parquet
+- sites.csv
+- source.osm.pbf
+data_size_bytes: 6246993
+network:
+  source_extract: null
+  source_timestamp: null
+  clipped_sha256: 4eeef62fc3f74714a27d374d9b61f1e950b95243b6c0c42e73d3414615010f2c
+  links: 36340
+  km: 1474.3
+  components: 140
+  largest_component_share: 0.9905
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'

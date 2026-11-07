@@ -1,0 +1,55 @@
+id: leeds-v1
+version: 1.0.0
+benchmark_version: 0.1.0
+title: Leeds multimode annual average daily flow (DfT and Leeds City Council footfall
+  cameras)
+place: Leeds
+country: GBR
+crs: EPSG:27700
+centre_lon: -1.5437941
+centre_lat: 53.7974185
+radius_m: 15000.0
+modes:
+- walking
+- cycling
+- car
+- heavy
+split:
+  group_cell_m: 3000.0
+  folds: 5
+  seed: 42
+input_tiers:
+- T0_network
+- T1_open_covariates
+- T2_synthetic_od
+sources:
+- source: dft_manual
+  licence: OGL-UK-3.0
+  url: https://roadtraffic.dft.gov.uk/downloads
+  reviewed: 2026-10-07, OGL v3 as recorded with the data, publisher page check pending
+  n_rows: 1194
+- source: leeds_footfall
+  licence: OGL-UK-3.0
+  url: https://datamillnorth.org/dataset/leeds-city-centre-footfall-2kx4d
+  reviewed: 2026-10-08, Open Government Licence v3 shown on the dataset page
+  n_rows: 8
+excluded_sources: {}
+network:
+  source_extract: null
+  source_timestamp: null
+  clipped_sha256: 475bfbcadd9cc3307d170c3ac47f690508df871e2fa1f10e3860c847ab3b6078
+  links: 230330
+  km: 11038.8
+  components: 292
+  largest_component_share: 0.997
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'
+files:
+- crosswalk.csv
+- inputs/od_synthetic.parquet
+- inputs/pois.parquet
+- inputs/population.parquet
+- inputs/zones.parquet
+- network.parquet
+- sites.csv
+- source.osm.pbf
+data_size_bytes: 36075287

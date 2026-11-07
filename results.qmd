@@ -1,0 +1,26 @@
+---
+title: "Results and release assets"
+---
+
+```{python}
+#| echo: false
+#| output: asis
+import sys
+sys.path.insert(0, ".")
+from benchmark.fetch import DEFAULT_VERSION as V
+
+base = "https://github.com/Robinlovelace/aadtbench/releases"
+print(f"""
+The current data release is **{V}**. The version is read from
+`benchmark/fetch.py`, so this page updates when that value changes.
+
+- [Release {V} and all its assets]({base}/tag/{V})
+- [All releases]({base})
+- [Leaderboard summary (CSV)](leaderboard-summary.csv), kept in git
+- [Full leaderboard]({base}/download/{V}/results__leaderboard.csv), a release asset
+- [Manifest]({base}/download/{V}/manifest-{V}.json), with sha256 checksums
+
+The [paper](paper/index.qmd) reads the full leaderboard from the release
+when it renders.
+""")
+```

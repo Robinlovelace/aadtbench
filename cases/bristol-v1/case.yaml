@@ -1,0 +1,51 @@
+id: bristol-v1
+version: 1.0.0
+benchmark_version: 0.1.0
+title: Bristol multimode annual average daily flow
+place: Bristol
+country: GBR
+crs: EPSG:27700
+centre_lon: -2.5972985
+centre_lat: 51.4538022
+centre_x: 358593.5
+centre_y: 172927.2
+radius_m: 15000.0
+modes:
+- cycling
+- car
+- heavy
+sources:
+- source: dft_manual
+  licence: OGL-UK-3.0
+  url: https://roadtraffic.dft.gov.uk/downloads
+  reviewed: 2026-10-07, OGL v3 as recorded with the data, publisher page check pending
+  n_rows: 659
+excluded_sources: {}
+network_licence: ODbL-1.0 (OpenStreetMap)
+split:
+  group_cell_m: 3000.0
+  folds: 5
+  seed: 42
+input_tiers:
+- T0_network
+- T1_open_covariates
+- T2_synthetic_od
+files:
+- crosswalk.csv
+- inputs/od_synthetic.parquet
+- inputs/pois.parquet
+- inputs/population.parquet
+- inputs/zones.parquet
+- network.parquet
+- sites.csv
+- source.osm.pbf
+data_size_bytes: 28284557
+network:
+  source_extract: null
+  source_timestamp: null
+  clipped_sha256: ebf3a224a5c7806d82d8cf8b2c0e13453a32b6058b132123d00f3233a63bd05d
+  links: 163985
+  km: 8480.6
+  components: 275
+  largest_component_share: 0.9961
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'

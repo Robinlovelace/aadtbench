@@ -1,0 +1,58 @@
+id: melbourne-v1
+version: 1.0.0
+benchmark_version: 0.1.0
+title: Melbourne multimode annual average daily flow
+place: Melbourne
+country: AUS
+crs: EPSG:32755
+centre_lon: 144.9631732
+centre_lat: -37.8142454
+centre_x: 320712.5
+centre_y: 5812840.2
+radius_m: 15000.0
+modes:
+- walking
+- car
+- heavy
+sources:
+- source: melbourne_ped
+  licence: CC-BY-4.0
+  url: https://data.melbourne.vic.gov.au
+  reviewed: 2026-10-07, CC BY 4.0 as recorded with the data, publisher page check
+    pending
+  n_rows: 100
+- source: vic_dtp_aadt
+  licence: CC-BY-4.0
+  url: https://discover.data.vic.gov.au
+  reviewed: 2026-10-07, CC BY 4.0 as recorded with the data, publisher page check
+    pending
+  n_rows: 4113
+excluded_sources: {}
+network_licence: ODbL-1.0 (OpenStreetMap)
+split:
+  group_cell_m: 3000.0
+  folds: 5
+  seed: 42
+input_tiers:
+- T0_network
+- T1_open_covariates
+- T2_synthetic_od
+files:
+- crosswalk.csv
+- inputs/od_synthetic.parquet
+- inputs/pois.parquet
+- inputs/population.parquet
+- inputs/zones.parquet
+- network.parquet
+- sites.csv
+- source.osm.pbf
+data_size_bytes: 55280258
+network:
+  source_extract: null
+  source_timestamp: null
+  clipped_sha256: 14d339fe47b789f5a9b95db90538c9c0f9baec596172857ba1350f2766ba0b00
+  links: 484294
+  km: 21438.4
+  components: 971
+  largest_component_share: 0.9956
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'

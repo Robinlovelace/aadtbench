@@ -1,0 +1,28 @@
+__pycache__/
+*.pyc
+.venv/
+.vscode/
+.idea/
+.env
+# Case data, inputs and results live in the GitHub release, not in git.
+# python -m benchmark.fetch downloads case data. The harness writes results/.
+data/
+results/
+results-ci/
+build/
+source-data/
+cache/
+cases/*/*
+!cases/*/case.yaml
+!cases/*/README.md
+# Paper render output
+paper/index.html
+paper/index_files/
+paper/.quarto/
+_site/
+.quarto/
+/index_files/
+_freeze/
+
+/.quarto/
+**/*.quarto_ipynb

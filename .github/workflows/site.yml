@@ -1,0 +1,61 @@
+name: Site and docx
+
+# Renders the Quarto site and the docx paper, publishes the site to GitHub
+# Pages on main, and attaches the docx as a workflow artifact. Based on
+# reproducible-project-template (publish.yml, release-standalone.yml).
+# Pull requests build only. The paper reads results from the public release
+# at render time (benchmark/fetch.py), which needs no token.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: site-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: quarto-dev/quarto-actions/setup@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt jupyter matplotlib tabulate
+      - name: Render site and docx
+        run: quarto render
+      - name: Check outputs
+        run: |
+          test -f _site/index.html
+          test -f _site/paper/index.html
+          test -f _site/paper/index.docx
+      - name: Upload docx artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aadtbench-paper-docx
+          path: _site/paper/index.docx
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
