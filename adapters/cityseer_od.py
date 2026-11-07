@@ -42,9 +42,12 @@ class CityseerOD(Adapter):
             seg = net[net["segment_id"].isin(set(edges["segment_id"]))]
             if mode in ("car", "heavy", "motor"):
                 kmh = edges.drop_duplicates("segment_id").set_index("segment_id").eval("length_m / time_s * 3.6")
-                imp = dict(zip(seg["segment_id"], (REF_KMH / seg["segment_id"].map(kmh)).fillna(1.0)))
+                imp_s = (REF_KMH / seg["segment_id"].map(kmh)).fillna(1.0)
+                imp = dict(zip(seg["segment_id"], imp_s))
+                cond = 1.0 / imp_s.values
             else:
                 imp = dict.fromkeys(seg["segment_id"], 1.0)
+                cond = np.ones(len(seg))
             geom_map = dict(zip(seg["segment_id"], seg["geometry"]))
             G = nx.MultiDiGraph()
             nodes = ctx.node_xy()
@@ -71,8 +74,8 @@ class CityseerOD(Adapter):
                                     betweenness={"betweenness": "1"})
             node_flow = res[f"cc_betweenness_{radius}"].astype(float)
             node_flow.index = node_flow.index.astype(str)
-            flow = (seg["u"].astype(str).map(node_flow).fillna(0).values
-                    + seg["v"].astype(str).map(node_flow).fillna(0).values) / 2
+            flow = ((seg["u"].astype(str).map(node_flow).fillna(0).values
+                     + seg["v"].astype(str).map(node_flow).fillna(0).values) / 2) * cond
             return pd.DataFrame({"segment_id": seg["segment_id"].values, "mode": mode, "flow": flow})
 
         return ctx.map_modes(one_mode)

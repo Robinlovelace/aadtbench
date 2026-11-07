@@ -47,7 +47,13 @@ KEEP_TAGS = ("highway", "name", "ref", "oneway", "junction", "access", "motor_ve
 
 
 def osmium_cmd() -> list[str]:
-    return shlex.split(os.environ.get("OSMIUM", "osmium"))
+    if "OSMIUM" in os.environ:
+        return shlex.split(os.environ["OSMIUM"])
+    import shutil
+    if shutil.which("osmium"):
+        return ["osmium"]
+    fallback = Path.home() / ".cache/rattler/cache/cached-envs-v0/osmium-tool-4ecfdee700828e57/bin/osmium"
+    return [str(fallback)] if fallback.exists() else ["osmium"]
 
 
 def sha256(path: Path) -> str:

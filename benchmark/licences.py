@@ -38,6 +38,12 @@ REVIEWED_SOURCES: dict[str, dict] = {
         "url": "https://datamillnorth.org/dataset/leeds-city-centre-footfall-2kx4d",
         "reviewed": "2026-10-08, Open Government Licence v3",
     },
+    "tfl": {
+        "licence": "OGL-UK-2.0",
+        "publisher": "Transport for London, Active Travel Counts Programme (TfL Open Data)",
+        "url": "https://cycling.data.tfl.gov.uk",
+        "reviewed": "2026-11-07, TfL Open Data terms (OGL v2 based)",
+    },
     "stadt_zuerich_miv": {
         "licence": "CC0-1.0",
         "publisher": "Stadt Zuerich, motorised traffic counts (all motor vehicles)",

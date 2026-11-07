@@ -46,14 +46,26 @@ def run_in_process(tool: str, blind: Path, out: Path, tier: str, modes: list[str
     return run_adapter(cls(), blind, tier, modes, out, variant=variant, threads=threads)
 
 
+def _image_digest(image: str) -> str:
+    try:
+        out = subprocess.run(["docker", "image", "inspect", "--format", "{{.Id}}", image],
+                             capture_output=True, text=True, check=True).stdout.strip()
+        return f"{image}@{out}" if out else image
+    except Exception:
+        return image
+
+
 def run_in_docker(image: str, blind: Path, out: Path, tier: str, modes: list[str],
-                  variant: str | None, threads: int) -> dict:
+                  variant: str | None, threads: int, tool: str | None = None) -> dict:
     out.mkdir(parents=True, exist_ok=True)
-    real_case = (blind / "case.yaml").resolve().parent
+    tname = tool or out.parent.name
+    mounts = [arg for p in sorted(blind.iterdir()) for arg in ("-v", f"{p.resolve()}:/case/{p.name}:ro")]
     cmd = ["docker", "run", "--rm", "--user", f"{os.getuid()}:{os.getgid()}",
-           "-v", f"{real_case}:/real_case:ro", "-v", f"{blind}:/case:ro", "-v", f"{out}:/out",
-           "--entrypoint", "python", image, "-m", f"adapters.{out.parent.name}",
-           "--case", "/real_case", "--tier", tier, "--modes", ",".join(modes),
+           "-e", f"AADTBENCH_IMAGE_DIGEST={_image_digest(image)}",
+           "-e", "MPLCONFIGDIR=/tmp/matplotlib",
+           *mounts, "-v", f"{out.resolve()}:/out",
+           "--entrypoint", "python", image, "-m", f"adapters.{tname}",
+           "--case", "/case", "--tier", tier, "--modes", ",".join(modes),
            "--threads", str(threads), "--out", "/out"]
     if variant:
         cmd += ["--variant", variant]
@@ -89,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
     blind = blind_copy(case, results)
     rd = run_dir_for(results, case.case_id, a.tool, variant, tier)
     t0 = time.perf_counter()
-    rec = (run_in_docker(a.image, blind, rd, tier, modes, variant, threads)
+    rec = (run_in_docker(a.image, blind, rd, tier, modes, variant, threads, tool=a.tool)
            if a.image else run_in_process(a.tool, blind, rd, tier, modes, variant, threads))
     wall = time.perf_counter() - t0
     rec.setdefault("case_id", case.case_id)

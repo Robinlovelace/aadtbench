@@ -8,7 +8,7 @@ LABEL org.opencontainers.image.title="AADTBench una"
 LABEL org.opencontainers.image.source="https://github.com/Robinlovelace/aadtbench"
 
 ENV PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PYTHONPATH=/workspace HOME=/tmp NUMBA_CACHE_DIR=/tmp/numba
+    PYTHONPATH=/workspace HOME=/tmp NUMBA_CACHE_DIR=/tmp/numba MPLCONFIGDIR=/tmp/matplotlib
 WORKDIR /workspace
 
 RUN apt-get update && apt-get install -y --no-install-recommends git \

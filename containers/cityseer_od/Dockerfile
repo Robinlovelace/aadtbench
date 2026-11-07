@@ -8,7 +8,7 @@ LABEL org.opencontainers.image.title="AADTBench cityseer_od"
 LABEL org.opencontainers.image.source="https://github.com/Robinlovelace/aadtbench"
 
 ENV PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PYTHONPATH=/workspace HOME=/tmp NUMBA_CACHE_DIR=/tmp/numba
+    PYTHONPATH=/workspace HOME=/tmp NUMBA_CACHE_DIR=/tmp/numba MPLCONFIGDIR=/tmp/matplotlib
 WORKDIR /workspace
 
 # cityseer imports a library that needs libexpat, which the slim image lacks.

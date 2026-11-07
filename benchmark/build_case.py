@@ -89,12 +89,14 @@ def build_sites_and_inputs(cfg: dict, counts_path: Path, layers_dir: Path, out: 
     c = c[c.source.isin(allowed) & c["mode"].isin(cfg["modes"]) & (c.aadt > 0)].copy()
     c["x"], c["y"] = project(c, crs)
     c = c[np.hypot(c.x - cx, c.y - cy) <= r]
-    c.loc[c["kind"].eq("junction_movement"), "aadt"] *= 2.0
+    if "kind" in c.columns:
+        c.loc[c["kind"].eq("junction_movement"), "aadt"] *= 2.0
     sites = pd.DataFrame({
         "site_id": c.site_id.astype(str), "mode": c["mode"], "value": c.aadt.round(3), "source": c.source,
-        "licence": c.source.map(lambda s: allowed[s]["licence"]), "method": c.method, "n_days": c.n_days,
+        "licence": c.source.map(lambda s: allowed[s]["licence"]),
+        "method": c["method"] if "method" in c.columns else "short_period", "n_days": c.n_days,
         "x": c.x.round(2), "y": c.y.round(2), "lon": c.lon, "lat": c.lat,
-        "bearing": c["bearing"] if "bearing" in c else np.nan,
+        "bearing": c["bearing"] if "bearing" in c.columns else np.nan,
     })
     sites = assign_folds(sites.reset_index(drop=True), float(cfg["split"]["group_cell_m"]),
                          int(cfg["split"]["folds"]), int(cfg["split"]["seed"]))
@@ -103,7 +105,8 @@ def build_sites_and_inputs(cfg: dict, counts_path: Path, layers_dir: Path, out: 
     extent = r + float(cfg.get("margin_m", 0) or 0)
     pop = points(layers_dir / "residents.parquet", crs, cx, cy, extent)
     pois = pd.concat([points(f, crs, cx, cy, extent).assign(type=f.stem.removeprefix("poi_"))
-                      for f in sorted(layers_dir.glob("poi_*.parquet")) if f.stem != "poi_all"], ignore_index=True)
+                      for f in sorted(layers_dir.glob("poi_*.parquet"))
+                      if f.stem != "poi_all" and "@" not in f.stem], ignore_index=True)
     pop.to_parquet(inp / "population.parquet", index=False)
     pois.to_parquet(inp / "pois.parquet", index=False)
     zone_m = float(cfg.get("zone_m", 1000.0) or 1000.0)
@@ -163,7 +166,7 @@ def main() -> None:
                                                 "links", "km", "components", "largest_component_share")}
     cfg["network"]["build"] = "benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning"
     files = sorted(str(p.relative_to(a.out)) for p in a.out.rglob("*")
-                   if p.is_file() and p.name not in ("build_stats.json", "network_build.json"))
+                   if p.is_file() and p.name not in ("build_stats.json", "network_build.json", "case.yaml"))
     cfg["files"] = files
     cfg["data_size_bytes"] = int(sum((a.out / f).stat().st_size for f in files))
     (case_dir / "case.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True))
