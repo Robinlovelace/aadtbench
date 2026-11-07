@@ -37,7 +37,7 @@ from benchmark.fetch import fetch_result
 
 board = pd.read_csv(fetch_result("leaderboard.csv", dest=ROOT / "results"))
 board = board[board["status"] == "complete"]
-OPEN = ["oxford-v1", "leeds-v1", "melbourne-v1", "zurich-v1", "toronto-v1"]
+OPEN = ["oxford-v1", "leeds-v1", "bristol-v1", "london-v1", "melbourne-v1", "zurich-v1", "toronto-v1"]
 CASES = OPEN + ["leuven-v1"]
 go = board[(board["split"] == "group_out_pooled") & (board["track"] == "uncalibrated")]
 
@@ -48,6 +48,8 @@ TOOLS = [
     ("aequilibrae", "AequilibraE"),
 ]
 VARIANTS = [
+    ("sdna", "betweenness_angular", "T0_network", "sDNA Bt (ang.)"),
+    ("sdna", "betweenness_euclidean", "T0_network", "sDNA Bt (eucl.)"),
     ("sdna", "nqpd_angular", "T0_network", "sDNA NQPD (ang.)"),
     ("sdna", "nqpd_euclidean", "T0_network", "sDNA NQPD (eucl.)"),
     ("una", "default", "T1_open_covariates", "UNA gravity+detour"),
@@ -408,22 +410,145 @@ with network density and cutoff radius.
 
 # Discussion
 
-Three findings stand out:
+## Different horses for courses: matching tools to planning questions
+
+No single tool dominates across every mode, input tier, metric and city scale
+(@fig-horses). Instead, the benchmark reveals a clear division of labour—*different
+horses for courses*—governed by four trade-offs:
+
+```{python}
+#| echo: false
+#| label: fig-horses
+#| fig-cap: "Different horses for courses across 8 cities and 4 modes. (a) Mean Spearman rho by mode and tool (best variant), showing the crossover from T0/T1 spatial network analysis on active modes to T2 OD assignment on motor modes. (b) Rank correlation (rho) vs calibrated log R2 (point size proportional to coverage). (c) Within-tool variant gains by mode. (d) Accuracy vs wall-clock runtime across network sizes."
+#| fig-format: png
+#| fig-dpi: 160
+#| fig-width: 7.5
+#| fig-height: 5.8
+fig, axes = plt.subplots(2, 2, figsize=(7.5, 5.8))
+
+# Panel A: Mode specialization profile
+ax = axes[0, 0]
+modes_order = ["walking", "cycling", "car", "heavy"]
+x_m = np.arange(len(modes_order))
+for tool_id, label, marker, color in styles:
+    s = best_tool(go[go.n_sites >= 20], tool_id).reset_index()
+    means = [s[s["mode"] == m]["rho"].mean() for m in modes_order]
+    ax.plot(x_m, means, marker=marker, color=color, lw=1.8, markersize=6, label=label)
+ax.set_xticks(x_m)
+ax.set_xticklabels(modes_order, fontsize=8)
+ax.set_ylabel("Mean Spearman rho", fontsize=8)
+ax.set_title("(a) Mode specialisation across cities", fontsize=9, loc="left")
+ax.grid(axis="y", color="#ececea", lw=0.6)
+ax.legend(fontsize=7, frameon=False, loc="lower right")
+
+# Panel B: Rank (rho) vs Calibrated Magnitude (log_r2) & Coverage
+ax = axes[0, 1]
+for tool_id, label, marker, color in styles:
+    d = go[(go.tool == tool_id) & (go.n_sites >= 20) & go.rho.notna()]
+    if d.empty:
+        continue
+    idx = d.groupby(["case_id", "mode"])["rho"].idxmax()
+    sub = d.loc[idx]
+    ax.scatter(
+        sub["rho"],
+        np.clip(sub["log_r2"], -10, 1),
+        s=20 + 45 * sub["coverage"].fillna(0),
+        marker=marker,
+        color=color,
+        alpha=0.8,
+        edgecolor="white",
+        linewidth=0.6,
+        label=label,
+    )
+ax.axhline(0, color="#b8b8b2", lw=0.8, ls="--")
+ax.set_xlabel("Spearman rho", fontsize=8)
+ax.set_ylabel("Calibrated log R2 (clipped at -10)", fontsize=8)
+ax.set_title("(b) Rank order vs magnitude & coverage", fontsize=9, loc="left")
+ax.grid(color="#ececea", lw=0.6)
+
+# Panel C: Within-tool variant deltas by mode
+ax = axes[1, 0]
+pairs = [
+    ("aequilibrae", "ue_bfw", "aon", "T2_synthetic_od", "Aeq: UE - AoN (motor)", ["car", "heavy"], "#1baf7a"),
+    ("cityseer_od", "dispersed", "default", "T2_synthetic_od", "cityseer: disp - short (active)", ["walking", "cycling"], "#eb6834"),
+    ("una", "default", "shortest", "T1_open_covariates", "UNA: detour - short (active)", ["walking", "cycling"], "#9467bd"),
+    ("sdna", "nqpd_angular", "betweenness_angular", "T0_network", "sDNA: NQPD - Bt (all)", ["walking", "cycling", "car", "heavy"], "#8c564b"),
+]
+y_p = np.arange(len(pairs))[::-1]
+deltas = []
+for tool, v1, v2, tier, lab, ms, col in pairs:
+    s1 = pick(go[go.n_sites >= 20], tool, v1, tier)
+    s2 = pick(go[go.n_sites >= 20], tool, v2, tier)
+    common = s1.index.intersection(s2.index)
+    common = [idx for idx in common if idx[1] in ms and idx[0] in OPEN]
+    deltas.append((s1.loc[common] - s2.loc[common]).mean() if common else 0.0)
+ax.barh(y_p, deltas, color=[p[6] for p in pairs], height=0.55, alpha=0.85)
+ax.axvline(0, color="#3d3d3a", lw=0.8)
+ax.set_yticks(y_p)
+ax.set_yticklabels([p[4] for p in pairs], fontsize=7.5)
+ax.set_xlabel("Mean delta Spearman rho", fontsize=8)
+ax.set_title("(c) Within-tool variant effect", fontsize=9, loc="left")
+ax.grid(axis="x", color="#ececea", lw=0.6)
+
+# Panel D: Accuracy vs Runtime
+ax = axes[1, 1]
+for tool_id, label, marker, color in styles:
+    d = go[(go.tool == tool_id) & (go.n_sites >= 20) & go.rho.notna()]
+    if d.empty:
+        continue
+    idx = d.groupby(["case_id", "mode"])["rho"].idxmax()
+    sub = d.loc[idx]
+    ax.scatter(
+        np.maximum(sub["wall_time_s"], 0.5),
+        sub["rho"],
+        s=36,
+        marker=marker,
+        color=color,
+        alpha=0.8,
+        edgecolor="white",
+        linewidth=0.6,
+    )
+ax.set_xscale("log")
+ax.set_xlabel("Wall time per run (s, log scale)", fontsize=8)
+ax.set_ylabel("Spearman rho", fontsize=8)
+ax.set_title("(d) Accuracy vs computational budget", fontsize=9, loc="left")
+ax.grid(color="#ececea", lw=0.6)
+
+for a in axes.ravel():
+    for sp in ["top", "right"]:
+        a.spines[sp].set_visible(False)
+fig.tight_layout()
+```
+
+| Planning context / question | Available data tier | Recommended tool & variant | Key strength |
+|---|---|---|---|
+| **Active travel network permeability & street design** (walking/cycling in urban cores, no OD data) | `T0_network` | **sDNA** (`nqpd_angular`, `nqpd_euclidean`, `betweenness_euclidean`) | Near-100% network coverage, positive $\log R^2$, strong walking/cycling correlation ($\rho \approx 0.48\text{–}0.65$) from street geometry alone |
+| **Land-use & POI-driven pedestrian/cycling flows** (new developments, station access, amenity reach) | `T1_open_covariates` | **UNA** (`default` gravity + detour envelope) | Explicit population-to-POI gravity decay with plausible detour paths; strong on urban cycling ($\rho \approx 0.52\text{–}0.65$) and walking |
+| **Multi-modal corridor screening with sub-zone OD** (active + motor flows across a city or metro area) | `T2_synthetic_od` | **cityseer** (`default` for motor, `dispersed` for active) | Fast Rust/Numba OD betweenness with conductance-weighted link projection; top or near-top $\rho$ on regional car/cycling networks |
+| **Strategic highway & freight assignment with congestion** (arterial capacity, road diet / diversion impacts) | `T2_synthetic_od` / `T3_observed_od` | **AequilibraE** (`ue_bfw` for motor, `aon` for fast screening) | Explicit link capacities and BPR user equilibrium (`ue_bfw`) spread heavy motor demand across parallel arterials ($\rho$ up to $0.78$) |
+
+: "Different horses for courses": matching open traffic estimation tools to planning questions, modes and data tiers. {#tbl-horses}
+
+Three broader findings stand out:
 
 1. **Road class vs network routing.** For motor traffic, road hierarchy encodes
    decades of infrastructure investment and speed regulation. Tools that incorporate
-   hierarchical speeds and capacities (`AequilibraE`) or road-class baselines
-   outperform purely geometric shortest-path routing (`cityseer` and `UNA`
-   without class speeds) on motor modes. Conversely, for walking and cycling,
-   local land-use density (`attractor_density`, `population_density`) and
-   distance-decayed accessibility (`UNA`) are crucial.
-2. **Tools vs variants.** Splitting tools from variants shows that within-tool
-   choices—such as user equilibrium vs all-or-nothing in `AequilibraE`, or
-   gravity decay with detour routing vs shortest paths in `UNA`—produce
-   interpretable, mode-specific differences without changing software packages.
+   hierarchical speeds and capacities (`AequilibraE` and conductance-weighted
+   `cityseer` / `sDNA`) or road-class baselines outperform purely geometric
+   shortest-path routing on motor modes. Conversely, for walking and cycling,
+   local land-use density (`attractor_density`, `population_density`), street
+   connectivity (`sDNA` NQPD/betweenness) and distance-decayed accessibility
+   (`UNA`) are crucial.
+2. **Zone connector topology matters as much as the routing engine.** Snapping
+   1 km² zones to a single arbitrary node discards all intrazonal trips and
+   dumps entire zone volumes onto minor residential streets. Splitting high-demand
+   zones into a multi-connector subgrid (and snapping motor connectors to the
+   primary/secondary/tertiary collector network) improves Spearman $\rho$,
+   $\log R^2$ and sensor coverage across every OD-based tool (`AequilibraE` and
+   `cityseer`).
 3. **Evaluation design.** Spatial group-out cross-validation, explicit simple
-   baselines, and separate rank ($\rho$) and magnitude ($\log R^2$) metrics
-   prevent over-claiming skill from spatial autocorrelation or road-class
+   baselines, and separate rank ($\rho$), magnitude ($\log R^2$) and coverage
+   metrics prevent over-claiming skill from spatial autocorrelation or road-class
    calibration.
 
 ## Limitations
