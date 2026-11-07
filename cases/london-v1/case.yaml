@@ -1,0 +1,59 @@
+id: london-v1
+version: 1.0.0
+benchmark_version: 0.1.0
+title: London multimode annual average daily flow (DfT and TfL Active Travel Counts)
+place: London
+country: GBR
+crs: EPSG:27700
+centre_lon: -0.1276
+centre_lat: 51.5072
+centre_x: 530034.0
+centre_y: 180381.0
+radius_m: 15000.0
+margin_m: 0.0
+zone_m: 1000.0
+modes:
+- walking
+- cycling
+- car
+- heavy
+network_licence: ODbL-1.0 (OpenStreetMap)
+split:
+  group_cell_m: 3000.0
+  folds: 5
+  seed: 42
+input_tiers:
+- T0_network
+- T1_open_covariates
+- T2_synthetic_od
+sources:
+- source: dft_manual
+  licence: OGL-UK-3.0
+  url: https://roadtraffic.dft.gov.uk/downloads
+  reviewed: 2026-10-07, OGL v3 as recorded with the data
+  n_rows: 5243
+- source: tfl
+  licence: OGL-UK-2.0
+  url: https://cycling.data.tfl.gov.uk
+  reviewed: 2026-11-07, TfL Open Data terms (OGL v2 based)
+  n_rows: 2306
+excluded_sources: {}
+network:
+  source_extract: geofabrik_great-britain-261025.osm.pbf
+  source_timestamp: '2026-10-25T21:21:21Z'
+  clipped_sha256: 6b4c25232090348ee3a2261f2c5556ee89778d3f327a53f200e72f7d3991ac72
+  links: 681498
+  km: 21559.8
+  components: 1620
+  largest_component_share: 0.9941
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'
+files:
+- crosswalk.csv
+- inputs/od_synthetic.parquet
+- inputs/pois.parquet
+- inputs/population.parquet
+- inputs/zones.parquet
+- network.parquet
+- sites.csv
+- source.osm.pbf
+data_size_bytes: 85915329

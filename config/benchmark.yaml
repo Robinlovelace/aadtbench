@@ -2,13 +2,13 @@ release: v0.1.0
 mini_case: oxford-mini-v1
 
 cases:
-  open: [oxford-v1, leeds-v1, melbourne-v1, zurich-v1, toronto-v1]
+  open: [oxford-v1, leeds-v1, bristol-v1, london-v1, melbourne-v1, zurich-v1, toronto-v1]
   non_commercial: [leuven-v1]
 
 limits:
-  full_case_time_limit_s: 600
+  full_case_time_limit_s: 3600
   mini_case_time_limit_s: 300
-  full_case_threads: 8
+  full_case_threads: 16
   mini_case_threads: 2
 
 smoke:

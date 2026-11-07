@@ -6,4 +6,3 @@
 !requirements.txt
 **/__pycache__
 **/*.pyc
-adapters/legacy_v01

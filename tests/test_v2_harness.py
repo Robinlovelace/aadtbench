@@ -149,6 +149,17 @@ class RunAllTest(unittest.TestCase):
         blind = blind_copy(case, res)
         self.assertEqual({p.name for p in blind.iterdir()}, {"case.yaml", "network.parquet", "inputs"})
 
+        res_par = self.tmp / "results_par"
+        self.assertEqual(main([*args[:-1], str(res_par), "--jobs", "2"]), 0)
+        lb_par = pd.read_csv(res_par / "leaderboard.csv")
+        self.assertEqual(len(lb_par), len(lb))
+
+    def test_reviewed_licence_tfl(self):
+        from benchmark.licences import reviewed_licence
+        lic, err = reviewed_licence("tfl")
+        self.assertEqual(lic, "OGL-UK-2.0")
+        self.assertIsNone(err)
+
 
 if __name__ == "__main__":
     unittest.main()

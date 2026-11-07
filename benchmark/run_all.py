@@ -136,13 +136,36 @@ def _declared_family(tool: str, variant: str | None) -> str:
         return "other"
 
 
+def _image_digest(image: str) -> str:
+    try:
+        out = subprocess.run(["docker", "image", "inspect", "--format", "{{.Id}}", image],
+                             capture_output=True, text=True, check=True).stdout.strip()
+        return f"{image}@{out}" if out else image
+    except Exception:
+        return image
+
+
 def run_adapter_cli(case: Case, blind: Path, tool: str, variant: str | None, tier: str,
                     modes: list[str], params: dict, threads: int, run_dir: Path, h: str,
-                    time_limit_s: float = DEFAULT_TIME_LIMIT_S) -> dict:
+                    time_limit_s: float = DEFAULT_TIME_LIMIT_S,
+                    docker: bool = False, docker_tag: str = "ci") -> dict:
     run_dir.mkdir(parents=True, exist_ok=True)
-    cmd = [sys.executable, "-m", f"adapters.{tool}", "--case", str(blind), "--tier", tier,
-           "--modes", ",".join(modes), "--params", json.dumps(params), "--threads", str(threads),
-           "--out", str(run_dir)]
+    cname = None
+    if docker:
+        image = f"aadtbench-{tool}:{docker_tag}"
+        cname = f"aadtbench-{case.case_id}-{tool}-{variant or 'default'}-{os.getpid()}-{int(time.time() * 1000) % 100000}"
+        mounts = [arg for p in sorted(blind.iterdir()) for arg in ("-v", f"{p.resolve()}:/case/{p.name}:ro")]
+        cmd = ["docker", "run", "--rm", "--name", cname, "--user", f"{os.getuid()}:{os.getgid()}",
+               "-e", f"AADTBENCH_IMAGE_DIGEST={_image_digest(image)}",
+               "-e", "MPLCONFIGDIR=/tmp/matplotlib",
+               *mounts, "-v", f"{run_dir.resolve()}:/out",
+               "--entrypoint", "python", image, "-m", f"adapters.{tool}",
+               "--case", "/case", "--tier", tier, "--modes", ",".join(modes),
+               "--params", json.dumps(params), "--threads", str(threads), "--out", "/out"]
+    else:
+        cmd = [sys.executable, "-m", f"adapters.{tool}", "--case", str(blind), "--tier", tier,
+               "--modes", ",".join(modes), "--params", json.dumps(params), "--threads", str(threads),
+               "--out", str(run_dir)]
     if variant:
         cmd += ["--variant", variant]
     env = dict(os.environ, PYTHONPATH=str(REPO) + os.pathsep + os.environ.get("PYTHONPATH", ""))
@@ -156,6 +179,8 @@ def run_adapter_cli(case: Case, blind: Path, tool: str, variant: str | None, tie
             rec.update(status="failed", message=(stderr or "")[-400:])
         rec.setdefault("status", "complete" if proc.returncode == 0 else "failed")
     except subprocess.TimeoutExpired:
+        if cname:
+            subprocess.run(["docker", "rm", "-f", cname], capture_output=True)
         for sig in (signal.SIGTERM, signal.SIGKILL):
             try:
                 os.killpg(proc.pid, sig)
@@ -261,14 +286,18 @@ def score_loco(cases: dict[str, Case], results: Path, run_keys: list[tuple], com
 
 
 def main(argv: list[str] | None = None) -> int:
+    from concurrent.futures import ThreadPoolExecutor
     p = argparse.ArgumentParser(description="Run tools on cases and write the AADTBench leaderboards.")
     p.add_argument("--cases", nargs="+", default=None)
     p.add_argument("--tools", nargs="+", default=["baselines"])
-    p.add_argument("--tier", nargs="+", default=[BASELINE_TIER])
+    p.add_argument("--tier", nargs="+", default=None)
     p.add_argument("--modes", default=None)
     p.add_argument("--variants", nargs="*", default=None)
     p.add_argument("--params", default="{}")
     p.add_argument("--threads", type=int, default=DEFAULT_THREADS)
+    p.add_argument("--jobs", "-j", type=int, default=1)
+    p.add_argument("--docker", action="store_true")
+    p.add_argument("--docker-tag", default="ci")
     p.add_argument("--results-dir", default=str(REPO / "results"))
     p.add_argument("--cases-root", default=None)
     p.add_argument("--from-dir", default=None)
@@ -277,19 +306,24 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--time-limit", type=float, default=DEFAULT_TIME_LIMIT_S)
     a = p.parse_args(argv)
 
+    cfg = yaml.safe_load(CONFIG_PATH.read_text()) if CONFIG_PATH.exists() else {}
+    tools_cfg = cfg.get("tools") or {}
+
     if a.cases is None:
-        cfg = yaml.safe_load(CONFIG_PATH.read_text())
+        all_tools = ["baselines" if t == "baseline" else t for t in tools_cfg] or ["baselines"]
+        run_tools = all_tools if a.tools == ["baselines"] and "--tools" not in (argv or sys.argv[1:]) else a.tools
         for group in (cfg["cases"]["open"], cfg["cases"].get("non_commercial", [])):
-            for tool, tcfg in cfg["tools"].items():
-                tname = "baselines" if tool == "baseline" else tool
-                cmd = ["--cases", *group, "--tools", tname, "--tier", tcfg["tier"],
-                       "--threads", str(a.threads), "--time-limit", str(a.time_limit),
-                       "--results-dir", a.results_dir]
-                if tname != "baselines":
-                    cmd += ["--variants", *tcfg["variants"]]
-                if a.force:
-                    cmd.append("--force")
-                main(cmd)
+            if not group:
+                continue
+            cmd = ["--cases", *group, "--tools", *run_tools,
+                   "--threads", str(a.threads), "--jobs", str(a.jobs),
+                   "--time-limit", str(a.time_limit), "--results-dir", a.results_dir,
+                   "--docker-tag", a.docker_tag]
+            if a.docker:
+                cmd.append("--docker")
+            if a.force:
+                cmd.append("--force")
+            main(cmd)
         if Path(a.results_dir) == REPO / "results" and (REPO / "results" / "summary.csv").exists():
             shutil.copyfile(REPO / "results" / "summary.csv", REPO / "leaderboard-summary.csv")
         return 0
@@ -299,34 +333,57 @@ def main(argv: list[str] | None = None) -> int:
     params = json.loads(a.params)
     want_modes = a.modes.split(",") if a.modes else None
     cases = {cs.case_id: cs for cs in (load_case(c, a.cases_root, a.version, a.from_dir) for c in a.cases)}
-    all_rows, run_keys = [], []
+    blinds = {cid: blind_copy(case, results) for cid, case in cases.items()}
+    site_classes = {cid: case.site_road_class() for cid, case in cases.items()}
+    cov_cache: dict[str, pd.DataFrame] = {}
+
+    tasks = []
     for cid, case in cases.items():
         modes = [m for m in case.modes if not want_modes or m in want_modes]
-        site_class = case.site_road_class()
-        blind, covs = None, None
         for tool in a.tools:
-            jobs = ([("baseline", n, BASELINE_TIER) for n in bl.BASELINES] if tool in ("baselines", "baseline")
-                    else [(tool, v, t) for v in (a.variants or [None]) for t in a.tier])
+            if tool in ("baselines", "baseline"):
+                jobs = [("baseline", n, BASELINE_TIER) for n in (a.variants or bl.BASELINES)]
+                if any(n != "class_only" for _, n, _ in jobs) and cid not in cov_cache:
+                    cov_cache[cid] = bl.segment_covariates(case)
+            else:
+                tcfg = tools_cfg.get(tool) or {}
+                tiers = a.tier or ([tcfg["tier"]] if "tier" in tcfg else [BASELINE_TIER])
+                variants = a.variants or tcfg.get("variants") or [None]
+                jobs = [(tool, v, t) for v in variants for t in tiers]
             for jtool, variant, tier in jobs:
-                label = variant or "default"
-                rd = run_dir_for(results, cid, jtool, label, tier)
-                h = harness_hash(case, jtool, label, tier, modes, params,
-                                 bl.BASELINE_VERSION if jtool == "baseline" else adapter_source_hash(jtool))
-                if a.force or not cached(rd, h, case.version if not params else ""):
-                    print(f"[run] {cid} {jtool} {label} {tier}", flush=True)
-                    if jtool == "baseline":
-                        if covs is None and label != "class_only":
-                            covs = bl.segment_covariates(case)
-                        rec = run_baseline(case, label, modes, rd, h, covs)
-                    else:
-                        blind = blind or blind_copy(case, results)
-                        rec = run_adapter_cli(case, blind, jtool, variant, tier, modes, params,
-                                              a.threads, rd, h, a.time_limit)
-                else:
-                    print(f"[cached] {cid} {jtool} {label} {tier}", flush=True)
-                    rec = read_run(rd)
-                all_rows += score_run(case, rec, rd, site_class, commit, stamp)
-                run_keys.append((cid, jtool, label, tier))
+                tasks.append((cid, case, modes, jtool, variant, tier))
+
+    def _exec_one(item):
+        cid, case, modes, jtool, variant, tier = item
+        label = variant or "default"
+        rd = run_dir_for(results, cid, jtool, label, tier)
+        h = harness_hash(case, jtool, label, tier, modes, params,
+                         bl.BASELINE_VERSION if jtool == "baseline" else adapter_source_hash(jtool))
+        if a.force or not cached(rd, h, case.version if not params else ""):
+            print(f"[run] {cid} {jtool} {label} {tier}", flush=True)
+            if jtool == "baseline":
+                rec = run_baseline(case, label, modes, rd, h, cov_cache.get(cid))
+            else:
+                rec = run_adapter_cli(case, blinds[cid], jtool, variant, tier, modes, params,
+                                      a.threads, rd, h, a.time_limit, docker=a.docker, docker_tag=a.docker_tag)
+        else:
+            print(f"[cached] {cid} {jtool} {label} {tier}", flush=True)
+            rec = read_run(rd)
+        rows = score_run(case, rec, rd, site_classes[cid], commit, stamp)
+        return rows, (cid, jtool, label, tier)
+
+    all_rows, run_keys = [], []
+    if a.jobs > 1 and len(tasks) > 1:
+        with ThreadPoolExecutor(max_workers=a.jobs) as pool:
+            for rows, rk in pool.map(_exec_one, tasks):
+                all_rows += rows
+                run_keys.append(rk)
+    else:
+        for item in tasks:
+            rows, rk = _exec_one(item)
+            all_rows += rows
+            run_keys.append(rk)
+
     if len(cases) >= 2:
         all_rows += score_loco(cases, results, run_keys, commit, stamp)
 
