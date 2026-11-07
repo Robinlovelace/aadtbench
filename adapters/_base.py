@@ -159,22 +159,60 @@ class RunContext:
             raise Unsupported(f"no {self.tier} OD rows for mode {mode}")
         return od[["o_zone", "d_zone", "trips"]].reset_index(drop=True)
 
-    def od_nodes(self, mode: str, max_snap_m: float = 500.0) -> pd.DataFrame:
+    def od_nodes(self, mode: str, max_snap_m: float = 1000.0) -> pd.DataFrame:
         from scipy.spatial import cKDTree
-        zones = self.zones()
-        nodes = self.node_xy().loc[self.main_component_nodes(mode)]
-        tree = cKDTree(nodes[["x", "y"]].values)
-        pts = zones.geometry.representative_point()
-        dist, idx = tree.query(np.c_[pts.x.values, pts.y.values])
-        ok = dist <= max_snap_m
-        node_of = pd.Series(nodes.index.values[idx[ok]], index=zones["zone_id"].values[ok])
         od = self.od(mode)
-        od = od[od["o_zone"].isin(node_of.index) & od["d_zone"].isin(node_of.index)]
-        out = pd.DataFrame({"o_node": od["o_zone"].map(node_of).values,
-                            "d_node": od["d_zone"].map(node_of).values,
-                            "trips": od["trips"].values})
-        out = out[out["o_node"] != out["d_node"]]
-        return out.groupby(["o_node", "d_node"], as_index=False)["trips"].sum()
+        zones = self.zones()
+        lcc = self.main_component_nodes(mode)
+        all_nodes = self.node_xy().loc[lcc]
+        z_vol = od.groupby("o_zone")["trips"].sum().add(od.groupby("d_zone")["trips"].sum(), fill_value=0.0)
+        zones = zones.assign(_vol=zones["zone_id"].map(z_vol).fillna(0.0)).sort_values("_vol", ascending=False)
+        top_zones = zones.iloc[:300]
+        rest_zones = zones.iloc[300:]
+
+        def _snap_zones(z_sub, nodes_df: pd.DataFrame, grid_n: int) -> pd.DataFrame:
+            if z_sub.empty:
+                return pd.DataFrame(columns=["zone_id", "node", "w"])
+            tree = cKDTree(nodes_df[["x", "y"]].values)
+            nids = nodes_df.index.values
+            b = z_sub.bounds
+            zids = z_sub["zone_id"].values
+            offs = np.linspace(1.0 / (2 * grid_n), 1.0 - 1.0 / (2 * grid_n), grid_n)
+            ox, oy = np.meshgrid(offs, offs)
+            ox, oy = ox.ravel(), oy.ravel()
+            xs = b["minx"].values[:, None] + (b["maxx"].values - b["minx"].values)[:, None] * ox[None, :]
+            ys = b["miny"].values[:, None] + (b["maxy"].values - b["miny"].values)[:, None] * oy[None, :]
+            dist, idx = tree.query(np.c_[xs.ravel(), ys.ravel()])
+            z_rep = np.repeat(zids, len(ox))
+            ok = dist <= max_snap_m
+            zc = (pd.DataFrame({"zone_id": z_rep[ok], "node": nids[idx[ok]], "w": 1.0})
+                  .groupby(["zone_id", "node"], as_index=False)["w"].sum())
+            zc["w"] /= zc.groupby("zone_id")["w"].transform("sum")
+            return zc
+
+        def _build_connectors(nodes_df: pd.DataFrame, top_n: int) -> pd.DataFrame:
+            return pd.concat([_snap_zones(top_zones, nodes_df, top_n),
+                              _snap_zones(rest_zones, nodes_df, 1)], ignore_index=True)
+
+        if mode in ("car", "heavy", "motor"):
+            edges = self.directed_edges(mode)
+            coll = edges[edges["road_class"].isin({"motorway", "trunk", "primary", "secondary", "tertiary"})]
+            pref_ids = np.intersect1d(lcc, np.unique(coll[["u", "v"]].values))
+            if len(pref_ids) >= 20:
+                zc = _build_connectors(self.node_xy().loc[pref_ids], 2)
+                missed = zones[~zones["zone_id"].isin(set(zc["zone_id"]))]
+                if not missed.empty:
+                    zc = pd.concat([zc, _snap_zones(missed, all_nodes, 1)], ignore_index=True)
+            else:
+                zc = _build_connectors(all_nodes, 2)
+        else:
+            zc = _build_connectors(all_nodes, 2 if len(zones) > 300 else 3)
+
+        od = od.merge(zc.rename(columns={"zone_id": "o_zone", "node": "o_node", "w": "ow"}), on="o_zone")
+        od = od.merge(zc.rename(columns={"zone_id": "d_zone", "node": "d_node", "w": "dw"}), on="d_zone")
+        od["trips"] = od["trips"] * od["ow"] * od["dw"]
+        od = od[od["o_node"] != od["d_node"]]
+        return od.groupby(["o_node", "d_node"], as_index=False)["trips"].sum()
 
 
 def directed_to_segments(edges: pd.DataFrame, flow, mode: str) -> pd.DataFrame:

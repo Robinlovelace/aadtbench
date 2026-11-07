@@ -33,11 +33,12 @@ All networks are raw OpenStreetMap (no cleaning), built by
 |---|---|---|---|
 | oxford-v1 | walking 124, cycling 241, car 294, heavy 292 | OGL v3 | yes |
 | leeds-v1 | walking 8, cycling 362, car 417, heavy 415 | OGL v3 (DfT, Leeds City Council footfall) | yes |
+| bristol-v1 | cycling 200, car 230, heavy 229 | OGL v3 | yes |
+| london-v1 | walking 1147, cycling 2875, car 1765, heavy 1762 | OGL v3 / OGL v2 (DfT, TfL Active Travel Counts) | yes |
 | melbourne-v1 | walking 100, car 2165, heavy 1948 | CC BY 4.0 | yes |
 | zurich-v1 | cycling 23, car 102 (all motor vehicles) | CC0 | yes |
 | toronto-v1 | walking 11626, cycling 10778, car 11628, heavy 10724 | OGL Toronto | yes |
 | leuven-v1 | walking 38, cycling 37, car 37 | CC BY-NC 4.0 (Telraam), non-commercial | yes, own board |
-| bristol-v1 | cycling 200, car 230, heavy 229 | OGL v3 | no |
 | oxford-mini-v1 | walking 60, cycling 90, car 96, heavy 96 | OGL v3 | CI only |
 
 Networks and POIs: OpenStreetMap (ODbL). Population: WorldPop (CC BY 4.0).

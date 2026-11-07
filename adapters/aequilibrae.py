@@ -29,7 +29,7 @@ class AequilibraEAssign(Adapter):
     modes = ("walking", "cycling", "car", "heavy", "motor")
     variants = {
         "aon": {"algorithm": "all-or-nothing", "max_iter": 1, "rgap": 1e-3, "options": AON_OPTIONS},
-        "ue_bfw": {"algorithm": "bfw", "max_iter": 50, "rgap": 1e-3,
+        "ue_bfw": {"algorithm": "bfw", "max_iter": 20, "rgap": 1e-3,
                    "alpha": 0.15, "beta": 4.0, "peak_hour_factor": PEAK_HOUR_FACTOR, "options": UE_OPTIONS},
     }
 

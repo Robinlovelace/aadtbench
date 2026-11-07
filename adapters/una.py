@@ -11,13 +11,28 @@ import pandas as pd
 
 from adapters._base import Adapter, RunContext, Unsupported, run_cli
 
-RADIUS_M = {"walking": 2000, "cycling": 5000, "car": 12000, "heavy": 15000, "motor": 12000}
+RADIUS_M = {"walking": 2000, "cycling": 6000, "car": 12000, "heavy": 15000, "motor": 12000}
 BETA = {"walking": 1.0 / 1000.0, "cycling": 1.0 / 3000.0, "car": 1.0 / 6000.0,
         "heavy": 1.0 / 12000.0, "motor": 1.0 / 6000.0}
-CELL_M = {"walking": 500.0, "cycling": 1000.0, "car": 2000.0, "heavy": 2000.0, "motor": 2000.0}
-MAX_ORIGINS = {"walking": 1200, "cycling": 750, "car": 200, "heavy": 200, "motor": 200}
+CELL_M = {"walking": 500.0, "cycling": 750.0, "car": 1500.0, "heavy": 1500.0, "motor": 1500.0}
+MAX_ORIGINS = {"walking": 1500, "cycling": 1200, "car": 300, "heavy": 300, "motor": 300}
+POI_ORIGIN_SHARE = {"walking": 0.25, "cycling": 0.5, "car": 0.0, "heavy": 0.0, "motor": 0.0}
+COLLECTOR_CLASSES = {"motorway", "trunk", "primary", "secondary", "tertiary"}
 REF_KMH = 30.0
 POP_ATTRACTOR_SHARE = 0.1
+
+
+def _snap_to_collectors(gdf: gpd.GeoDataFrame, seg: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    from scipy.spatial import cKDTree
+    coll = seg[seg["road_class"].isin(COLLECTOR_CLASSES)]
+    if len(coll) < 20:
+        return gdf
+    pts = coll.geometry.interpolate(0.5, normalized=True)
+    xy = np.c_[pts.x.values, pts.y.values]
+    _, idx = cKDTree(xy).query(np.c_[gdf.geometry.x.values, gdf.geometry.y.values])
+    s = pd.DataFrame({"x": xy[idx, 0], "y": xy[idx, 1], "weight": gdf["weight"].values})
+    s = s.groupby(["x", "y"], as_index=False)["weight"].sum()
+    return gpd.GeoDataFrame(s[["weight"]], geometry=gpd.points_from_xy(s["x"], s["y"]), crs=gdf.crs)
 
 
 def _grid_points(df: pd.DataFrame, cell_m: float, max_pts: int, crs) -> gpd.GeoDataFrame:
@@ -33,18 +48,27 @@ def _grid_points(df: pd.DataFrame, cell_m: float, max_pts: int, crs) -> gpd.GeoD
                             geometry=gpd.points_from_xy(g["x"], g["y"]), crs=crs)
 
 
-def _od_points_for(ctx: RunContext, mode: str, crs) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+def _od_points_for(ctx: RunContext, mode: str, crs, seg: gpd.GeoDataFrame | None = None) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
     cell_m = float(ctx.params.get("cell_m", CELL_M)[mode])
     max_pts = int(ctx.params.get("max_origins", MAX_ORIGINS)[mode])
+    if seg is not None and len(seg) > 200_000:
+        max_pts = min(max_pts, max(250, int(250_000_000 // len(seg))))
+    poi_sh = float(ctx.params.get("poi_origin_share", POI_ORIGIN_SHARE).get(mode, 0.0))
     if ctx.tier == "T1_open_covariates":
         pop, pois = ctx.population(), ctx.pois()
         if pop.empty or pois.empty:
             raise Unsupported(f"empty T1 population or POIs for {mode}")
+        orig = (pd.concat([pop[["x", "y", "weight"]],
+                           pois[["x", "y"]].assign(weight=pois["weight"].values * poi_sh)], ignore_index=True)
+                if poi_sh > 0 else pop[["x", "y", "weight"]])
         attr = pd.concat([
             pois[["x", "y", "weight"]],
             pop[["x", "y"]].assign(weight=pop["weight"].values * POP_ATTRACTOR_SHARE),
         ], ignore_index=True)
-        return _grid_points(pop, cell_m, max_pts, crs), _grid_points(attr, cell_m, max_pts, crs)
+        o_gdf, d_gdf = _grid_points(orig, cell_m, max_pts, crs), _grid_points(attr, cell_m, max_pts, crs)
+        if seg is not None and mode in ("car", "heavy", "motor"):
+            o_gdf, d_gdf = _snap_to_collectors(o_gdf, seg), _snap_to_collectors(d_gdf, seg)
+        return o_gdf, d_gdf
 
     zones = ctx.zones()
     pts = zones.geometry.representative_point()
@@ -99,11 +123,11 @@ class UNAFlow(Adapter):
         def one_mode(mode: str) -> pd.DataFrame:
             edges = ctx.directed_edges(mode)
             seg = net[net["segment_id"].isin(set(edges["segment_id"]))][
-                ["segment_id", "length_m", "geometry"]
+                ["segment_id", "road_class", "length_m", "geometry"]
             ].reset_index(drop=True)
             if seg.empty:
                 raise Unsupported(f"no network segments open to {mode}")
-            orig_gdf, dest_gdf = _od_points_for(ctx, mode, net.crs)
+            orig_gdf, dest_gdf = _od_points_for(ctx, mode, net.crs, seg=seg)
             if orig_gdf.empty or dest_gdf.empty:
                 raise Unsupported(f"no origins or destinations for {mode}")
 
@@ -136,9 +160,12 @@ class UNAFlow(Adapter):
                 s.output_geojson = s.output_feather = s.output_csv = s.progressbar = False
                 s.logger_verbosity = 0
                 u.RunFlow()
-                flow = np.asarray(u.flow.edge_flow, dtype=float)
+                flow = np.maximum(np.asarray(u.flow.edge_flow, dtype=float), 0.0)
+                if (flow > 0).any():
+                    med = float(np.median(flow[flow > 0]))
+                    flow = np.where(flow > 0, np.maximum(flow, 1e-2 * med), 0.0)
 
-            return pd.DataFrame({"segment_id": seg["segment_id"].values, "mode": mode, "flow": np.maximum(flow, 0.0)})
+            return pd.DataFrame({"segment_id": seg["segment_id"].values, "mode": mode, "flow": flow})
 
         return ctx.map_modes(one_mode)
 
