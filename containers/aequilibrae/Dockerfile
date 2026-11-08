@@ -4,17 +4,21 @@
 # Self-contained (no base image) so that CI can cache it with buildx.
 FROM python:3.12-slim
 
-LABEL org.opencontainers.image.title="AADTBench aequilibrae"
-LABEL org.opencontainers.image.source="https://github.com/Robinlovelace/aadtbench"
+LABEL org.opencontainers.image.title="AADTBench aequilibrae" \
+      org.opencontainers.image.description="AADTBench traffic flow estimation adapter for AequilibraE assignment" \
+      org.opencontainers.image.source="https://github.com/Robinlovelace/aadtbench" \
+      org.opencontainers.image.licenses="MIT"
 
 ENV PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONPATH=/workspace HOME=/tmp NUMBA_CACHE_DIR=/tmp/numba MPLCONFIGDIR=/tmp/matplotlib
 WORKDIR /workspace
 
 COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt aequilibrae==1.7.2
+RUN mkdir -p /tmp/numba /tmp/matplotlib && chmod 1777 /tmp/numba /tmp/matplotlib \
+    && pip install -r /tmp/requirements.txt aequilibrae==1.7.2
 
 COPY adapters ./adapters
 COPY benchmark/__init__.py benchmark/system.py ./benchmark/
+RUN python -m compileall -q /workspace
 
 ENTRYPOINT ["python", "-m", "adapters.aequilibrae"]

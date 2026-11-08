@@ -17,7 +17,7 @@ import yaml
 from adapters._base import Adapter, run_adapter, validate_predictions
 from benchmark.case import load_case
 from benchmark.fetch import FetchError
-from benchmark.run_all import CONFIG_PATH, blind_copy, run_dir_for, score_run
+from benchmark.run_all import CONFIG_PATH, blind_copy, resolve_docker_image, run_dir_for, score_run
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -79,6 +79,8 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="CI smoke test for one AADTBench tool.")
     p.add_argument("--tool", required=True)
     p.add_argument("--image", default=None)
+    p.add_argument("--docker", action="store_true")
+    p.add_argument("--docker-tag", default="ci")
     p.add_argument("--case", default=None)
     p.add_argument("--cases-root", default=None)
     p.add_argument("--from-dir", default=None)
@@ -100,9 +102,10 @@ def main(argv: list[str] | None = None) -> int:
     results = Path(tempfile.mkdtemp(prefix="aadtbench-smoke-"))
     blind = blind_copy(case, results)
     rd = run_dir_for(results, case.case_id, a.tool, variant, tier)
+    image = a.image or (resolve_docker_image(a.tool, a.docker_tag) if a.docker else None)
     t0 = time.perf_counter()
-    rec = (run_in_docker(a.image, blind, rd, tier, modes, variant, threads, tool=a.tool)
-           if a.image else run_in_process(a.tool, blind, rd, tier, modes, variant, threads))
+    rec = (run_in_docker(image, blind, rd, tier, modes, variant, threads, tool=a.tool)
+           if image else run_in_process(a.tool, blind, rd, tier, modes, variant, threads))
     wall = time.perf_counter() - t0
     rec.setdefault("case_id", case.case_id)
     rec.setdefault("case_version", case.version)

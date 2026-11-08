@@ -57,14 +57,17 @@ CI) and shown as NA.
 
 ## Run it
 
+Build the tool container and run it via `--docker` (with read-only blind mounts):
+
 ```bash
-pip install -r requirements.txt my_tool
-python -m benchmark.fetch --version v0.1.0
-python -m benchmark.run_all --cases oxford-v1 --tools my_tool --tier T2_synthetic_od
-python -m benchmark.smoke --tool my_tool
+pip install -r requirements.txt
+docker build -f containers/my_tool/Dockerfile -t aadtbench-my_tool:ci .
+python -m benchmark.fetch --version v0.1.0 --case oxford-mini-v1
+python -m benchmark.smoke --tool my_tool --docker
+python -m benchmark.run_all --cases oxford-v1 --tools my_tool --tier T2_synthetic_od --docker
 ```
 
-## Add it to CI
+## Add it to CI and GHCR
 
 1. Copy `containers/cityseer_od/Dockerfile` and its `.dockerignore` to
    `containers/<tool>/`. Install only the pinned tool. The entry point is
@@ -73,5 +76,7 @@ python -m benchmark.smoke --tool my_tool
 3. Add the tool to `matrix.tool` in `.github/workflows/smoke.yml`.
 4. Add a test in `tests/test_adapters.py` that runs the adapter on the synthetic fixture.
 
-CI runs the unit tests, `python -m benchmark.contract_check` and the smoke
-matrix. Open a pull request with the adapter and its summary rows.
+CI runs the unit tests, `python -m benchmark.contract_check`, and the Docker
+smoke matrix on `oxford-mini-v1`, then publishes verified images to
+`ghcr.io/robinlovelace/aadtbench-<tool>:latest`. Open a pull request with the
+adapter and its summary rows.

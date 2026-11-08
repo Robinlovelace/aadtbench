@@ -4,8 +4,10 @@
 # Self-contained (no base image) so that CI can cache it with buildx.
 FROM python:3.12-slim
 
-LABEL org.opencontainers.image.title="AADTBench sdna"
-LABEL org.opencontainers.image.source="https://github.com/Robinlovelace/aadtbench"
+LABEL org.opencontainers.image.title="AADTBench sdna" \
+      org.opencontainers.image.description="AADTBench traffic flow estimation adapter for sDNA (sdna-plus)" \
+      org.opencontainers.image.source="https://github.com/Robinlovelace/aadtbench" \
+      org.opencontainers.image.licenses="GPL-3.0-or-later"
 
 ENV PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONPATH=/workspace HOME=/tmp MPLCONFIGDIR=/tmp/matplotlib
@@ -13,9 +15,11 @@ WORKDIR /workspace
 
 COPY requirements.txt /tmp/requirements.txt
 # 5.2.0 is the first PyPI release with the OpenMP Linux build (sdna_plus PR 122, merged 29 June 2026).
-RUN pip install -r /tmp/requirements.txt sdna-plus==5.2.0
+RUN mkdir -p /tmp/matplotlib && chmod 1777 /tmp/matplotlib \
+    && pip install -r /tmp/requirements.txt sdna-plus==5.2.0
 
 COPY adapters ./adapters
 COPY benchmark/__init__.py benchmark/system.py ./benchmark/
+RUN python -m compileall -q /workspace
 
 ENTRYPOINT ["python", "-m", "adapters.sdna"]

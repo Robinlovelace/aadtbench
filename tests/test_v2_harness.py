@@ -156,6 +156,7 @@ class RunAllTest(unittest.TestCase):
 
     def test_reviewed_licence_tfl(self):
         from benchmark.licences import reviewed_licence
+        from benchmark.run_all import resolve_docker_image
         lic, err = reviewed_licence("tfl")
         self.assertEqual(lic, "OGL-UK-2.0")
         self.assertIsNone(err)
@@ -163,6 +164,14 @@ class RunAllTest(unittest.TestCase):
             lic_p, err_p = reviewed_licence(src)
             self.assertEqual(lic_p, "ODbL-1.0")
             self.assertIsNone(err_p)
+        self.assertEqual(
+            resolve_docker_image("nonexistent_tool_xyz", "ci"),
+            "ghcr.io/robinlovelace/aadtbench-nonexistent_tool_xyz:latest",
+        )
+        self.assertEqual(
+            resolve_docker_image("una", "ghcr.io/robinlovelace/aadtbench-una:v0.1.0"),
+            "ghcr.io/robinlovelace/aadtbench-una:v0.1.0",
+        )
 
 
 if __name__ == "__main__":

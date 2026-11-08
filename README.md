@@ -12,17 +12,38 @@ checked by sha256 on download.
 
 ## Quick start
 
+Every tool runs inside its own container image published to the GitHub
+Container Registry (`ghcr.io/robinlovelace/aadtbench-<tool>:latest`), so only
+the lightweight benchmark harness (`requirements.txt`) is installed on the
+host:
+
 ```bash
-pip install -r requirements.txt cityseer==5.8.0 aequilibrae==1.7.2 sdna-plus==5.2.0 "git+https://github.com/City-Form-Lab/urban_network_analysis.git@d270792"
+pip install -r requirements.txt
 python -m benchmark.fetch --version v0.1.0
 python -m benchmark.run_all --cases oxford-v1 --tools baselines
-python -m benchmark.run_all --cases oxford-v1 --tools cityseer_od aequilibrae --tier T2_synthetic_od
+python -m benchmark.run_all --cases oxford-v1 --tools cityseer_od aequilibrae una sdna --docker
 cat results/LEADERBOARD.md
+```
+
+Or run a single tool smoke check in Docker (pulling from GHCR automatically if
+not built locally):
+
+```bash
+python -m benchmark.smoke --tool aequilibrae --docker
 ```
 
 `scripts/run_board.sh` runs the default case set from `config/benchmark.yaml` and writes
 `leaderboard-summary.csv` (best variant per case, mode and tool), the only
 result file kept in git.
+
+## Tool containers (GHCR)
+
+| Tool | GHCR image | Dockerfile |
+|---|---|---|
+| **UNA** | `ghcr.io/robinlovelace/aadtbench-una:latest` | `containers/una/Dockerfile` |
+| **cityseer** | `ghcr.io/robinlovelace/aadtbench-cityseer_od:latest` | `containers/cityseer_od/Dockerfile` |
+| **AequilibraE** | `ghcr.io/robinlovelace/aadtbench-aequilibrae:latest` | `containers/aequilibrae/Dockerfile` |
+| **sDNA** | `ghcr.io/robinlovelace/aadtbench-sdna:latest` | `containers/sdna/Dockerfile` |
 
 ## Cases (v0.1.0)
 

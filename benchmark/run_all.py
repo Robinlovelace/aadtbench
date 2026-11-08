@@ -136,6 +136,20 @@ def _declared_family(tool: str, variant: str | None) -> str:
         return "other"
 
 
+GHCR_PREFIX = "ghcr.io/robinlovelace/aadtbench"
+
+
+def resolve_docker_image(tool: str, tag: str = "ci") -> str:
+    if "/" in tag or ":" in tag:
+        return tag
+    local = f"aadtbench-{tool}:{tag}"
+    if subprocess.run(["docker", "image", "inspect", local],
+                      capture_output=True).returncode == 0:
+        return local
+    remote_tag = "latest" if tag == "ci" else tag
+    return f"{GHCR_PREFIX}-{tool}:{remote_tag}"
+
+
 def _image_digest(image: str) -> str:
     try:
         out = subprocess.run(["docker", "image", "inspect", "--format", "{{.Id}}", image],
@@ -152,7 +166,7 @@ def run_adapter_cli(case: Case, blind: Path, tool: str, variant: str | None, tie
     run_dir.mkdir(parents=True, exist_ok=True)
     cname = None
     if docker:
-        image = f"aadtbench-{tool}:{docker_tag}"
+        image = resolve_docker_image(tool, docker_tag)
         cname = f"aadtbench-{case.case_id}-{tool}-{variant or 'default'}-{os.getpid()}-{int(time.time() * 1000) % 100000}"
         mounts = [arg for p in sorted(blind.iterdir()) for arg in ("-v", f"{p.resolve()}:/case/{p.name}:ro")]
         cmd = ["docker", "run", "--rm", "--name", cname, "--user", f"{os.getuid()}:{os.getgid()}",
