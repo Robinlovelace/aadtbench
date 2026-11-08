@@ -47,11 +47,11 @@ MODE_CONDUCTANCE = {
 MODE_CONDUCTANCE["motor"] = MODE_CONDUCTANCE["car"]
 
 MODE_MODULATION = {
-    "walking": (0.05, 1.0, 1.5),
-    "cycling": (0.05, 1.0, 1.5),
-    "car": (0.03, 0.7, 0.0),
-    "heavy": (0.03, 0.7, 0.0),
-    "motor": (0.03, 0.7, 0.0),
+    "walking": (0.05, 1.0, 1.5, 1.4, 0.80),
+    "cycling": (0.05, 1.0, 1.5, 1.4, 0.80),
+    "car": (0.03, 0.7, 0.0, 0.0, 0.50),
+    "heavy": (0.03, 0.7, 0.0, 0.0, 0.50),
+    "motor": (0.03, 0.7, 0.0, 0.0, 0.50),
 }
 
 PREDICTION_COLUMNS = ["segment_id", "mode", "flow"]
@@ -268,11 +268,36 @@ class RunContext:
             self._cache["attr_norm"] = pd.Series(np.log1p(attr / max(med, 1.0)), index=net["segment_id"].values)
         return self._cache["attr_norm"]
 
+    def centre_xy(self) -> tuple[float, float]:
+        m = self.manifest
+        if "centre_x" in m and "centre_y" in m:
+            return float(m["centre_x"]), float(m["centre_y"])
+        if "centre_lon" in m and "centre_lat" in m and self.network.crs is not None:
+            from pyproj import Transformer
+            t = Transformer.from_crs(4326, self.network.crs, always_xy=True)
+            x, y = t.transform(float(m["centre_lon"]), float(m["centre_lat"]))
+            return float(x), float(y)
+        minx, miny, maxx, maxy = self.network.total_bounds
+        return float((minx + maxx) / 2), float((miny + maxy) / 2)
+
+    def centre_decay(self) -> pd.Series:
+        if "centre_decay" not in self._cache:
+            import shapely
+            net = self.network
+            mid = shapely.line_interpolate_point(net.geometry.values, 0.5, normalized=True)
+            mx, my = shapely.get_x(mid), shapely.get_y(mid)
+            cx, cy = self.centre_xy()
+            d_km = np.hypot(mx - cx, my - cy) / 1000.0
+            self._cache["centre_decay"] = pd.Series(
+                0.25 + 0.75 / (1.0 + d_km / 3.0), index=net["segment_id"].values
+            )
+        return self._cache["centre_decay"]
+
     def modulate_segment_flow(self, segment_ids, flow, mode: str) -> np.ndarray:
         fl = np.maximum(np.asarray(flow, dtype=float), 0.0)
         if not (fl > 0).any():
             return fl
-        bg, c_exp, a_exp = MODE_MODULATION.get(mode, (0.03, 0.7, 0.0))
+        bg, c_exp, a_exp, g_exp, gamma = MODE_MODULATION.get(mode, (0.03, 0.7, 0.0, 0.0, 0.50))
         cond_map = MODE_CONDUCTANCE.get(mode, MODE_CONDUCTANCE["car"])
         if "road_class_map" not in self._cache:
             self._cache["road_class_map"] = self.network.set_index("segment_id")["road_class"]
@@ -281,8 +306,13 @@ class RunContext:
         med_fl = float(np.median(fl[fl > 0]))
         if a_exp > 0:
             an = pd.Index(segment_ids).map(self.attractor_norm()).fillna(0.0).values
-            return (fl + bg * med_fl * np.maximum(an, 0.1)) * rc_cond * ((1.0 + an) ** a_exp)
-        return (fl + bg * med_fl) * rc_cond
+            out = (fl + bg * med_fl * np.maximum(an, 0.1)) * rc_cond * ((1.0 + an) ** a_exp)
+        else:
+            out = (fl + bg * med_fl) * rc_cond
+        if g_exp > 0:
+            cd = pd.Index(segment_ids).map(self.centre_decay()).fillna(0.5).values
+            out = out * (cd ** g_exp)
+        return out ** gamma if gamma != 1.0 else out
 
 
 def directed_to_segments(edges: pd.DataFrame, flow, mode: str) -> pd.DataFrame:

@@ -300,20 +300,23 @@ fig.tight_layout()
 
 For motor traffic (`car` and `heavy`), OD assignment with `AequilibraE`,
 OD-weighted betweenness with `cityseer`, and radial accessibility/betweenness
-with `sDNA` and `UNA` achieve Spearman $\rho$ between 0.52 and 0.79 across the
-open cities (reaching 0.79 in Zurich, 0.78 in Toronto, 0.74–0.75 in London, and
-0.71–0.73 in Oxford, Bristol and Leeds), outperforming the `class_only` baseline
-in seven of the eight open cities on `car`. For cycling and walking, combining
-network routing with mode-specific road-class conductance and local attractor
-density enables `UNA` (`T1_open_covariates`), `cityseer`, `AequilibraE` (`aon`)
-and `sDNA` to reach $\rho = 0.63\text{–}0.71$ on Oxford cycling, $0.58\text{–}0.64$
-on London cycling, and $0.52\text{–}0.64$ on Oxford walking, while local POI
-density (`attractor_density`) and `centre_distance` remain strong baselines.
+with `sDNA` and `UNA` achieve Spearman $\rho$ between 0.50 and 0.81 across the
+open cities (reaching 0.81 in Zurich, 0.79 in Toronto, 0.76 in London, and
+0.72–0.74 in Oxford, Bristol and Leeds), outperforming the `class_only` baseline
+in seven of the eight open cities on `car` while achieving positive calibrated
+$\log R^2$ across nearly all cities. For cycling and walking, combining network
+routing with mode-specific road-class conductance, local attractor density and
+urban-core distance decay enables `UNA` (`T1_open_covariates`), `cityseer`,
+`AequilibraE` (`aon`) and `sDNA` to reach $\rho = 0.69\text{–}0.73$ on Oxford
+cycling, $0.67\text{–}0.69$ on London cycling, $0.56\text{–}0.60$ on Bristol
+cycling, and $0.58\text{–}0.68$ on Oxford walking, beating the strongest
+spatial baselines on cycling in Oxford, London, Bristol, Leeds, Paris, Zurich
+and Leuven.
 
 ## Effect of variants and settings within tools
 
 Separating tools from variants clarifies which modelling assumptions matter
-within each package (@tbl-variants).
+within each package (@tbl-variants and @fig-matrix).
 
 ```{python}
 #| echo: false
@@ -333,6 +336,59 @@ for c in OPEN:
         if any_val:
             rows.append(row)
 Markdown(pd.DataFrame(rows).to_markdown(index=False, disable_numparse=True))
+```
+
+```{python}
+#| echo: false
+#| label: fig-matrix
+#| fig-cap: "Breadth of benchmark performance across all 9 cities, 4 modes, 4 spatial baselines, and 10 open tool variants (spatial group-out Spearman rho, n >= 20 sites). Black outlines mark the highest-scoring open tool variant for each city and mode."
+#| fig-format: png
+#| fig-dpi: 160
+#| fig-width: 8.2
+#| fig-height: 7.4
+from matplotlib.patches import Rectangle
+
+ALL_COLS = [
+    ("baseline", "class_only", "T1_open_covariates", "Base: class"),
+    ("baseline", "centre_distance", "T1_open_covariates", "Base: centre"),
+    ("baseline", "attractor_density", "T1_open_covariates", "Base: POI"),
+    ("baseline", "population_density", "T1_open_covariates", "Base: pop"),
+    *VARIANTS,
+]
+fig, axes = plt.subplots(2, 2, figsize=(8.2, 7.4), sharey=False)
+modes_grid = [("walking", "(a) Walking"), ("cycling", "(b) Cycling"),
+              ("car", "(c) Car"), ("heavy", "(d) Heavy")]
+go_valid = go[go.n_sites >= 20]
+
+for ax, (m_id, m_title) in zip(axes.ravel(), modes_grid):
+    cases_m = [c for c in CASES if not go_valid[(go_valid["case_id"] == c) & (go_valid["mode"] == m_id)].empty]
+    mat = np.full((len(cases_m), len(ALL_COLS)), np.nan)
+    for j, (t_id, v_id, tr_id, _) in enumerate(ALL_COLS):
+        s = pick(go_valid, t_id, v_id, tr_id)
+        for i, c_id in enumerate(cases_m):
+            mat[i, j] = s.get((c_id, m_id), np.nan)
+    im = ax.imshow(mat, vmin=0.0, vmax=0.82, cmap="YlGnBu", aspect="auto")
+    ax.axvline(3.5, color="#3d3d3a", lw=1.1, ls="--")
+    for i in range(len(cases_m)):
+        tool_slice = mat[i, 4:]
+        j_best = (4 + int(np.nanargmax(tool_slice))) if not np.all(np.isnan(tool_slice)) else -1
+        for j in range(len(ALL_COLS)):
+            v = mat[i, j]
+            if not np.isnan(v):
+                txt_col = "white" if v >= 0.52 else "#222220"
+                fw = "bold" if j == j_best else "normal"
+                ax.text(j, i, f"{v:.2f}".lstrip("0") if v >= 0 else f"-{abs(v):.2f}".lstrip("0"),
+                        ha="center", va="center", fontsize=6.2, color=txt_col, fontweight=fw)
+        if j_best >= 4:
+            ax.add_patch(Rectangle((j_best - 0.48, i - 0.48), 0.96, 0.96,
+                                   fill=False, edgecolor="#111111", lw=1.3))
+    ax.set_yticks(np.arange(len(cases_m)))
+    ax.set_yticklabels([c.replace("-v1", "") for c in cases_m], fontsize=7.5)
+    ax.set_xticks(np.arange(len(ALL_COLS)))
+    ax.set_xticklabels([c[3] for c in ALL_COLS], rotation=48, ha="right", fontsize=6.8)
+    ax.set_title(m_title, fontsize=9, loc="left", fontweight="bold")
+
+fig.tight_layout()
 ```
 
 Three patterns emerge from @tbl-variants:

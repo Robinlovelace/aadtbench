@@ -62,6 +62,10 @@ def assign(edges: pd.DataFrame, od: pd.DataFrame, params: dict, mode: str, threa
     node_map = pd.Series(np.arange(1, len(raw) + 1, dtype=np.int64), index=raw)
     cap = (edges["road_class"].map(CLASS_CAPACITY_VPH).fillna(DEFAULT_CAPACITY_VPH)
            if mode in MOTOR_MODES else pd.Series(DEFAULT_CAPACITY_VPH, index=edges.index))
+    cap_km = float((cap.values * edges["length_m"].values).sum()) / 1000.0
+    trip_sum = float(od["trips"].values.sum())
+    if ue and trip_sum * scale > 0.09 * cap_km and trip_sum > 0:
+        scale = 0.005 * cap_km / trip_sum
     net = pd.DataFrame({
         "link_id": np.arange(1, len(edges) + 1, dtype=np.int64),
         "a_node": node_map.loc[edges["u"].values].values,
