@@ -107,7 +107,7 @@ class SDNA(Adapter):
             if interp_nqpd:
                 vmap = pd.Series(raw[top["idx"].values], index=pd.MultiIndex.from_arrays([top["gx"], top["gy"]]))
                 raw = vmap.loc[list(zip(gx, gy))].values
-            flow = raw * cond
+            flow = ctx.modulate_segment_flow(seg["segment_id"].values, raw * cond, mode)
             return pd.DataFrame({"segment_id": seg["segment_id"].values, "mode": mode, "flow": flow})
 
         return ctx.map_modes(one_mode)

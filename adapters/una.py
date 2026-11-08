@@ -164,6 +164,7 @@ class UNAFlow(Adapter):
                 if (flow > 0).any():
                     med = float(np.median(flow[flow > 0]))
                     flow = np.where(flow > 0, np.maximum(flow, 1e-2 * med), 0.0)
+                flow = ctx.modulate_segment_flow(seg["segment_id"].values, flow, mode)
 
             return pd.DataFrame({"segment_id": seg["segment_id"].values, "mode": mode, "flow": flow})
 

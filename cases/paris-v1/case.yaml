@@ -1,0 +1,66 @@
+id: paris-v1
+version: 1.0.0
+benchmark_version: 0.1.0
+title: Paris multimode annual average daily flow (Ville de Paris Open Data counts)
+place: Paris
+country: FRA
+crs: EPSG:32631
+centre_lon: 2.3483915
+centre_lat: 48.8534951
+radius_m: 15000.0
+margin_m: 0.0
+zone_m: 1000.0
+modes:
+- cycling
+- car
+- heavy
+network_licence: ODbL-1.0 (OpenStreetMap)
+split:
+  group_cell_m: 3000.0
+  folds: 5
+  seed: 42
+input_tiers:
+- T0_network
+- T1_open_covariates
+- T2_synthetic_od
+note: Permanent road loop counts (paris_road) measure all motor vehicles per road
+  section and are scored as car (paired across opposite carriageways within 30 m).
+  Multimodal thermal sensors (paris_multimodal) and Eco-Counter bicycle counters (paris_velo)
+  provide separate two-way cycling, light vehicle (car), and heavy vehicle (heavy)
+  counts.
+sources:
+- source: paris_multimodal
+  licence: ODbL-1.0
+  url: https://opendata.paris.fr/explore/dataset/comptage-multimodal-comptages/
+  reviewed: 2026-11-08, ODbL 1.0 per Ville de Paris Open Data portal
+  n_rows: 113
+- source: paris_road
+  licence: ODbL-1.0
+  url: https://opendata.paris.fr/explore/dataset/comptages-routiers-permanents/
+  reviewed: 2026-11-08, ODbL 1.0 per Ville de Paris Open Data portal
+  n_rows: 1259
+- source: paris_velo
+  licence: ODbL-1.0
+  url: https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/
+  reviewed: 2026-11-08, ODbL 1.0 per Ville de Paris Open Data portal
+  n_rows: 85
+excluded_sources: {}
+network:
+  source_extract: null
+  source_timestamp: null
+  clipped_sha256: f345cc0b409eae7706c4735735ae5099fcd9e960047825df68370672cc357885
+  links: 782493
+  km: 25036.7
+  components: 2835
+  largest_component_share: 0.9924
+  build: 'benchmark/build_osm_network.py: raw OSM, split at shared nodes, no cleaning'
+files:
+- crosswalk.csv
+- inputs/od_synthetic.parquet
+- inputs/pois.parquet
+- inputs/population.parquet
+- inputs/zones.parquet
+- network.parquet
+- sites.csv
+- source.osm.pbf
+data_size_bytes: 93396627

@@ -37,7 +37,7 @@ from benchmark.fetch import fetch_result
 
 board = pd.read_csv(fetch_result("leaderboard.csv", dest=ROOT / "results"))
 board = board[board["status"] == "complete"]
-OPEN = ["oxford-v1", "leeds-v1", "bristol-v1", "london-v1", "melbourne-v1", "zurich-v1", "toronto-v1"]
+OPEN = ["oxford-v1", "leeds-v1", "bristol-v1", "london-v1", "paris-v1", "melbourne-v1", "zurich-v1", "toronto-v1"]
 CASES = OPEN + ["leuven-v1"]
 go = board[(board["split"] == "group_out_pooled") & (board["track"] == "uncalibrated")]
 
@@ -140,8 +140,10 @@ Markdown(pd.DataFrame(rows).to_markdown(index=False, disable_numparse=True))
 ```
 
 The open cases draw counts from public sources with redistributable licences:
-the UK Open Government Licence v3 (DfT, Oxfordshire County Council, Leeds City
-Council), CC BY 4.0 (City of Melbourne, Victoria Department of Transport and
+the UK Open Government Licence v3 and v2 (DfT, Oxfordshire County Council, Leeds
+City Council, Transport for London), the Open Database Licence ODbL 1.0 (Ville
+de Paris permanent road loops, Eco-Counter cycle counters and multimodal thermal
+sensors), CC BY 4.0 (City of Melbourne, Victoria Department of Transport and
 Planning), CC0 (Stadt Zürich), and the Open Government Licence Toronto.
 Networks and points of interest come from OpenStreetMap [@haklay2008osm] and
 population from WorldPop [@tatem2017worldpop].
@@ -230,12 +232,12 @@ four open tools and eight variants evaluated in this study.
 
 @tbl-main and @fig-main compare the four tools (taking each tool's best fixed
 variant) against the `class_only` and best T1 baseline on the spatial group-out
-split across the five open cases.
+split across the eight open cases.
 
 ```{python}
 #| echo: false
 #| label: tbl-main
-#| tbl-cap: "Spatial group-out Spearman rho by tool across the five open cases (five folds of 3 km cells). Each tool column reports the best fixed variant for that tool."
+#| tbl-cap: "Spatial group-out Spearman rho by tool across the eight open cases (five folds of 3 km cells). Each tool column reports the best fixed variant for that tool."
 bl = go[(go.tool == "baseline") & go.rho.notna()]
 best = bl.loc[bl.groupby(["case_id", "mode"])["rho"].idxmax()].set_index(["case_id", "mode"])
 rows = []
@@ -262,13 +264,13 @@ Markdown(pd.DataFrame(rows).to_markdown(index=False, disable_numparse=True))
 #| fig-format: png
 #| fig-dpi: 160
 #| fig-width: 6.5
-#| fig-height: 4.8
+#| fig-height: 5.4
 import matplotlib.pyplot as plt
 
 order = [(c, m) for c in OPEN for m in ["walking", "cycling", "car", "heavy", "motor"]
          if (c, m) in best.index]
 labels = [f"{c} {m}" for c, m in order]
-fig, ax = plt.subplots(figsize=(6.5, 4.8))
+fig, ax = plt.subplots(figsize=(6.5, 5.4))
 y = np.arange(len(order))[::-1]
 ax.axvline(0, color="#b8b8b2", lw=0.8, zorder=0)
 ax.grid(axis="x", color="#ececea", lw=0.6, zorder=0)
@@ -296,15 +298,17 @@ ax.legend(fontsize=8, frameon=False, loc="lower left")
 fig.tight_layout()
 ```
 
-For motor traffic (`car` and `heavy`), OD assignment with `AequilibraE` and
-OD-weighted betweenness with `cityseer` achieve Spearman $\rho$ between 0.35 and
-0.68 across the open cities, approaching the `class_only` baseline without using
-road-class counts directly on `cityseer` (which routes by street distance) and
-using road class only for free-flow speeds and capacities in `AequilibraE`. For
-walking, `UNA` (`T1_open_covariates`), `cityseer` and `AequilibraE` (`aon`)
-achieve $\rho$ up to 0.56 in Oxford and 0.62 in Melbourne, while local POI
-density (`attractor_density`) remains a remarkably strong baseline across all
-cities.
+For motor traffic (`car` and `heavy`), OD assignment with `AequilibraE`,
+OD-weighted betweenness with `cityseer`, and radial accessibility/betweenness
+with `sDNA` and `UNA` achieve Spearman $\rho$ between 0.52 and 0.79 across the
+open cities (reaching 0.79 in Zurich, 0.78 in Toronto, 0.74–0.75 in London, and
+0.71–0.73 in Oxford, Bristol and Leeds), outperforming the `class_only` baseline
+in seven of the eight open cities on `car`. For cycling and walking, combining
+network routing with mode-specific road-class conductance and local attractor
+density enables `UNA` (`T1_open_covariates`), `cityseer`, `AequilibraE` (`aon`)
+and `sDNA` to reach $\rho = 0.63\text{–}0.71$ on Oxford cycling, $0.58\text{–}0.64$
+on London cycling, and $0.52\text{–}0.64$ on Oxford walking, while local POI
+density (`attractor_density`) and `centre_distance` remain strong baselines.
 
 ## Effect of variants and settings within tools
 
@@ -419,7 +423,7 @@ horses for courses*—governed by four trade-offs:
 ```{python}
 #| echo: false
 #| label: fig-horses
-#| fig-cap: "Different horses for courses across 8 cities and 4 modes. (a) Mean Spearman rho by mode and tool (best variant), showing the crossover from T0/T1 spatial network analysis on active modes to T2 OD assignment on motor modes. (b) Rank correlation (rho) vs calibrated log R2 (point size proportional to coverage). (c) Within-tool variant gains by mode. (d) Accuracy vs wall-clock runtime across network sizes."
+#| fig-cap: "Different horses for courses across 9 cities and 4 modes. (a) Mean Spearman rho by mode and tool (best variant), showing the crossover from T0/T1 spatial network analysis on active modes to T2 OD assignment on motor modes. (b) Rank correlation (rho) vs calibrated log R2 (point size proportional to coverage). (c) Within-tool variant gains by mode. (d) Accuracy vs wall-clock runtime across network sizes."
 #| fig-format: png
 #| fig-dpi: 160
 #| fig-width: 7.5
@@ -522,10 +526,10 @@ fig.tight_layout()
 
 | Planning context / question | Available data tier | Recommended tool & variant | Key strength |
 |---|---|---|---|
-| **Active travel network permeability & street design** (walking/cycling in urban cores, no OD data) | `T0_network` | **sDNA** (`nqpd_angular`, `nqpd_euclidean`, `betweenness_euclidean`) | Near-100% network coverage, positive $\log R^2$, strong walking/cycling correlation ($\rho \approx 0.48\text{–}0.65$) from street geometry alone |
-| **Land-use & POI-driven pedestrian/cycling flows** (new developments, station access, amenity reach) | `T1_open_covariates` | **UNA** (`default` gravity + detour envelope) | Explicit population-to-POI gravity decay with plausible detour paths; strong on urban cycling ($\rho \approx 0.52\text{–}0.65$) and walking |
-| **Multi-modal corridor screening with sub-zone OD** (active + motor flows across a city or metro area) | `T2_synthetic_od` | **cityseer** (`default` for motor, `dispersed` for active) | Fast Rust/Numba OD betweenness with conductance-weighted link projection; top or near-top $\rho$ on regional car/cycling networks |
-| **Strategic highway & freight assignment with congestion** (arterial capacity, road diet / diversion impacts) | `T2_synthetic_od` / `T3_observed_od` | **AequilibraE** (`ue_bfw` for motor, `aon` for fast screening) | Explicit link capacities and BPR user equilibrium (`ue_bfw`) spread heavy motor demand across parallel arterials ($\rho$ up to $0.78$) |
+| **Active travel network permeability & street design** (walking/cycling in urban cores, no OD data) | `T0_network` | **sDNA** (`nqpd_angular`, `nqpd_euclidean`, `betweenness_euclidean`) | 100% network coverage, positive $\log R^2$, strong walking/cycling/motor correlation ($\rho \approx 0.50\text{–}0.75$) from street geometry and hierarchy |
+| **Land-use & POI-driven pedestrian/cycling flows** (new developments, station access, amenity reach) | `T1_open_covariates` | **UNA** (`default` gravity + detour envelope) | Explicit population-to-POI gravity decay with plausible detour paths; top or near-top on urban cycling ($\rho \approx 0.55\text{–}0.71$) and walking |
+| **Multi-modal corridor screening with sub-zone OD** (active + motor flows across a city or metro area) | `T2_synthetic_od` | **cityseer** (`default` for motor, `dispersed` for active) | Fast Rust/Numba OD betweenness with conductance-weighted link projection; top $\rho$ on Zurich ($\rho = 0.79$) and Paris ($\rho = 0.53$) car networks |
+| **Strategic highway & freight assignment with congestion** (arterial capacity, road diet / diversion impacts) | `T2_synthetic_od` / `T3_observed_od` | **AequilibraE** (`ue_bfw` for motor, `aon` for fast screening) | Explicit link capacities and BPR user equilibrium (`ue_bfw`) spread heavy motor demand across parallel arterials ($\rho$ up to $0.79$) |
 
 : "Different horses for courses": matching open traffic estimation tools to planning questions, modes and data tiers. {#tbl-horses}
 

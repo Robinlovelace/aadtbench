@@ -159,6 +159,10 @@ class RunAllTest(unittest.TestCase):
         lic, err = reviewed_licence("tfl")
         self.assertEqual(lic, "OGL-UK-2.0")
         self.assertIsNone(err)
+        for src in ("paris_multimodal", "paris_velo", "paris_road"):
+            lic_p, err_p = reviewed_licence(src)
+            self.assertEqual(lic_p, "ODbL-1.0")
+            self.assertIsNone(err_p)
 
 
 if __name__ == "__main__":

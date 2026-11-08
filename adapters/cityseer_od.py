@@ -76,6 +76,7 @@ class CityseerOD(Adapter):
             node_flow.index = node_flow.index.astype(str)
             flow = ((seg["u"].astype(str).map(node_flow).fillna(0).values
                      + seg["v"].astype(str).map(node_flow).fillna(0).values) / 2) * cond
+            flow = ctx.modulate_segment_flow(seg["segment_id"].values, flow, mode)
             return pd.DataFrame({"segment_id": seg["segment_id"].values, "mode": mode, "flow": flow})
 
         return ctx.map_modes(one_mode)

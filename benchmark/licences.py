@@ -63,6 +63,16 @@ REVIEWED_SOURCES: dict[str, dict] = {
         "reviewed": "2026-10-08, Open Government Licence Toronto",
     } for src, what in (("toronto_tmc", "turning movement counts"), ("toronto_svc", "speed and volume counts"),
                         ("toronto_bike", "permanent bicycle counters"))},
+    **{src: {
+        "licence": "ODbL-1.0",
+        "publisher": f"Ville de Paris open data ({what})",
+        "url": f"https://opendata.paris.fr/explore/dataset/{ds}/",
+        "reviewed": "2026-11-08, ODbL 1.0 per Ville de Paris Open Data portal",
+    } for src, ds, what in (
+        ("paris_multimodal", "comptage-multimodal-comptages", "multimodal thermal sensors"),
+        ("paris_velo", "comptage-velo-donnees-compteurs", "Eco-Counter bicycle counters"),
+        ("paris_road", "comptages-routiers-permanents", "permanent road traffic loops"),
+    )},
 }
 
 NON_COMMERCIAL_SOURCES: dict[str, dict] = {

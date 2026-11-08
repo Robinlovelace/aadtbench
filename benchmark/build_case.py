@@ -22,7 +22,7 @@ BENCHMARK_VERSION = "0.1.0"
 SOURCE_RULES = {"telraam": {"kind": "point", "radius_m": 50.0}, "toronto_tmc": {"kind": "junction"}}
 PAIR_SENSOR_M = 30.0
 DIRECTIONAL_SOURCES = {"oxflow", "vic_dtp_aadt", "stadt_zuerich_miv", "stadt_zuerich_fuss_velo",
-                       "toronto_svc", "toronto_bike"}
+                       "toronto_svc", "toronto_bike", "paris_road"}
 
 
 def project(df: pd.DataFrame, crs: int) -> tuple[np.ndarray, np.ndarray]:
@@ -97,6 +97,7 @@ def build_sites_and_inputs(cfg: dict, counts_path: Path, layers_dir: Path, out: 
         "method": c["method"] if "method" in c.columns else "short_period", "n_days": c.n_days,
         "x": c.x.round(2), "y": c.y.round(2), "lon": c.lon, "lat": c.lat,
         "bearing": c["bearing"] if "bearing" in c.columns else np.nan,
+        **({"road_name": c["road_name"]} if "road_name" in c.columns else {}),
     })
     sites = assign_folds(sites.reset_index(drop=True), float(cfg["split"]["group_cell_m"]),
                          int(cfg["split"]["folds"]), int(cfg["split"]["seed"]))

@@ -34,6 +34,26 @@ CLASS_CAPACITY_VPH = {"motorway": 2200, "trunk": 1800, "primary": 900, "secondar
                       "footway": 300, "other": 300}
 PEAK_HOUR_FACTOR = 0.1
 
+MODE_CONDUCTANCE = {
+    "walking": {"footway": 1.4, "cycleway": 1.2, "minor": 1.0, "tertiary": 1.0,
+                "secondary": 0.9, "primary": 0.8, "trunk": 0.3, "service": 0.6, "other": 0.8},
+    "cycling": {"cycleway": 2.5, "footway": 1.2, "minor": 1.0, "tertiary": 1.0,
+                "secondary": 0.7, "primary": 0.5, "trunk": 0.25, "service": 0.5, "other": 0.8},
+    "car": {"motorway": 3.5, "trunk": 2.8, "primary": 1.8, "secondary": 1.4,
+            "tertiary": 1.1, "minor": 0.6, "service": 0.2, "other": 0.6},
+    "heavy": {"motorway": 4.5, "trunk": 3.5, "primary": 2.0, "secondary": 1.3,
+              "tertiary": 0.9, "minor": 0.4, "service": 0.1, "other": 0.4},
+}
+MODE_CONDUCTANCE["motor"] = MODE_CONDUCTANCE["car"]
+
+MODE_MODULATION = {
+    "walking": (0.05, 1.0, 1.5),
+    "cycling": (0.05, 1.0, 1.5),
+    "car": (0.03, 0.7, 0.0),
+    "heavy": (0.03, 0.7, 0.0),
+    "motor": (0.03, 0.7, 0.0),
+}
+
 PREDICTION_COLUMNS = ["segment_id", "mode", "flow"]
 FAMILIES = ("reach", "flow", "assignment", "baseline", "statistical", "other")
 OPTION_KEYS = ("distance", "radius_or_decay", "weighting", "congestion")
@@ -213,6 +233,56 @@ class RunContext:
         od["trips"] = od["trips"] * od["ow"] * od["dw"]
         od = od[od["o_node"] != od["d_node"]]
         return od.groupby(["o_node", "d_node"], as_index=False)["trips"].sum()
+
+    def attractor_norm(self) -> pd.Series:
+        if "attr_norm" not in self._cache:
+            import shapely
+            from scipy.spatial import cKDTree
+            net = self.network
+            mid = shapely.line_interpolate_point(net.geometry.values, 0.5, normalized=True)
+            mx, my = shapely.get_x(mid), shapely.get_y(mid)
+            if (TIER_RANK[self.tier] >= TIER_RANK["T1_open_covariates"]
+                    and (self.case_dir / "inputs" / "pois.parquet").exists()):
+                pois = self.pois()
+                px, py, pw = pois["x"].values, pois["y"].values, pois["weight"].values
+            else:
+                sub = net["road_class"].isin({"footway", "cycleway", "service", "minor"}).values
+                if not sub.any():
+                    sub = np.ones(len(net), dtype=bool)
+                px, py, pw = mx[sub], my[sub], np.ones(int(sub.sum()))
+            cell_m = 200.0
+            gx, gy = np.floor(px / cell_m).astype(np.int64), np.floor(py / cell_m).astype(np.int64)
+            df = pd.DataFrame({"gx": gx, "gy": gy, "w": pw}).groupby(["gx", "gy"], as_index=False)["w"].sum()
+            cx, cy, cw = (df["gx"].values + 0.5) * cell_m, (df["gy"].values + 0.5) * cell_m, df["w"].values
+            lgx, lgy = np.floor(mx / cell_m).astype(np.int64), np.floor(my / cell_m).astype(np.int64)
+            l_cells, inv = np.unique(np.c_[lgx, lgy], axis=0, return_inverse=True)
+            lcx, lcy = (l_cells[:, 0] + 0.5) * cell_m, (l_cells[:, 1] + 0.5) * cell_m
+            pairs = cKDTree(np.c_[lcx, lcy]).sparse_distance_matrix(
+                cKDTree(np.c_[cx, cy]), 1800.0, output_type="ndarray"
+            )
+            attr = np.bincount(
+                pairs["i"], cw[pairs["j"]] * np.exp(-pairs["v"] / 600.0), minlength=len(l_cells)
+            )[inv.ravel()]
+            pos = attr[attr > 0]
+            med = float(np.median(pos)) if len(pos) else 1.0
+            self._cache["attr_norm"] = pd.Series(np.log1p(attr / max(med, 1.0)), index=net["segment_id"].values)
+        return self._cache["attr_norm"]
+
+    def modulate_segment_flow(self, segment_ids, flow, mode: str) -> np.ndarray:
+        fl = np.maximum(np.asarray(flow, dtype=float), 0.0)
+        if not (fl > 0).any():
+            return fl
+        bg, c_exp, a_exp = MODE_MODULATION.get(mode, (0.03, 0.7, 0.0))
+        cond_map = MODE_CONDUCTANCE.get(mode, MODE_CONDUCTANCE["car"])
+        if "road_class_map" not in self._cache:
+            self._cache["road_class_map"] = self.network.set_index("segment_id")["road_class"]
+        rc = pd.Index(segment_ids).map(self._cache["road_class_map"])
+        rc_cond = pd.Series(rc).map(cond_map).fillna(1.0).values ** c_exp
+        med_fl = float(np.median(fl[fl > 0]))
+        if a_exp > 0:
+            an = pd.Index(segment_ids).map(self.attractor_norm()).fillna(0.0).values
+            return (fl + bg * med_fl * np.maximum(an, 0.1)) * rc_cond * ((1.0 + an) ** a_exp)
+        return (fl + bg * med_fl) * rc_cond
 
 
 def directed_to_segments(edges: pd.DataFrame, flow, mode: str) -> pd.DataFrame:

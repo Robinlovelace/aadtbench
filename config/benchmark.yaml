@@ -2,7 +2,7 @@ release: v0.1.0
 mini_case: oxford-mini-v1
 
 cases:
-  open: [oxford-v1, leeds-v1, bristol-v1, london-v1, melbourne-v1, zurich-v1, toronto-v1]
+  open: [oxford-v1, leeds-v1, bristol-v1, london-v1, paris-v1, melbourne-v1, zurich-v1, toronto-v1]
   non_commercial: [leuven-v1]
 
 limits:

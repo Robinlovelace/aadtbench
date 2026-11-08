@@ -35,6 +35,7 @@ All networks are raw OpenStreetMap (no cleaning), built by
 | leeds-v1 | walking 8, cycling 362, car 417, heavy 415 | OGL v3 (DfT, Leeds City Council footfall) | yes |
 | bristol-v1 | cycling 200, car 230, heavy 229 | OGL v3 | yes |
 | london-v1 | walking 1147, cycling 2875, car 1765, heavy 1762 | OGL v3 / OGL v2 (DfT, TfL Active Travel Counts) | yes |
+| paris-v1 | cycling 125, car 1297, heavy 35 | ODbL 1.0 (Ville de Paris Open Data) | yes |
 | melbourne-v1 | walking 100, car 2165, heavy 1948 | CC BY 4.0 | yes |
 | zurich-v1 | cycling 23, car 102 (all motor vehicles) | CC0 | yes |
 | toronto-v1 | walking 11626, cycling 10778, car 11628, heavy 10724 | OGL Toronto | yes |

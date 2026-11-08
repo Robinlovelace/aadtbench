@@ -44,7 +44,9 @@ class AequilibraEAssign(Adapter):
                 raise Unsupported(f"ue_bfw is not defined for {mode}, use the aon variant")
             edges = ctx.directed_edges(mode)
             od = ctx.od_nodes(mode)
-            return directed_to_segments(edges, assign(edges, od, ctx.params, mode, ctx.threads), mode)
+            out = directed_to_segments(edges, assign(edges, od, ctx.params, mode, ctx.threads), mode)
+            out["flow"] = ctx.modulate_segment_flow(out["segment_id"].values, out["flow"].values, mode)
+            return out
 
         return ctx.map_modes(one_mode)
 
