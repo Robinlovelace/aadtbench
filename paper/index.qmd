@@ -19,6 +19,7 @@ abstract: |
 keywords: [traffic flow estimation, benchmark, spatial network analysis, active travel, traffic counts, reproducibility, open data]
 execute:
   freeze: auto
+number-sections: true
 ---
 
 ```{python}
@@ -88,28 +89,16 @@ Increasingly, there is a need for estimates of active modes, walking and cycling
 
 Increased demand for estimates of active travel flows has resulted in a growing body of research analysing the comparatively sparse data on walking and cycling (compared with voluminous car traffic counts) [@tait2024contraflow; @kaiser2025counting; @bostanara2025planning; @klein2026global], and the emergence of companies such as VivaCity [@vivacity2024sensors; @amin2025vivacity] and Telraam (recently acquired by Eco-Counter) [@momirski2022wecount; @telraam2026ecocounter] that deploy computer-vision cameras and low-cost citizen-science sensors to collect continuous multimodal counts.
 Despite the growth of such research directions and companies, observed counts currently exist a tiny fraction of links. As with car traffic, models are needed to fill the gaps where there is no data and to estimate the impact of future interventions. Unlike motor traffic modelling, however, active modes are not destined to concentrate on major roads: several people on foot or bike can fit in place of a single car, making the spatial distribution of flows less constrained by congestion, and more variable over short distances.
-A wide range of models and tools have been developed to estimate walking and cycling flows, although it is notable that little research focusses on the modelling walking and cycling (and potentially other modes) in the same tool, inadvertently continuing the siloed single-mode approach seen in traditional transport modelling [e.g. papers that only consider one mode, walking, cycling or other at a time].
+A wide range of models and tools have been developed to estimate walking and cycling flows, although it is notable that little research focusses on the modelling walking and cycling (and potentially other modes) in the same tool, inadvertently continuing the siloed single-mode approach seen in traditional transport modelling—for example, studies and tools addressing only walking [@griswold2019pedestrian; @wolpert2025pedestrian; @park2025pedestrian; @sevtsuk2026foottraffic], only cycling [@cooper2018predictive; @bhowmick2022bicycling; @viero2024bikedna; @lovelace2024cruse], or only motor traffic [@sfyridis2020aadt; @ma2026aadt], with relatively few frameworks modelling walking and cycling together [@schlosser2025activetravel].
 
-Models and network centrality and reach measures from spatial network analysis
-[@cooper2020sdna; @simons2022cityseer; @sevtsuk2026una], demand-weighted
-betweenness and spatial interaction, and origin-destination (OD) assignment
-with or without congestion [@aequilibrae2024; @krantz2024flownet]. Each is
-usually validated on its own counts, network and inputs, making it difficult to
-compare tools across modes, cities and computational budgets.
+A paradox in research on estimating active modes is that the focus on these modes is that they can lead to a neglect of the interactions between different transport modes, and the omission of one of the key barriers to active travel: the 'elephant in the room' of motor vehicle traffic.
+It is in this context that this paper was written.
+Building on the observation that open tools have greater potential to enable the reproducible and therefore falsifiable and scientifically rigorous evidence that is needed than proprietary tools [@lovelace_open_2020], we review open tools.
+It is is an applied and practical review, which seeks to demonstrate how open tools can be used to estimate active and motor traffic flows in a reproducible and comparable manner.
+Questions that many readers will be asking when approaching and hoping to use such tools include: which generates good estimates of flow in my use case, which is easiest to use, and which is fastest?
 
 Benchmarks have solved this problem in other fields by fixing the task, the
-data and the scoring rule so any method can be evaluated on equal terms. Three
-lessons from early experiments shaped AADTBench v0.1:
-
-1. Calibration with road class can mask whether a routing or centrality engine
-   adds signal of its own. Scoring tools with a single scale factor per mode
-   alongside an explicit road-class baseline isolates what each tool contributes.
-2. Simple spatial baselines—road class, distance to the city centre, and local
-   point-of-interest or population density—are strong competitors, especially
-   for walking and cycling.
-3. Small held-out sets in one city are fragile, and nearby counters are
-   spatially correlated, so random splits overstate skill
-   [@roberts2017crossvalidation].
+data and the scoring rule so any method can be evaluated on equal terms [refs].
 
 This paper describes the benchmark design (Section 2), the harness and the four
 tools evaluated (Section 3), and their performance across modes, variants and
@@ -120,18 +109,12 @@ benchmarking.
 
 ## Task and target
 
-The target is the two-way annual average daily flow on a link, for one of five
-modes: `walking`, `cycling`, `car` (motor vehicles other than heavy vehicles),
-`heavy` (goods vehicles, buses and coaches) and `motor` (all motor vehicles,
-for cases whose counts do not separate them). A tool writes one non-negative
-flow per link and mode on any scale.
+The target is the two-way annual average daily flow on a link, for one of five modes: `walking`, `cycling`, `car` (motor vehicles other than heavy vehicles), `heavy` (goods vehicles, buses and coaches) and `motor` (all motor vehicles,
+for cases whose counts do not separate them). A tool writes one non-negative flow per link and mode on any scale.
 
 ## Cases
 
-A case is a frozen bundle: a raw OpenStreetMap network with stable link ids,
-count sites with annual averages, a crosswalk from sites to links, input layers,
-and spatial folds. Cases are distributed as assets of a versioned GitHub
-release with SHA-256 checksums verified by the harness (@tbl-cases).
+A case includes: a raw OpenStreetMap network with stable link ids and count sites with annual averages and are uploaded as GitHub releases (@tbl-cases).
 
 ```{python}
 #| echo: false
@@ -306,7 +289,8 @@ ax.legend(fontsize=8, frameon=False, loc="lower left")
 fig.tight_layout()
 ```
 
-For motor traffic (`car` and `heavy`), OD assignment with `AequilibraE`,
+[Discussion TBC]
+<!-- For motor traffic (`car` and `heavy`), OD assignment with `AequilibraE`,
 OD-weighted betweenness with `cityseer`, and radial accessibility/betweenness
 with `sDNA` and `UNA` achieve Spearman $\rho$ between 0.50 and 0.81 across the
 open cities (reaching 0.81 in Zurich, 0.79 in Toronto, 0.76 in London, and
@@ -319,7 +303,7 @@ urban-core distance decay enables `UNA` (`T1_open_covariates`), `cityseer`,
 cycling, $0.67\text{–}0.69$ on London cycling, $0.56\text{–}0.60$ on Bristol
 cycling, and $0.58\text{–}0.68$ on Oxford walking, beating the strongest
 spatial baselines on cycling in Oxford, London, Bristol, Leeds, Paris, Zurich
-and Leuven.
+and Leuven. -->
 
 ## Effect of variants and settings within tools
 
@@ -650,7 +634,21 @@ leaderboards: release `v0.1.0` of the same repository, with SHA-256 checksums in
 
 # Acknowledgements
 
-We thank Crispin Cooper for review comments on the first version, which led to
-the model family grouping and the like-for-like comparison.
+TBC.
 
 # References
+
+
+<!-- Wider points, to include?
+
+
+
+1. Calibration with road class can mask whether a routing or centrality engine
+   adds signal of its own. Scoring tools with a single scale factor per mode
+   alongside an explicit road-class baseline isolates what each tool contributes.
+2. Simple spatial baselines—road class, distance to the city centre, and local
+   point-of-interest or population density—are strong competitors, especially
+   for walking and cycling.
+3. Small held-out sets in one city are fragile, and nearby counters are
+   spatially correlated, so random splits overstate skill
+   [@roberts2017crossvalidation]. -->
