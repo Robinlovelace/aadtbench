@@ -85,6 +85,7 @@ Transport modelling grew as a discipline in response to rapid growth in ownershi
 With shifting transport policy priorities come shifts in transport modelling demands.
 Increasingly, there is a need for estimates of active modes, walking and cycling being the most prominent, to inform interventions ranging from where to build new bike lanes to which streets to pedestrianise [@lovelace2017pct; @cooper2019pedestrian].
 
+Increased demand for estimates of active travel flows has resulted in a growing body of research analysing what little data exists (compared with voluminous car traffic counts), and the emergence of companies such as Vivacity and Telraam (recently acquired by Eco-Counter) [...].
 Counts exist for a small share of links. Models fill the gaps. The methods are
 many: network centrality and reach measures from spatial network analysis
 [@cooper2020sdna; @simons2022cityseer; @sevtsuk2026una], demand-weighted
