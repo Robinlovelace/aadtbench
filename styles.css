@@ -1,0 +1,111 @@
+/* Responsive, left-aligned Quarto tables across site and paper */
+figure.quarto-float-tbl > div,
+figure.quarto-float-tbl .cell-output-display {
+  overflow-x: auto;
+  max-inline-size: 100%;
+  container-type: inline-size;
+}
+
+figure.quarto-float-tbl table {
+  inline-size: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+figure.quarto-float-tbl thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  background: var(--bs-body-bg, #fff);
+}
+
+figure.quarto-float-tbl th,
+figure.quarto-float-tbl td {
+  text-align: left;
+  vertical-align: top;
+}
+
+figure.quarto-float-tbl table code {
+  font-size: 0.8em;
+  padding: 0.1em 0.3em;
+  border-radius: 0.2rem;
+  white-space: nowrap;
+}
+
+/* Stacked card layout for #tbl-tools on narrow containers */
+@container (width < 640px) {
+  #tbl-tools table,
+  #tbl-tools thead,
+  #tbl-tools tbody,
+  #tbl-tools tr,
+  #tbl-tools th,
+  #tbl-tools td {
+    display: block;
+    inline-size: 100% !important;
+  }
+
+  #tbl-tools colgroup,
+  #tbl-tools thead {
+    display: none;
+  }
+
+  #tbl-tools tbody tr {
+    margin-block-end: 1rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 0.375rem;
+    overflow: hidden;
+  }
+
+  #tbl-tools tbody td {
+    border: 0;
+    border-block-end: 1px solid var(--bs-border-color-translucent, rgba(0, 0, 0, 0.08));
+    padding: 0.4rem 0.65rem;
+  }
+
+  #tbl-tools tbody td:last-child {
+    border-block-end: 0;
+  }
+
+  #tbl-tools tbody td:first-child {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    background: var(--bs-tertiary-bg, #f8f9fa);
+    font-size: 0.95rem;
+  }
+
+  #tbl-tools table {
+    --label-2: "Package";
+    --label-3: "Family";
+    --label-4: "Input tier";
+    --label-5: "Variant";
+    --label-6: "Description";
+  }
+
+  #tbl-tools tbody td:nth-child(2)::before {
+    content: var(--label-2) ": ";
+    font-weight: 600;
+  }
+  #tbl-tools tbody td:nth-child(3)::before {
+    content: var(--label-3) ": ";
+    font-weight: 600;
+  }
+  #tbl-tools tbody td:nth-child(4)::before {
+    content: var(--label-4) ": ";
+    font-weight: 600;
+  }
+  #tbl-tools tbody td:nth-child(5)::before {
+    content: var(--label-5) ": ";
+    font-weight: 600;
+  }
+  #tbl-tools tbody td:nth-child(6)::before {
+    content: var(--label-6) ": ";
+    font-weight: 600;
+  }
+
+  #tbl-tools table code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

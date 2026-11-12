@@ -209,13 +209,13 @@ algorithmic or parameter settings within a tool). @tbl-tools summarises the
 four open tools and eight variants evaluated in this study.
 
 | Tool | Package | Family | Input tier | Variant | Description |
-|---|---|---|---|---|---|
+|:---|:---|:---|:---|:---|:---|
 | **sDNA** | `sdna-plus` [@cooper2020sdna] | `flow` / `reach` | `T0_network` | `betweenness_angular`, `betweenness_euclidean`, `nqpd_angular`, `nqpd_euclidean` | Unweighted link betweenness and Network Quantity Penalised by Distance (NQPD) within mode-specific metric radii |
 | **UNA** | `urban_network_analysis` [@sevtsuk2026una] | `flow` | `T1_open_covariates` | `default`, `shortest` | Gravity-weighted population-to-POI flow with detour tolerance (`1.15`) vs shortest-path only (`1.0`, no decay) |
 | **cityseer** | `cityseer` [@simons2022cityseer] | `flow` | `T2_synthetic_od` | `default`, `dispersed` | OD-weighted shortest-path betweenness vs 3% path-length tolerance dispersal |
 | **AequilibraE** | `aequilibrae` [@aequilibrae2024] | `assignment` | `T2_synthetic_od` | `aon`, `ue_bfw` | All-or-nothing (AoN) free-flow time assignment vs bi-conjugate Frank-Wolfe user equilibrium (UE) with BPR congestion |
 
-: Open tools and fixed variants evaluated in AADTBench v0.1. {#tbl-tools}
+: Open tools and fixed variants evaluated in AADTBench v0.1. {#tbl-tools .sm .striped .small tbl-colwidths="[10,20,9,16,19,26]"}
 
 # Results
 
