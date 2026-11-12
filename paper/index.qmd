@@ -83,11 +83,14 @@ def fmt(v, nd=2):
 Estimates of traffic flows on the transport network currently, and under scenarios of change, are needed to guide transport investment, safety and policy decisions.
 Transport modelling grew as a discipline in response to rapid growth in ownership and use of private cars [@boyce2015forecasting] but is now adapting to wider challenges, including pressures on planners to make the transport systems they manage more energy efficient, clean, and healthy [@lovelace_open_2020].
 With shifting transport policy priorities come shifts in transport modelling demands.
-Increasingly, there is a need for estimates of active modes, walking and cycling being the most prominent, to inform interventions ranging from where to build new bike lanes to which streets to pedestrianise [@lovelace2017pct; @cooper2019pedestrian].
+Increasingly, there is a need for estimates of active modes, walking and cycling being the most prominent, to inform interventions ranging from where to build new bike lanes—as in Paris's 2027--2032 *Plan Vélo* [@lovelace2017pct; @paris2026planvelo]—to which streets to pedestrianise, exemplified by the recent pedestrianisation of Oxford Street in London [@cooper2019pedestrian; @gla2026oxfordstreet].
 
-Increased demand for estimates of active travel flows has resulted in a growing body of research analysing what little data exists (compared with voluminous car traffic counts), and the emergence of companies such as Vivacity and Telraam (recently acquired by Eco-Counter) [...].
-Counts exist for a small share of links. Models fill the gaps. The methods are
-many: network centrality and reach measures from spatial network analysis
+
+Increased demand for estimates of active travel flows has resulted in a growing body of research analysing the comparatively sparse data on walking and cycling (compared with voluminous car traffic counts) [@tait2024contraflow; @kaiser2025counting; @bostanara2025planning; @klein2026global], and the emergence of companies such as VivaCity [@vivacity2024sensors; @amin2025vivacity] and Telraam (recently acquired by Eco-Counter) [@momirski2022wecount; @telraam2026ecocounter] that deploy computer-vision cameras and low-cost citizen-science sensors to collect continuous multimodal counts.
+Despite the growth of such research directions and companies, observed counts currently exist a tiny fraction of links. As with car traffic, models are needed to fill the gaps where there is no data and to estimate the impact of future interventions. Unlike motor traffic modelling, however, active modes are not destined to concentrate on major roads: several people on foot or bike can fit in place of a single car, making the spatial distribution of flows less constrained by congestion, and more variable over short distances.
+A wide range of models and tools have been developed to estimate walking and cycling flows, although it is notable that little research focusses on the modelling walking and cycling (and potentially other modes) in the same tool, inadvertently continuing the siloed single-mode approach seen in traditional transport modelling [e.g. papers that only consider one mode, walking, cycling or other at a time].
+
+Models and network centrality and reach measures from spatial network analysis
 [@cooper2020sdna; @simons2022cityseer; @sevtsuk2026una], demand-weighted
 betweenness and spatial interaction, and origin-destination (OD) assignment
 with or without congestion [@aequilibrae2024; @krantz2024flownet]. Each is
