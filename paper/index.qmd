@@ -466,8 +466,8 @@ Green Algorithms [@lannelongue2021green], CPU electricity is estimated as
 $E = t_{\text{CPU}} \cdot (\text{TDP}/N_{\text{threads}})/3600$ (a
 thread-proportional package lower bound; direct hardware counters such as RAPL
 are preferred where available [@henderson2020systematic]). Even the heaviest
-variants use under 10 Wh/city—less than two-thirds of a smartphone charge
-(~15 Wh) or one hour of a 10 W LED bulb—while the fastest use under 0.7 Wh/city.
+variants use under 14 Wh/city—less than a single smartphone charge
+(~15 Wh)—while the fastest use under 0.7 Wh/city.
 
 # Discussion
 
