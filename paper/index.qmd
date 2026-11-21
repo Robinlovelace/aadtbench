@@ -51,6 +51,7 @@ TOOLS = [
 VARIANTS = [
     ("sdna", "betweenness_angular", "T0_network", "sDNA Bt (ang.)"),
     ("sdna", "betweenness_euclidean", "T0_network", "sDNA Bt (eucl.)"),
+    ("sdna", "mode_hybrid", "T0_network", "sDNA mode hybrid"),
     ("sdna", "nqpd_angular", "T0_network", "sDNA NQPD (ang.)"),
     ("sdna", "nqpd_euclidean", "T0_network", "sDNA NQPD (eucl.)"),
     ("una", "default", "T1_open_covariates", "UNA gravity+detour"),
@@ -91,10 +92,10 @@ Increased demand for estimates of active travel flows has resulted in a growing 
 Despite the growth of such research directions and companies, observed counts currently exist a tiny fraction of links. As with car traffic, models are needed to fill the gaps where there is no data and to estimate the impact of future interventions. Unlike motor traffic modelling, however, active modes are not destined to concentrate on major roads: several people on foot or bike can fit in place of a single car, making the spatial distribution of flows less constrained by congestion, and more variable over short distances.
 A wide range of models and tools have been developed to estimate walking and cycling flows, although it is notable that little research focusses on the modelling walking and cycling (and potentially other modes) in the same tool, inadvertently continuing the siloed single-mode approach seen in traditional transport modelling—for example, studies and tools addressing only walking [@griswold2019pedestrian; @wolpert2025pedestrian; @park2025pedestrian; @sevtsuk2026foottraffic], only cycling [@cooper2018predictive; @bhowmick2022bicycling; @viero2024bikedna; @lovelace2024cruse], or only motor traffic [@sfyridis2020aadt; @ma2026aadt], with relatively few frameworks modelling walking and cycling together [@schlosser2025activetravel].
 
-A paradox in research on estimating active modes is that the focus on these modes is that they can lead to a neglect of the interactions between different transport modes, and the omission of one of the key barriers to active travel: the 'elephant in the room' of motor vehicle traffic.
+A paradox in research on estimating active modes is that focusing on them alone can neglect inter-modal interactions and one of the key barriers to active travel: the 'elephant in the room' of motor vehicle traffic.
 It is in this context that this paper was written.
 Building on the observation that open tools have greater potential to enable the reproducible and therefore falsifiable and scientifically rigorous evidence that is needed than proprietary tools [@lovelace_open_2020], we review open tools.
-It is is an applied and practical review, which seeks to demonstrate how open tools can be used to estimate active and motor traffic flows in a reproducible and comparable manner.
+It is an applied, practical review demonstrating how open tools can estimate active and motor traffic flows in a reproducible and comparable manner.
 Questions that many readers will be asking when approaching and hoping to use such tools include: which generates good estimates of flow in my use case, which is easiest to use, and which is fastest?
 
 Benchmarks have solved this problem in other fields by fixing the task, the
@@ -198,19 +199,19 @@ A tool joins the benchmark through a single Python file in `adapters/` that
 subclasses `Adapter`, declares its metadata and variants, and implements
 `predict(ctx)`. The harness passes a blind copy of the case (`case.yaml`,
 `network.parquet`, `inputs/`, with no counts), enforces the wall-time limit and
-thread budget from `config/benchmark.yaml` (8 threads and 600 s on full cases,
+thread budget from `config/benchmark.yaml` (16 threads and 3600 s on full cases,
 2 threads and 300 s on the `oxford-mini-v1` CI case), and records wall time,
-speed index and peak memory in `system.json`.
+CPU thread-time, speed index and peak memory in `system.json`.
 
 ## Tools and variants
 
 We distinguish **tools** (distinct software packages) from **variants** (fixed
 algorithmic or parameter settings within a tool). @tbl-tools summarises the
-four open tools and eight variants evaluated in this study.
+four open tools and eleven variants evaluated in this study.
 
 | Tool | Package | Family | Input tier | Variant | Description |
 |:---|:---|:---|:---|:---|:---|
-| **sDNA** | `sdna-plus` [@cooper2020sdna] | `flow` / `reach` | `T0_network` | `betweenness_angular`, `betweenness_euclidean`, `nqpd_angular`, `nqpd_euclidean` | Unweighted link betweenness and Network Quantity Penalised by Distance (NQPD) within mode-specific metric radii |
+| **sDNA** | `sdna-plus` [@cooper2020sdna] | `flow` / `reach` | `T0_network` | `betweenness_angular`, `betweenness_euclidean`, `mode_hybrid`, `nqpd_angular`, `nqpd_euclidean` | Polyline-length weighted betweenness, mode-specific hybrid metrics (`PEDESTRIAN` with stochastic dispersal, `CYCLE_ROUNDTRIP`, `VEHICLE` two-phase betweenness), and NQPD within mode-specific radii |
 | **UNA** | `urban_network_analysis` [@sevtsuk2026una] | `flow` | `T1_open_covariates` | `default`, `shortest` | Gravity-weighted population-to-POI flow with detour tolerance (`1.15`) vs shortest-path only (`1.0`, no decay) |
 | **cityseer** | `cityseer` [@simons2022cityseer] | `flow` | `T2_synthetic_od` | `default`, `dispersed` | OD-weighted shortest-path betweenness vs 3% path-length tolerance dispersal |
 | **AequilibraE** | `aequilibrae` [@aequilibrae2024] | `assignment` | `T2_synthetic_od` | `aon`, `ue_bfw` | All-or-nothing (AoN) free-flow time assignment vs bi-conjugate Frank-Wolfe user equilibrium (UE) with BPR congestion |
@@ -290,20 +291,6 @@ fig.tight_layout()
 ```
 
 [Discussion TBC]
-<!-- For motor traffic (`car` and `heavy`), OD assignment with `AequilibraE`,
-OD-weighted betweenness with `cityseer`, and radial accessibility/betweenness
-with `sDNA` and `UNA` achieve Spearman $\rho$ between 0.50 and 0.81 across the
-open cities (reaching 0.81 in Zurich, 0.79 in Toronto, 0.76 in London, and
-0.72–0.74 in Oxford, Bristol and Leeds), outperforming the `class_only` baseline
-in seven of the eight open cities on `car` while achieving positive calibrated
-$\log R^2$ across nearly all cities. For cycling and walking, combining network
-routing with mode-specific road-class conductance, local attractor density and
-urban-core distance decay enables `UNA` (`T1_open_covariates`), `cityseer`,
-`AequilibraE` (`aon`) and `sDNA` to reach $\rho = 0.69\text{–}0.73$ on Oxford
-cycling, $0.67\text{–}0.69$ on London cycling, $0.56\text{–}0.60$ on Bristol
-cycling, and $0.58\text{–}0.68$ on Oxford walking, beating the strongest
-spatial baselines on cycling in Oxford, London, Bristol, Leeds, Paris, Zurich
-and Leuven. -->
 
 ## Effect of variants and settings within tools
 
@@ -333,7 +320,7 @@ Markdown(pd.DataFrame(rows).to_markdown(index=False, disable_numparse=True))
 ```{python}
 #| echo: false
 #| label: fig-matrix
-#| fig-cap: "Breadth of benchmark performance across all 9 cities, 4 modes, 4 spatial baselines, and 10 open tool variants (spatial group-out Spearman rho, n >= 20 sites). Black outlines mark the highest-scoring open tool variant for each city and mode."
+#| fig-cap: "Breadth of benchmark performance across all 9 cities, 4 modes, 4 spatial baselines, and 11 open tool variants (spatial group-out Spearman rho, n >= 20 sites). Black outlines mark the highest-scoring open tool variant for each city and mode."
 #| fig-format: png
 #| fig-dpi: 160
 #| fig-width: 8.2
@@ -446,19 +433,41 @@ countries.
 ```{python}
 #| echo: false
 #| label: tbl-resources
-#| tbl-cap: "Median wall time, speed index (wall time over a fixed reference workload on the same machine) and peak memory per run across the open cases."
-r = go[(go.tool != "baseline") & (go.case_id.isin(OPEN))]
-r = r.drop_duplicates(["case_id", "tool", "variant", "input_tier"])
-t = r.groupby(["tool", "variant", "input_tier"])[["wall_time_s", "speed_index", "peak_memory_mb"]].median().reset_index()
-t.columns = ["Tool", "Variant", "Input tier", "Wall time (s)", "Speed index", "Peak memory (MB)"]
-Markdown(t.round(1).to_markdown(index=False, disable_numparse=True))
+#| tbl-cap: "Median per-city compute and estimated CPU electricity use across the eight open cases: wall time, total CPU thread-time, hardware-normalised speed index (wall time over a fixed reference workload), peak memory, and TDP-proportional CPU energy (Wh/city, from cpu_time_s using 350 W / 64 threads for the host AMD Threadripper PRO 9975WX)."
+CPU_W_PER_THREAD = {
+    "AMD Ryzen Threadripper PRO 9975WX 32-Cores": 350.0 / 64.0,
+}
+r = go[(go.tool != "baseline") & (go.case_id.isin(OPEN))].drop_duplicates(
+    ["case_id", "tool", "variant", "input_tier"]
+).copy()
+w_per_thr = r["cpu_model"].map(CPU_W_PER_THREAD).fillna(6.0)
+r["energy_wh"] = r["cpu_time_s"] * w_per_thr / 3600.0
+t = (
+    r.groupby(["tool", "variant"])[
+        ["wall_time_s", "cpu_time_s", "speed_index", "peak_memory_mb", "energy_wh"]
+    ]
+    .median()
+    .reset_index()
+)
+t.columns = ["Tool", "Variant", "Wall (s)", "CPU (s)", "Speed idx", "Peak RAM (MB)", "Wh/city"]
+t[["Wall (s)", "CPU (s)", "Speed idx"]] = t[["Wall (s)", "CPU (s)", "Speed idx"]].round(1)
+t["Peak RAM (MB)"] = t["Peak RAM (MB)"].round(0).astype(int)
+t["Wh/city"] = t["Wh/city"].round(2)
+Markdown(t.to_markdown(index=False, disable_numparse=True))
 ```
 
-Under the shared 8-thread budget, `AequilibraE` (`aon` and `ue_bfw`) and
-`cityseer` complete full regional networks in seconds to half a minute with
-modest memory (@tbl-resources). `UNA` and `sDNA` require more compute on large
-networks because pair-wise search trees and radial hulls grow super-linearly
-with network density and cutoff radius.
+Reporting CPU thread-time alongside wall time separates total work from
+parallelism (@tbl-resources). `AequilibraE` (`aon`) and `sDNA` NQPD finish a
+typical city in under a minute, whereas `AequilibraE` (`ue_bfw`) and `cityseer`
+take 1.4–2.2 min (~8 GB RAM). `UNA` takes 3–5 min wall time but runs nearly
+single-threaded (~0.4–0.5 Wh/city), while `sDNA` betweenness/hybrid variants
+parallelise strongly (~10× threads) with 5–6× less memory (~1.3 GB). Following
+Green Algorithms [@lannelongue2021green], CPU electricity is estimated as
+$E = t_{\text{CPU}} \cdot (\text{TDP}/N_{\text{threads}})/3600$ (a
+thread-proportional package lower bound; direct hardware counters such as RAPL
+are preferred where available [@henderson2020systematic]). Even the heaviest
+variants use under 14 Wh/city—less than a single smartphone charge
+(~15 Wh)—while the fastest use under 0.7 Wh/city.
 
 # Discussion
 
@@ -637,18 +646,3 @@ leaderboards: release `v0.1.0` of the same repository, with SHA-256 checksums in
 TBC.
 
 # References
-
-
-<!-- Wider points, to include?
-
-
-
-1. Calibration with road class can mask whether a routing or centrality engine
-   adds signal of its own. Scoring tools with a single scale factor per mode
-   alongside an explicit road-class baseline isolates what each tool contributes.
-2. Simple spatial baselines—road class, distance to the city centre, and local
-   point-of-interest or population density—are strong competitors, especially
-   for walking and cycling.
-3. Small held-out sets in one city are fragile, and nearby counters are
-   spatially correlated, so random splits overstate skill
-   [@roberts2017crossvalidation]. -->

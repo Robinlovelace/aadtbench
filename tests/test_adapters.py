@@ -102,13 +102,42 @@ class AdapterVariantsTest(unittest.TestCase):
     @unittest.skipUnless(HAVE_SDNA, "sdna-plus is not installed")
     def test_sdna_variants(self):
         from adapters.sdna import SDNA
-        for variant, family in [("betweenness_angular", "flow"), ("betweenness_euclidean", "flow"),
-                                ("nqpd_euclidean", "reach"), ("nqpd_angular", "reach")]:
+        flows = {}
+        for variant, family in [
+            ("betweenness_angular", "flow"),
+            ("betweenness_euclidean", "flow"),
+            ("mode_hybrid", "flow"),
+            ("nqpd_euclidean", "reach"),
+            ("nqpd_angular", "reach"),
+        ]:
             out = self.tmp / f"sdna_{variant}"
             rec = run_adapter(SDNA(), self.case, "T0_network", ["walking", "car"], out, variant=variant, threads=1)
             self.assertEqual(rec["status"], "complete")
             self.assertEqual(rec["family"], family)
-            self.assertGreater(rec["n_predictions"], 0)
+            pred = validate_predictions(pd.read_parquet(out / "predictions.parquet"), self.net["segment_id"])
+            self.assertEqual(set(pred["mode"]), {"walking", "car"})
+            self.assertGreater((pred["flow"] > 0).sum(), 0.5 * len(pred))
+            flows[variant] = pred[pred["mode"] == "car"].set_index("segment_id")["flow"]
+        self.assertFalse(flows["betweenness_angular"].equals(flows["mode_hybrid"]))
+
+        # Also exercise CYCLE_ROUNDTRIP directly (synthetic case manifest lists walking & car, network has allow_cycling).
+        import yaml
+        from adapters._base import RunContext
+        manifest = yaml.safe_load((self.case / "case.yaml").read_text())
+        ctx_cyc = RunContext(self.case, manifest, "T0_network", ["cycling"],
+                             dict(SDNA.variants["mode_hybrid"]), 1, self.tmp / "sdna_cyc")
+        pred_cyc = validate_predictions(SDNA().predict(ctx_cyc), self.net["segment_id"])
+        self.assertEqual(set(pred_cyc["mode"]), {"cycling"})
+        self.assertGreater((pred_cyc["flow"] > 0).sum(), 0.5 * len(pred_cyc))
+
+        # Also exercise the subsampled grid-aggregation & NQPD IDW paths (len(seg) > max_origins).
+        for variant in ("betweenness_angular", "mode_hybrid", "nqpd_angular"):
+            out = self.tmp / f"sdna_sub_{variant}"
+            rec = run_adapter(SDNA(), self.case, "T0_network", ["walking", "car"], out,
+                              variant=variant, params={"max_origins": 10}, threads=1)
+            self.assertEqual(rec["status"], "complete")
+            pred = validate_predictions(pd.read_parquet(out / "predictions.parquet"), self.net["segment_id"])
+            self.assertGreater((pred["flow"] > 0).sum(), 0.5 * len(pred))
 
 
 if __name__ == "__main__":
