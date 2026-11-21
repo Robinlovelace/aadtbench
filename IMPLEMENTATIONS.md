@@ -52,8 +52,8 @@ or mode the tool cannot handle.
 
 Variants are fixed before scoring and are not chosen by looking at the board.
 Flows are scored with a single scale factor per mode fitted on training folds.
-Each run is killed after the limit in `config/benchmark.yaml` (600 s, 300 s in
-CI) and shown as NA.
+Each run is killed after the limit in `config/benchmark.yaml` (3600 s on full
+cases, 300 s in CI) and recorded with status `timeout` and NA metrics.
 
 ## Run it
 
@@ -79,4 +79,13 @@ python -m benchmark.run_all --cases oxford-v1 --tools my_tool --tier T2_syntheti
 CI runs the unit tests, `python -m benchmark.contract_check`, and the Docker
 smoke matrix on `oxford-mini-v1`, then publishes verified images to
 `ghcr.io/robinlovelace/aadtbench-<tool>:latest`. Open a pull request with the
-adapter and its summary rows.
+adapter and its updated `leaderboard-summary.csv` rows.
+
+### Published tool containers (GHCR)
+
+| Tool | GHCR image | Dockerfile |
+|---|---|---|
+| **sDNA** | `ghcr.io/robinlovelace/aadtbench-sdna:latest` | `containers/sdna/Dockerfile` |
+| **UNA** | `ghcr.io/robinlovelace/aadtbench-una:latest` | `containers/una/Dockerfile` |
+| **cityseer** | `ghcr.io/robinlovelace/aadtbench-cityseer_od:latest` | `containers/cityseer_od/Dockerfile` |
+| **AequilibraE** | `ghcr.io/robinlovelace/aadtbench-aequilibrae:latest` | `containers/aequilibrae/Dockerfile` |

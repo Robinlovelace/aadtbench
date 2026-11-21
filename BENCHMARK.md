@@ -6,10 +6,11 @@ and reach measures, spatial interaction or statistical models. The benchmark
 fixes the inputs, the counts, the count-to-link crosswalk, the splits and the
 scoring. A tool joins through a thin adapter (`IMPLEMENTATIONS.md`).
 
-Code is in git. Case data, results and leaderboards are assets of a versioned
-GitHub release, listed with sha256 in `manifest-<version>.json`. Git holds only
-`case.yaml` and a README per case, and one compact results summary
-(`leaderboard-summary.csv`).
+Code and the complete scored leaderboard (`leaderboard-summary.csv`, covering
+all tools, variants, cases and splits) live in git. Case data bundles and
+archived run outputs are assets of a versioned GitHub release, listed with
+SHA-256 checksums in `manifest-<version>.json`. Git holds only `case.yaml` and
+a `README.md` per case.
 
 ## Concepts
 
@@ -150,9 +151,10 @@ placed each row.
 
 `python -m benchmark.fetch --version v0.1.0` downloads case assets
 (`<case_id>__<path>`) into `cases/<case_id>/` and fails on any sha256
-mismatch. Results are assets named `results__<file>`, listed in the manifest
-under case `results`. The paper reads them with `benchmark.fetch.fetch_result`,
-which checks sha256 too.
+mismatch. Archived result assets are named `results__<file>` and listed in the
+manifest under case `results`. The website and paper read
+`leaderboard-summary.csv` directly from git (falling back to
+`benchmark.fetch.fetch_result` when absent).
 
 ## Runs, hardware and provenance
 
@@ -162,8 +164,8 @@ kernel, container image digest, harness commit, data release, wall time, CPU
 time, peak memory). Each machine times a fixed reference workload once, and
 each run reports a speed index: wall time over reference time.
 
-**Threads and time limit.** Configured in `config/benchmark.yaml`: 8 threads
-and 600 s wall time on full cases, 2 threads and 300 s on the CI mini case.
+**Threads and time limit.** Configured in `config/benchmark.yaml`: 16 threads
+and 3600 s wall time on full cases, 2 threads and 300 s on the CI mini case.
 Threads are passed as `ctx.threads` and `OMP_NUM_THREADS` and recorded in
 `system.json`. On timeout the process group is killed and the run is recorded
 with status `timeout` and NA metrics.

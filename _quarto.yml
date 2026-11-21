@@ -3,11 +3,13 @@ project:
   output-dir: _site
   render:
     - README.md
+    - leaderboard.qmd
     - paper/index.qmd
     - BENCHMARK.md
     - IMPLEMENTATIONS.md
   resources:
     - leaderboard-summary.csv
+    - assets/hero-benchmark.png
 
 execute:
   freeze: auto
@@ -24,15 +26,17 @@ website:
     left:
       - text: "Home"
         href: README.md
+      - text: "Leaderboard"
+        href: leaderboard.qmd
       - text: "Paper"
         href: paper/index.qmd
       - text: "Specification"
         href: BENCHMARK.md
       - text: "Add a tool"
         href: IMPLEMENTATIONS.md
-      - text: "Results"
-        href: https://github.com/Robinlovelace/aadtbench/releases/tag/v0.1.0
     right:
+      - text: "Releases"
+        href: https://github.com/Robinlovelace/aadtbench/releases
       - icon: github
         href: https://github.com/Robinlovelace/aadtbench
         aria-label: GitHub

@@ -3,8 +3,9 @@ name: Site and docx
 # Renders the Quarto site and the docx paper, publishes the site to GitHub
 # Pages on main, and attaches the docx as a workflow artifact. Based on
 # reproducible-project-template (publish.yml, release-standalone.yml).
-# Pull requests build only. The paper reads results from the public release
-# at render time (benchmark/fetch.py), which needs no token.
+# Pull requests build only. The site and paper read `leaderboard-summary.csv`
+# directly from the repository (falling back to the public release asset via
+# `benchmark/fetch.py` if absent), which needs no token.
 
 on:
   push:
@@ -35,6 +36,7 @@ jobs:
       - name: Check outputs
         run: |
           test -f _site/index.html
+          test -f _site/leaderboard.html
           test -f _site/paper/index.html
           test -f _site/paper/index.docx
       - name: Upload docx artifact

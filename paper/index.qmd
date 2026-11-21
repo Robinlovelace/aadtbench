@@ -36,7 +36,10 @@ ROOT = Path("..")
 sys.path.insert(0, str(ROOT))
 from benchmark.fetch import fetch_result
 
-board = pd.read_csv(fetch_result("leaderboard.csv", dest=ROOT / "results"))
+_board_path = ROOT / "leaderboard-summary.csv"
+if not _board_path.exists():
+    _board_path = fetch_result("leaderboard.csv", dest=ROOT / "results")
+board = pd.read_csv(_board_path)
 board = board[board["status"] == "complete"]
 OPEN = ["oxford-v1", "leeds-v1", "bristol-v1", "london-v1", "paris-v1", "melbourne-v1", "zurich-v1", "toronto-v1"]
 CASES = OPEN + ["leuven-v1"]
@@ -89,8 +92,8 @@ Increasingly, there is a need for estimates of active modes, walking and cycling
 
 
 Increased demand for estimates of active travel flows has resulted in a growing body of research analysing the comparatively sparse data on walking and cycling (compared with voluminous car traffic counts) [@tait2024contraflow; @kaiser2025counting; @bostanara2025planning; @klein2026global], and the emergence of companies such as VivaCity [@vivacity2024sensors; @amin2025vivacity] and Telraam (recently acquired by Eco-Counter) [@momirski2022wecount; @telraam2026ecocounter] that deploy computer-vision cameras and low-cost citizen-science sensors to collect continuous multimodal counts.
-Despite the growth of such research directions and companies, observed counts currently exist a tiny fraction of links. As with car traffic, models are needed to fill the gaps where there is no data and to estimate the impact of future interventions. Unlike motor traffic modelling, however, active modes are not destined to concentrate on major roads: several people on foot or bike can fit in place of a single car, making the spatial distribution of flows less constrained by congestion, and more variable over short distances.
-A wide range of models and tools have been developed to estimate walking and cycling flows, although it is notable that little research focusses on the modelling walking and cycling (and potentially other modes) in the same tool, inadvertently continuing the siloed single-mode approach seen in traditional transport modelling—for example, studies and tools addressing only walking [@griswold2019pedestrian; @wolpert2025pedestrian; @park2025pedestrian; @sevtsuk2026foottraffic], only cycling [@cooper2018predictive; @bhowmick2022bicycling; @viero2024bikedna; @lovelace2024cruse], or only motor traffic [@sfyridis2020aadt; @ma2026aadt], with relatively few frameworks modelling walking and cycling together [@schlosser2025activetravel].
+Despite the growth of such research directions and companies, observed counts currently exist on a tiny fraction of links. As with car traffic, models are needed to fill the gaps where there is no data and to estimate the impact of future interventions. Unlike motor traffic modelling, however, active modes are not destined to concentrate on major roads: several people on foot or bike can fit in place of a single car, making the spatial distribution of flows less constrained by congestion, and more variable over short distances.
+A wide range of models and tools have been developed to estimate walking and cycling flows, although it is notable that little research focusses on modelling walking and cycling (and potentially other modes) in the same tool, inadvertently continuing the siloed single-mode approach seen in traditional transport modelling—for example, studies and tools addressing only walking [@griswold2019pedestrian; @wolpert2025pedestrian; @park2025pedestrian; @sevtsuk2026foottraffic], only cycling [@cooper2018predictive; @bhowmick2022bicycling; @viero2024bikedna; @lovelace2024cruse], or only motor traffic [@sfyridis2020aadt; @ma2026aadt], with relatively few frameworks modelling walking and cycling together [@schlosser2025activetravel].
 
 A paradox in research on estimating active modes is that focusing on them alone can neglect inter-modal interactions and one of the key barriers to active travel: the 'elephant in the room' of motor vehicle traffic.
 It is in this context that this paper was written.
@@ -99,7 +102,8 @@ It is an applied, practical review demonstrating how open tools can estimate act
 Questions that many readers will be asking when approaching and hoping to use such tools include: which generates good estimates of flow in my use case, which is easiest to use, and which is fastest?
 
 Benchmarks have solved this problem in other fields by fixing the task, the
-data and the scoring rule so any method can be evaluated on equal terms [refs].
+data and the scoring rule so any method can be evaluated on equal terms
+[@deng2009imagenet; @mattson2020mlperf].
 
 This paper describes the benchmark design (Section 2), the harness and the four
 tools evaluated (Section 3), and their performance across modes, variants and
@@ -212,9 +216,9 @@ four open tools and eleven variants evaluated in this study.
 | Tool | Package | Family | Input tier | Variant | Description |
 |:---|:---|:---|:---|:---|:---|
 | **sDNA** | `sdna-plus` [@cooper2020sdna] | `flow` / `reach` | `T0_network` | `betweenness_angular`, `betweenness_euclidean`, `mode_hybrid`, `nqpd_angular`, `nqpd_euclidean` | Polyline-length weighted betweenness, mode-specific hybrid metrics (`PEDESTRIAN` with stochastic dispersal, `CYCLE_ROUNDTRIP`, `VEHICLE` two-phase betweenness), and NQPD within mode-specific radii |
-| **UNA** | `urban_network_analysis` [@sevtsuk2026una] | `flow` | `T1_open_covariates` | `default`, `shortest` | Gravity-weighted population-to-POI flow with detour tolerance (`1.15`) vs shortest-path only (`1.0`, no decay) |
-| **cityseer** | `cityseer` [@simons2022cityseer] | `flow` | `T2_synthetic_od` | `default`, `dispersed` | OD-weighted shortest-path betweenness vs 3% path-length tolerance dispersal |
-| **AequilibraE** | `aequilibrae` [@aequilibrae2024] | `assignment` | `T2_synthetic_od` | `aon`, `ue_bfw` | All-or-nothing (AoN) free-flow time assignment vs bi-conjugate Frank-Wolfe user equilibrium (UE) with BPR congestion |
+| **UNA** | `urban_network_analysis` [@sevtsuk2026una] | `flow` | `T1_open_covariates` | `default`, `shortest` | Gravity-weighted population-to-POI flow with 5% detour tolerance (`default`) vs shortest-path only (`shortest`) |
+| **cityseer** | `cityseer` [@simons2022cityseer] | `flow` | `T2_synthetic_od` | `default`, `dispersed` | OD-weighted shortest-path betweenness vs path-length tolerance dispersal (8% walking, 3% other modes) |
+| **AequilibraE** | `aequilibrae` [@aequilibrae2024] | `assignment` | `T2_synthetic_od` | `aon`, `ue_bfw` | All-or-nothing (AoN) free-flow assignment vs bi-conjugate Frank-Wolfe user equilibrium (UE) with BPR congestion (and soft BPR dispersion on active modes) |
 
 : Open tools and fixed variants evaluated in AADTBench v0.1. {#tbl-tools .sm .striped .small tbl-colwidths="[10,20,9,16,19,26]"}
 
@@ -290,7 +294,16 @@ ax.legend(fontsize=8, frameon=False, loc="lower left")
 fig.tight_layout()
 ```
 
-[Discussion TBC]
+Across the eight open cities (@tbl-main, @fig-main), open tools consistently
+outperform the simple baselines on car, heavy and cycling targets: `sDNA` leads
+six of nine cities on car ($\rho$ up to $0.83$ in Bristol and $0.80$ in Oxford,
+Leeds, London and Toronto), while `cityseer` leads Zurich ($0.81$) and Paris
+($0.50$). On cycling, `UNA` and `cityseer` trade leads across cities ($\rho$ up
+to $0.73$ in Oxford and $0.69$ in London), well ahead of every spatial baseline.
+Walking remains the hardest mode to beat simple land-use covariates: local POI
+density (`attractor_density`, median $\rho = 0.59$) still outperforms every
+network tool in several cities, though `AequilibraE`, `cityseer`, `UNA` and
+`sDNA` each achieve $\rho \approx 0.48$–$0.73$ depending on urban form.
 
 ## Effect of variants and settings within tools
 
@@ -370,24 +383,29 @@ for ax, (m_id, m_title) in zip(axes.ravel(), modes_grid):
 fig.tight_layout()
 ```
 
-Three patterns emerge from @tbl-variants:
+Three patterns emerge from @tbl-variants and @fig-matrix:
 
-1. **Congestion in assignment (`AequilibraE AoN` vs `UE`).** Bi-conjugate
-   Frank-Wolfe user equilibrium (`ue_bfw`) consistently matches or improves on
-   all-or-nothing assignment (`aon`) for motor traffic (for example in Leeds,
-   Melbourne and Toronto), because BPR congestion spreads trips across parallel
-   arterials where AoN loads a single shortest-time corridor.
-2. **Path dispersal (`cityseer` and `UNA`).** Allowing a 3% path-length
-   tolerance in `cityseer` (`dispersed`) slightly improves active travel rank
-   correlation in dense grids such as Toronto and Melbourne. In `UNA`, combining
-   exponential distance decay with detour routing (`default`) outperforms
-   unweighted shortest-path routing (`shortest`) for walking and cycling in
-   Oxford and Zurich, while `shortest` is stronger on long-distance regional
-   car networks.
-3. **Angular vs Euclidean impedance (`sDNA`).** On `T0_network` (network
-   geometry alone, with no population or POI inputs), `sDNA` NQPD achieves
-   competitive rank correlation on Oxford car and heavy traffic ($\rho \approx 0.44$–$0.46$),
-   with Euclidean and angular formulations performing similarly.
+1. **Congestion and multi-path dispersion (`AequilibraE AoN` vs `UE`).**
+   Bi-conjugate Frank-Wolfe user equilibrium (`ue_bfw`) consistently matches or
+   improves on all-or-nothing assignment (`aon`) for motor traffic (spreading
+   demand across parallel arterials via BPR congestion) and, with soft BPR
+   dispersion on active modes, lifts median cycling $\log R^2$ to $+0.06$ and
+   walking $\rho$ to $0.69$ in Oxford and $0.48$ in Melbourne.
+2. **Path dispersal and gravity decay (`cityseer` and `UNA`).** Allowing
+   path-length tolerance in `cityseer` (`dispersed`: 8% walking, 3% other modes)
+   improves active-travel rank correlation over shortest-path routing across
+   cities (median cycling $\rho = 0.55$, mean walking $\rho = 0.52$). In `UNA`,
+   exponential gravity decay with a detour envelope (`default`) leads four of
+   eight cycling cities (including Oxford $\rho = 0.73$ and Toronto $0.54$),
+   whereas `shortest` is stronger on long-distance car corridors and London
+   walking/cycling.
+3. **Mode-specific hybrid metrics vs fast reach (`sDNA`).** On `T0_network`
+   (street geometry and road hierarchy alone, with no population, POI or OD
+   inputs), `sDNA mode_hybrid` achieves the highest overall car rank correlation
+   and calibrated magnitude (median $\rho = 0.79$, $\log R^2 = +0.50$) and leads
+   heavy vehicles (median $\rho = 0.72$, $\log R^2 = +0.45$). Meanwhile, `sDNA`
+   NQPD variants (`nqpd_euclidean`, `nqpd_angular`) run roughly $15\times$ faster
+   while maintaining positive $\log R^2$ across walking and cycling.
 
 ## Leave-one-city-out transfer
 
@@ -457,17 +475,19 @@ Markdown(t.to_markdown(index=False, disable_numparse=True))
 ```
 
 Reporting CPU thread-time alongside wall time separates total work from
-parallelism (@tbl-resources). `AequilibraE` (`aon`) and `sDNA` NQPD finish a
-typical city in under a minute, whereas `AequilibraE` (`ue_bfw`) and `cityseer`
-take 1.4–2.2 min (~8 GB RAM). `UNA` takes 3–5 min wall time but runs nearly
-single-threaded (~0.4–0.5 Wh/city), while `sDNA` betweenness/hybrid variants
-parallelise strongly (~10× threads) with 5–6× less memory (~1.3 GB). Following
+parallelism (@tbl-resources). `AequilibraE` (`aon`, ~15 s) and `sDNA` NQPD
+(~44 s) finish a typical city in under a minute, whereas `cityseer` takes
+~1.5 min (~2.6 GB RAM, 0.3–0.4 Wh/city) and `AequilibraE` (`ue_bfw`) takes
+~2.7 min (~1.6 GB RAM, ~2.0 Wh/city). `UNA` takes 2.7–4.3 min wall time
+(3.6–4.4 GB RAM) but runs mostly single-threaded (~0.3–0.6 Wh/city), while
+`sDNA` betweenness and `mode_hybrid` parallelise strongly (~11× threads,
+10–13.5 min wall time) with the lowest memory footprint (~1.3 GB). Following
 Green Algorithms [@lannelongue2021green], CPU electricity is estimated as
 $E = t_{\text{CPU}} \cdot (\text{TDP}/N_{\text{threads}})/3600$ (a
 thread-proportional package lower bound; direct hardware counters such as RAPL
 are preferred where available [@henderson2020systematic]). Even the heaviest
 variants use under 14 Wh/city—less than a single smartphone charge
-(~15 Wh)—while the fastest use under 0.7 Wh/city.
+(~15 Wh)—while the fastest use under 0.5 Wh/city.
 
 # Discussion
 
@@ -530,10 +550,11 @@ ax.grid(color="#ececea", lw=0.6)
 # Panel C: Within-tool variant deltas by mode
 ax = axes[1, 0]
 pairs = [
-    ("aequilibrae", "ue_bfw", "aon", "T2_synthetic_od", "Aeq: UE - AoN (motor)", ["car", "heavy"], "#1baf7a"),
+    ("sdna", "nqpd_euclidean", "betweenness_angular", "T0_network", "sDNA: NQPD - Bt (active)", ["walking", "cycling"], "#8c564b"),
+    ("sdna", "mode_hybrid", "betweenness_angular", "T0_network", "sDNA: hybrid - Bt (motor)", ["car", "heavy"], "#a06d62"),
     ("cityseer_od", "dispersed", "default", "T2_synthetic_od", "cityseer: disp - short (active)", ["walking", "cycling"], "#eb6834"),
     ("una", "default", "shortest", "T1_open_covariates", "UNA: detour - short (active)", ["walking", "cycling"], "#9467bd"),
-    ("sdna", "nqpd_angular", "betweenness_angular", "T0_network", "sDNA: NQPD - Bt (all)", ["walking", "cycling", "car", "heavy"], "#8c564b"),
+    ("aequilibrae", "ue_bfw", "aon", "T2_synthetic_od", "Aeq: UE - AoN (all modes)", ["walking", "cycling", "car", "heavy"], "#1baf7a"),
 ]
 y_p = np.arange(len(pairs))[::-1]
 deltas = []
@@ -583,10 +604,10 @@ fig.tight_layout()
 
 | Planning context / question | Available data tier | Recommended tool & variant | Key strength |
 |---|---|---|---|
-| **Active travel network permeability & street design** (walking/cycling in urban cores, no OD data) | `T0_network` | **sDNA** (`nqpd_angular`, `nqpd_euclidean`, `betweenness_euclidean`) | 100% network coverage, positive $\log R^2$, strong walking/cycling/motor correlation ($\rho \approx 0.50\text{–}0.75$) from street geometry and hierarchy |
-| **Land-use & POI-driven pedestrian/cycling flows** (new developments, station access, amenity reach) | `T1_open_covariates` | **UNA** (`default` gravity + detour envelope) | Explicit population-to-POI gravity decay with plausible detour paths; top or near-top on urban cycling ($\rho \approx 0.55\text{–}0.71$) and walking |
-| **Multi-modal corridor screening with sub-zone OD** (active + motor flows across a city or metro area) | `T2_synthetic_od` | **cityseer** (`default` for motor, `dispersed` for active) | Fast Rust/Numba OD betweenness with conductance-weighted link projection; top $\rho$ on Zurich ($\rho = 0.79$) and Paris ($\rho = 0.53$) car networks |
-| **Strategic highway & freight assignment with congestion** (arterial capacity, road diet / diversion impacts) | `T2_synthetic_od` / `T3_observed_od` | **AequilibraE** (`ue_bfw` for motor, `aon` for fast screening) | Explicit link capacities and BPR user equilibrium (`ue_bfw`) spread heavy motor demand across parallel arterials ($\rho$ up to $0.79$) |
+| **Network-only motor & active screening** (no OD or land-use data; street design & corridor hierarchy) | `T0_network` | **sDNA** (`mode_hybrid` for car/heavy; `nqpd_euclidean` for fast active reach) | Top overall car ($\rho = 0.79$, $\log R^2 = +0.50$) and heavy ($\rho = 0.72$) from street geometry & hierarchy alone; lowest RAM (~1.3 GB) and 100% coverage |
+| **Land-use & POI-driven active flows** (new developments, station access, amenity reach) | `T1_open_covariates` | **UNA** (`default` gravity + detour, `shortest` for London/car) | Explicit population-to-POI gravity decay with detour envelope; leads 4 of 8 cycling cities (Oxford $\rho = 0.73$, London $0.69$) at ~0.3–0.6 Wh/city |
+| **Fast multi-modal corridor screening with OD** (city-wide active + motor flows under ~1.5 min) | `T2_synthetic_od` | **cityseer** (`default` for motor, `dispersed` for active) | Fast Rust/Numba OD betweenness (~90 s, ~0.3 Wh/city); top median cycling $\rho = 0.55$ and #1 car in Zurich ($0.81$) and Paris ($0.50$) |
+| **Strategic assignment with congestion & active dispersion** (arterial capacity, road diet / diversion impacts) | `T2_synthetic_od` / `T3_observed_od` | **AequilibraE** (`ue_bfw` for congested/multi-path assignment; `aon` in ~15 s) | Explicit link capacities and BPR user equilibrium (`ue_bfw`) give strong motor magnitude ($\log R^2 = +0.46$), positive cycling $\log R^2$, and top walking in Oxford ($0.69$) and Melbourne ($0.48$) |
 
 : "Different horses for courses": matching open traffic estimation tools to planning questions, modes and data tiers. {#tbl-horses}
 
@@ -637,12 +658,18 @@ AADTBench is open to three kinds of contribution:
 
 # Data and code availability
 
-Code: <https://github.com/Robinlovelace/aadtbench>. Case data and full
-leaderboards: release `v0.1.0` of the same repository, with SHA-256 checksums in
+Code and the complete scored leaderboard (`leaderboard-summary.csv`):
+<https://github.com/Robinlovelace/aadtbench>. Case bundles and archived release
+assets: release `v0.1.0` of the same repository, with SHA-256 checksums in
 `manifest-v0.1.0.json`.
 
 # Acknowledgements
 
-TBC.
+We thank the public agencies and open-data communities that publish traffic and
+active-travel counts under open licences—the UK Department for Transport,
+Transport for London, Oxfordshire County Council, Leeds City Council, Ville de
+Paris, City of Melbourne, Victoria Department of Transport and Planning, Stadt
+Zürich, City of Toronto, Telraam, OpenStreetMap contributors, and WorldPop—as
+well as the maintainers of sDNA, UNA, cityseer, and AequilibraE.
 
 # References
