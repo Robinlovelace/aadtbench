@@ -38,6 +38,6 @@ tools:
     smoke_variant: aon
   sdna:
     tier: T0_network
-    variants: [betweenness_angular, betweenness_euclidean, nqpd_euclidean, nqpd_angular]
+    variants: [betweenness_angular, betweenness_euclidean, mode_hybrid, nqpd_euclidean, nqpd_angular]
     smoke_variant: betweenness_angular
     smoke_modes: [car]
