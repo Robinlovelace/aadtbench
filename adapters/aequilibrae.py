@@ -8,16 +8,18 @@ import os
 import numpy as np
 import pandas as pd
 
-from adapters._base import (CLASS_CAPACITY_VPH, PEAK_HOUR_FACTOR, Adapter, RunContext,
+from adapters._base import (CLASS_CAPACITY_VPH, MODE_CONDUCTANCE, PEAK_HOUR_FACTOR, Adapter, RunContext,
                             Unsupported, directed_to_segments, run_cli)
 
 DEFAULT_CAPACITY_VPH = 300.0
 MOTOR_MODES = ("car", "heavy", "motor")
 ACTIVE_MODES = ("walking", "cycling")
 
-AON_OPTIONS = {"distance": "time", "radius_or_decay": "none", "weighting": "od", "congestion": "none"}
-UE_OPTIONS = {"distance": "time", "radius_or_decay": "none", "weighting": "od",
-              "congestion": "user equilibrium (BPR)",
+AON_OPTIONS = {"distance": "time (heavy: freight conductance weighted)", "radius_or_decay": "none",
+               "weighting": "od", "congestion": "none"}
+UE_OPTIONS = {"distance": "time (heavy: freight conductance weighted)", "radius_or_decay": "none",
+              "weighting": "od",
+              "congestion": "user equilibrium (BPR; soft BPR multi-path dispersion on active modes)",
               "demand": "daily trips x 0.1 as peak hour, flows x 10 back"}
 
 
@@ -29,19 +31,16 @@ class AequilibraEAssign(Adapter):
     modes = ("walking", "cycling", "car", "heavy", "motor")
     variants = {
         "aon": {"algorithm": "all-or-nothing", "max_iter": 1, "rgap": 1e-3, "options": AON_OPTIONS},
-        "ue_bfw": {"algorithm": "bfw", "max_iter": 20, "rgap": 1e-3,
-                   "alpha": 0.15, "beta": 4.0, "peak_hour_factor": PEAK_HOUR_FACTOR, "options": UE_OPTIONS},
+        "ue_bfw": {"algorithm": "bfw", "max_iter": 30, "rgap": 1e-3,
+                   "alpha": 0.15, "beta": 4.0, "active_alpha": 1.0, "active_beta": 2.0,
+                   "active_cap_factor": 0.15, "peak_hour_factor": PEAK_HOUR_FACTOR, "options": UE_OPTIONS},
     }
 
     def tool_version(self) -> str:
         return importlib.metadata.version("aequilibrae")
 
     def predict(self, ctx: RunContext) -> pd.DataFrame:
-        ue = ctx.params.get("algorithm") != "all-or-nothing"
-
         def one_mode(mode: str) -> pd.DataFrame:
-            if ue and mode in ACTIVE_MODES:
-                raise Unsupported(f"ue_bfw is not defined for {mode}, use the aon variant")
             edges = ctx.directed_edges(mode)
             od = ctx.od_nodes(mode)
             out = directed_to_segments(edges, assign(edges, od, ctx.params, mode, ctx.threads), mode)
@@ -57,22 +56,30 @@ def assign(edges: pd.DataFrame, od: pd.DataFrame, params: dict, mode: str, threa
     from aequilibrae.paths import Graph, TrafficAssignment, TrafficClass
 
     ue = params.get("algorithm") != "all-or-nothing"
+    is_motor = mode in MOTOR_MODES
     scale = float(params.get("peak_hour_factor", 1.0)) if ue else 1.0
     raw = np.unique(edges[["u", "v"]].values.astype(np.int64))
     node_map = pd.Series(np.arange(1, len(raw) + 1, dtype=np.int64), index=raw)
     cap = (edges["road_class"].map(CLASS_CAPACITY_VPH).fillna(DEFAULT_CAPACITY_VPH)
-           if mode in MOTOR_MODES else pd.Series(DEFAULT_CAPACITY_VPH, index=edges.index))
+           if is_motor else pd.Series(DEFAULT_CAPACITY_VPH, index=edges.index))
     cap_km = float((cap.values * edges["length_m"].values).sum()) / 1000.0
     trip_sum = float(od["trips"].values.sum())
-    if ue and trip_sum * scale > 0.09 * cap_km and trip_sum > 0:
-        scale = 0.005 * cap_km / trip_sum
+    if ue and trip_sum > 0:
+        if is_motor and trip_sum * scale > 0.09 * cap_km:
+            scale = 0.005 * cap_km / trip_sum
+        elif not is_motor:
+            scale = float(params.get("active_cap_factor", 0.15)) * cap_km / trip_sum
+    fft = np.maximum(edges["time_s"].values.astype(float), 1e-3)
+    if mode == "heavy":
+        rc_c = edges["road_class"].map(MODE_CONDUCTANCE["heavy"]).fillna(1.0).values
+        fft = fft / (rc_c ** 0.6)
     net = pd.DataFrame({
         "link_id": np.arange(1, len(edges) + 1, dtype=np.int64),
         "a_node": node_map.loc[edges["u"].values].values,
         "b_node": node_map.loc[edges["v"].values].values,
         "direction": np.int8(1),
         "distance": edges["length_m"].values.astype(float),
-        "free_flow_time": np.maximum(edges["time_s"].values.astype(float), 1e-3),
+        "free_flow_time": np.maximum(fft, 1e-3),
         "capacity": cap.values.astype(float),
     })
 
@@ -99,7 +106,9 @@ def assign(edges: pd.DataFrame, od: pd.DataFrame, params: dict, mode: str, threa
     assig = TrafficAssignment()
     assig.set_classes([tc])
     assig.set_vdf("BPR")
-    assig.set_vdf_parameters({"alpha": params.get("alpha", 0.15), "beta": params.get("beta", 4.0)})
+    alpha = params.get("alpha", 0.15) if is_motor else params.get("active_alpha", 1.0)
+    beta = params.get("beta", 4.0) if is_motor else params.get("active_beta", 2.0)
+    assig.set_vdf_parameters({"alpha": alpha, "beta": beta})
     assig.set_capacity_field("capacity")
     assig.set_time_field("free_flow_time")
     assig.max_iter = int(params.get("max_iter", 50))

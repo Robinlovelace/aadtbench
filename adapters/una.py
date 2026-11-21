@@ -9,7 +9,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from adapters._base import Adapter, RunContext, Unsupported, run_cli
+from adapters._base import MODE_CONDUCTANCE, Adapter, RunContext, Unsupported, run_cli
 
 RADIUS_M = {"walking": 2000, "cycling": 6000, "car": 12000, "heavy": 15000, "motor": 12000}
 BETA = {"walking": 1.0 / 1000.0, "cycling": 1.0 / 3000.0, "car": 1.0 / 6000.0,
@@ -131,9 +131,13 @@ class UNAFlow(Adapter):
             if orig_gdf.empty or dest_gdf.empty:
                 raise Unsupported(f"no origins or destinations for {mode}")
 
-            if mode in ("car", "heavy", "motor"):
+            is_motor = mode in ("car", "heavy", "motor")
+            if is_motor:
                 kmh = edges.drop_duplicates("segment_id").set_index("segment_id").eval("length_m / time_s * 3.6")
                 imp = (REF_KMH / seg["segment_id"].map(kmh)).fillna(1.0).values
+                if mode == "heavy":
+                    rc_c = seg["road_class"].map(MODE_CONDUCTANCE["heavy"]).fillna(1.0).values
+                    imp = imp / (rc_c ** 0.5)
                 seg["cost_m"] = np.maximum(seg["length_m"].values * imp, 1e-3)
                 weight_col, net_cols = "cost_m", ["segment_id", "cost_m", "geometry"]
             else:
@@ -155,7 +159,13 @@ class UNAFlow(Adapter):
                 s.gravity_beta = float(ctx.params["beta"][mode])
                 s.flow_engine = "aggregate_flow"
                 s.flow_decay = True
-                s.flow_decay_method, s.flow_gravity_cap = "gravity_cap", "p95"
+                if is_motor:
+                    s.flow_decay_method = "closest"
+                    if float(ctx.params.get("detour_ratio", 1.05)) > 1.0:
+                        s.turns = True
+                        s.turn_penalty = 30
+                else:
+                    s.flow_decay_method, s.flow_gravity_cap = "gravity_cap", "p95"
                 s.flow_detour_ratio = float(ctx.params.get("detour_ratio", 1.05))
                 s.output_geojson = s.output_feather = s.output_csv = s.progressbar = False
                 s.logger_verbosity = 0
