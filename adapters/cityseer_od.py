@@ -7,23 +7,25 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from adapters._base import Adapter, RunContext, Unsupported, run_cli
+from adapters._base import MODE_CONDUCTANCE, Adapter, RunContext, Unsupported, run_cli
 
 RADIUS_M = {"walking": 3000, "cycling": 8000, "car": 20000, "heavy": 30000, "motor": 20000}
+DISPERSED_TOL = {"walking": 8.0, "cycling": 3.0, "car": 3.0, "heavy": 3.0, "motor": 3.0}
 REF_KMH = 30.0
 
 
 class CityseerOD(Adapter):
     tool = "cityseer_od"
     family = "flow"
-    options = {"distance": "metric (motor modes: class speed weighted)",
-               "radius_or_decay": "radius per mode", "weighting": "od", "congestion": "none"}
+    options = {"distance": "metric (motor: speed/freight weighted)",
+               "radius_or_decay": "radius per mode", "weighting": "od (geometric node-to-edge projection)",
+               "congestion": "none"}
     tiers = ("T2_synthetic_od", "T3_observed_od")
     modes = ("walking", "cycling", "car", "heavy", "motor")
     variants = {
         "default": {"radius_m": RADIUS_M, "tolerance": 0.0},
-        "dispersed": {"radius_m": RADIUS_M, "tolerance": 3.0,
-                      "options": {"radius_or_decay": "radius per mode, 3 percent path tolerance"}},
+        "dispersed": {"radius_m": RADIUS_M, "tolerance": DISPERSED_TOL,
+                      "options": {"radius_or_decay": "radius per mode, path tolerance (8% walk, 3% other)"}},
     }
 
     def tool_version(self) -> str:
@@ -43,6 +45,9 @@ class CityseerOD(Adapter):
             if mode in ("car", "heavy", "motor"):
                 kmh = edges.drop_duplicates("segment_id").set_index("segment_id").eval("length_m / time_s * 3.6")
                 imp_s = (REF_KMH / seg["segment_id"].map(kmh)).fillna(1.0)
+                if mode == "heavy":
+                    rc_c = seg["road_class"].map(MODE_CONDUCTANCE["heavy"]).fillna(1.0).values
+                    imp_s = imp_s / (rc_c ** 0.5)
                 imp = dict(zip(seg["segment_id"], imp_s))
                 cond = 1.0 / imp_s.values
             else:
@@ -68,14 +73,18 @@ class CityseerOD(Adapter):
             radius = int(ctx.params["radius_m"][mode])
             matrix = cs.rustalgos.centrality.OdMatrix(
                 pos[od["o_node"]].tolist(), pos[od["d_node"]].tolist(), od["trips"].astype(float).tolist())
+            tol_cfg = ctx.params.get("tolerance")
+            tol = tol_cfg.get(mode, 0.0) if isinstance(tol_cfg, dict) else (tol_cfg or 0.0)
             res = cs.betweenness_od(network_structure=structure, nodes_gdf=nodes_df.copy(),
                                     od_matrix=matrix, distances=[radius],
-                                    tolerance=ctx.params.get("tolerance") or None,
+                                    tolerance=tol or None,
                                     betweenness={"betweenness": "1"})
             node_flow = res[f"cc_betweenness_{radius}"].astype(float)
             node_flow.index = node_flow.index.astype(str)
-            flow = ((seg["u"].astype(str).map(node_flow).fillna(0).values
-                     + seg["v"].astype(str).map(node_flow).fillna(0).values) / 2) * cond
+            uf = np.maximum(seg["u"].astype(str).map(node_flow).fillna(0).values, 0.0)
+            vf = np.maximum(seg["v"].astype(str).map(node_flow).fillna(0).values, 0.0)
+            # Geometric mean eliminates arterial-junction leakage onto adjacent minor side streets.
+            flow = np.sqrt(uf * vf) * cond
             flow = ctx.modulate_segment_flow(seg["segment_id"].values, flow, mode)
             return pd.DataFrame({"segment_id": seg["segment_id"].values, "mode": mode, "flow": flow})
 

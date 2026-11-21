@@ -61,7 +61,7 @@ class AdapterVariantsTest(unittest.TestCase):
     def test_aequilibrae_variants(self):
         from adapters.aequilibrae import AequilibraEAssign
         totals = {}
-        for variant, modes in (("aon", ["car", "walking"]), ("ue_bfw", ["car"])):
+        for variant, modes in (("aon", ["car", "walking"]), ("ue_bfw", ["car", "walking"])):
             out = self.tmp / f"aeq_{variant}"
             rec = run_adapter(AequilibraEAssign(), self.case, "T2_synthetic_od", modes,
                               out, variant=variant, threads=1)
@@ -71,9 +71,6 @@ class AdapterVariantsTest(unittest.TestCase):
             self.assertGreater((pred["flow"] > 0).sum(), 0.5 * len(pred))
             totals[variant] = pred[pred["mode"] == "car"]["flow"].sum()
         self.assertGreaterEqual(totals["ue_bfw"], 0.99 * totals["aon"])
-        rec_w = run_adapter(AequilibraEAssign(), self.case, "T2_synthetic_od", ["walking"],
-                            self.tmp / "aeq_walk", variant="ue_bfw", threads=1)
-        self.assertEqual(rec_w["status"], "unsupported")
 
     @unittest.skipUnless(HAVE_CITYSEER, "cityseer is not installed")
     def test_cityseer_variants(self):
