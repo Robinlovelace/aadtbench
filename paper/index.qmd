@@ -36,7 +36,10 @@ ROOT = Path("..")
 sys.path.insert(0, str(ROOT))
 from benchmark.fetch import fetch_result
 
-board = pd.read_csv(fetch_result("leaderboard.csv", dest=ROOT / "results"))
+_board_path = ROOT / "leaderboard-summary.csv"
+if not _board_path.exists():
+    _board_path = fetch_result("leaderboard.csv", dest=ROOT / "results")
+board = pd.read_csv(_board_path)
 board = board[board["status"] == "complete"]
 OPEN = ["oxford-v1", "leeds-v1", "bristol-v1", "london-v1", "paris-v1", "melbourne-v1", "zurich-v1", "toronto-v1"]
 CASES = OPEN + ["leuven-v1"]
