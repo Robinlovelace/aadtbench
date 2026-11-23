@@ -25,15 +25,13 @@ note: Motorised traffic counts are all motor vehicles, scored as car (heavy incl
 sources:
 - source: stadt_zuerich_fuss_velo
   licence: CC0-1.0
-  url: https://data.stadt-zuerich.ch
-  reviewed: 2026-10-08, CC0 per the dataset page, as recorded by the data porting
-    step, recheck pending
+  url: https://data.stadt-zuerich.ch/dataset/ted_taz_verkehrszaehlungen_werte_fussgaenger_velo
+  reviewed: 2026-11-23, CC0 1.0 verified on Stadt Zuerich Open Data
   n_rows: 23
 - source: stadt_zuerich_miv
   licence: CC0-1.0
-  url: https://data.stadt-zuerich.ch
-  reviewed: 2026-10-08, CC0 per the dataset page, as recorded by the data porting
-    step, recheck pending
+  url: https://data.stadt-zuerich.ch/dataset/sid_dav_verkehrszaehlung_miv_od2031
+  reviewed: 2026-11-23, CC0 1.0 verified on Stadt Zuerich Open Data
   n_rows: 102
 excluded_sources: {}
 network:

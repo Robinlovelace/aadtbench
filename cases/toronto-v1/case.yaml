@@ -26,21 +26,18 @@ note: 'Turning movement counts are junction arms: flow entering from the arm, do
 sources:
 - source: toronto_bike
   licence: OGL-Toronto
-  url: https://open.toronto.ca
-  reviewed: 2026-10-08, Open Government Licence Toronto as recorded with the data,
-    recheck pending
+  url: https://open.toronto.ca/dataset/permanent-bicycle-counters/
+  reviewed: 2026-11-23, Open Government Licence – Toronto verified on open.toronto.ca
   n_rows: 24
 - source: toronto_svc
   licence: OGL-Toronto
-  url: https://open.toronto.ca
-  reviewed: 2026-10-08, Open Government Licence Toronto as recorded with the data,
-    recheck pending
+  url: https://open.toronto.ca/dataset/traffic-volumes-midblock-vehicle-speed-volume-and-classification-counts/
+  reviewed: 2026-11-23, Open Government Licence – Toronto verified on open.toronto.ca
   n_rows: 479
 - source: toronto_tmc
   licence: OGL-Toronto
-  url: https://open.toronto.ca
-  reviewed: 2026-10-08, Open Government Licence Toronto as recorded with the data,
-    recheck pending
+  url: https://open.toronto.ca/dataset/traffic-volumes-at-intersections-for-all-modes/
+  reviewed: 2026-11-23, Open Government Licence – Toronto verified on open.toronto.ca
   n_rows: 44253
 excluded_sources: {}
 network:

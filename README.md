@@ -43,5 +43,5 @@ Run `scripts/run_board.sh` for the full default suite and `scripts/update_readme
 ## Data, results, and contributing
 
 - **Code & results:** Git holds the harness, adapters, and the complete scored leaderboard ([`leaderboard-summary.csv`](leaderboard-summary.csv), all variants and splits).
-- **Case bundles:** Networks (OSM, ODbL), WorldPop population (CC BY 4.0), and reviewed open counts live in the [v0.1.0 release](https://github.com/Robinlovelace/aadtbench/releases/tag/v0.1.0), verified by SHA-256 on download.
+- **Case bundles:** Networks (OSM, ODbL-1.0), population (WorldPop CC BY 4.0; ONS Census 2021 Output Areas OGL-UK-3.0 for London), and reviewed open counts live in the [v0.1.0 release](https://github.com/Robinlovelace/aadtbench/releases/tag/v0.1.0), verified by SHA-256 on download. London active travel counts are Powered by TfL Open Data (Contains OS data © Crown copyright and database rights 2026).
 - **Contribute:** New tools, cities, and rule proposals are welcome via issues and pull requests — see [`BENCHMARK.md`](BENCHMARK.md) for the rules and [`IMPLEMENTATIONS.md`](IMPLEMENTATIONS.md) for the adapter contract and container images.

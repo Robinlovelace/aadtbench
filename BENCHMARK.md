@@ -145,7 +145,12 @@ placed each row.
 - Non-commercial cases (Telraam, CC BY-NC 4.0) are released as separate cases
   with `licence_class: non_commercial` and kept off the leave-one-city-out
   board.
-- Networks and POIs are OpenStreetMap (ODbL). Population is WorldPop (CC BY).
+- Networks and POIs are OpenStreetMap (ODbL-1.0). Population is WorldPop
+  (CC BY 4.0) for all cases except `london-v1` and `london-mini-v1`, which use
+  ONS Census 2021 Output Area centroids (OGL-UK-3.0; Contains OS data © Crown
+  copyright and database rights 2026). London TfL active travel counts are
+  Powered by TfL Open Data (OGL v2.0 with TfL amendments; Contains OS data ©
+  Crown copyright and database rights 2026).
 
 ## Distribution
 

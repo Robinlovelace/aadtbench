@@ -136,13 +136,16 @@ Markdown(pd.DataFrame(rows).to_markdown(index=False, disable_numparse=True))
 ```
 
 The open cases draw counts from public sources with redistributable licences:
-the UK Open Government Licence v3 and v2 (DfT, Leeds
-City Council, Transport for London), the Open Database Licence ODbL 1.0 (Ville
-de Paris permanent road loops, Eco-Counter cycle counters and multimodal thermal
-sensors), CC BY 4.0 (City of Melbourne, Victoria Department of Transport and
-Planning), CC0 (Stadt Zürich), and the Open Government Licence Toronto.
-Networks and points of interest come from OpenStreetMap [@haklay2008osm] and
-population from WorldPop [@tatem2017worldpop].
+the UK Open Government Licence v3.0 (Department for Transport, Leeds City
+Council) and TfL Open Data terms (OGL v2.0 with TfL amendments; Powered by TfL
+Open Data; Contains OS data © Crown copyright and database rights 2026), the
+Open Database Licence ODbL 1.0 (Direction de la Voirie et des Déplacements –
+Ville de Paris permanent road loops, Eco-Counter cycle counters and multimodal
+thermal sensors), CC BY 4.0 (City of Melbourne, Victoria Department of
+Transport and Planning), CC0 1.0 (Stadt Zürich), and the Open Government
+Licence – Toronto. Networks and points of interest come from OpenStreetMap
+[@haklay2008osm] and population from WorldPop [@tatem2017worldpop] (with ONS
+Census 2021 Output Area centroids under OGL-UK-3.0 for London).
 
 ## Count-to-link crosswalk
 
@@ -669,9 +672,11 @@ assets: release `v0.1.0` of the same repository, with SHA-256 checksums in
 
 We thank the public agencies and open-data communities that publish traffic and
 active-travel counts under open licences—the UK Department for Transport,
-Transport for London, Leeds City Council, Ville de
-Paris, City of Melbourne, Victoria Department of Transport and Planning, Stadt
-Zürich, City of Toronto, Telraam, OpenStreetMap contributors, and WorldPop—as
-well as the maintainers of sDNA, UNA, cityseer, and AequilibraE.
+Transport for London (Powered by TfL Open Data; Contains OS data © Crown
+copyright and database rights 2026), Office for National Statistics, Leeds City
+Council, Direction de la Voirie et des Déplacements – Ville de Paris (ODbL 1.0),
+City of Melbourne, Victoria Department of Transport and Planning, Stadt Zürich,
+City of Toronto, Telraam, OpenStreetMap contributors, and WorldPop—as well as
+the maintainers of sDNA, UNA, cityseer, and AequilibraE.
 
 # References

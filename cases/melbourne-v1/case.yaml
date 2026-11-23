@@ -17,15 +17,13 @@ modes:
 sources:
 - source: melbourne_ped
   licence: CC-BY-4.0
-  url: https://data.melbourne.vic.gov.au
-  reviewed: 2026-10-07, CC BY 4.0 as recorded with the data, publisher page check
-    pending
+  url: https://data.melbourne.vic.gov.au/explore/dataset/pedestrian-counting-system-sensor-locations/
+  reviewed: 2026-11-23, CC BY 4.0 verified on City of Melbourne Open Data
   n_rows: 100
 - source: vic_dtp_aadt
   licence: CC-BY-4.0
-  url: https://discover.data.vic.gov.au
-  reviewed: 2026-10-07, CC BY 4.0 as recorded with the data, publisher page check
-    pending
+  url: https://discover.data.vic.gov.au/dataset/historical-annual-average-daily-traffic-volume
+  reviewed: 2026-11-23, CC BY 4.0 verified on DataVic / Transport Victoria
   n_rows: 4113
 excluded_sources: {}
 network_licence: ODbL-1.0 (OpenStreetMap)

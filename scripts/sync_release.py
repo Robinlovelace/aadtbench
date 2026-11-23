@@ -75,7 +75,11 @@ def main() -> int:
                 print(f"[stage] {aname} ({sz} bytes)")
 
         allowed_cases = set(CASES) | {"results"}
-        pruned = [k for k in list(existing.keys()) if k[0] not in allowed_cases]
+        allowed_results = set(RESULT_FILES)
+        pruned = [
+            k for k in list(existing.keys())
+            if k[0] not in allowed_cases or (k[0] == "results" and k[1] not in allowed_results)
+        ]
         for k in pruned:
             print(f"[prune] {k[0]}/{k[1]}")
             existing.pop(k, None)

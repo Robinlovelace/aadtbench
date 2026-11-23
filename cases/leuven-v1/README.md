@@ -30,5 +30,7 @@ Excluded:
 
 - none
 
-Inputs: WorldPop (CC BY 4.0), OSM POIs (ODbL), zones, synthetic OD. Rebuild:
+Inputs: WorldPop (CC BY 4.0; central Leuven 3.5 × 4.4 km extent, 2,859 grid
+cells), OSM POIs (ODbL-1.0; central Leuven 5.4 × 6.5 km extent, legacy 6-class
+POI taxonomy), zones, synthetic OD. Rebuild:
 `python benchmark/build_case.py --case leuven-v1 --source <extract> --out <dir>`.

@@ -30,13 +30,15 @@ sources:
 - source: dft_manual
   licence: OGL-UK-3.0
   url: https://roadtraffic.dft.gov.uk/downloads
-  reviewed: 2026-10-07, OGL v3 as recorded with the data
+  reviewed: 2026-11-23, OGL v3.0 verified on publisher portal
   n_rows: 5243
 - source: tfl
   licence: OGL-UK-2.0
   url: https://cycling.data.tfl.gov.uk
-  reviewed: 2026-11-07, TfL Open Data terms (OGL v2 based)
+  attribution: Powered by TfL Open Data. Contains OS data © Crown copyright and database rights 2026.
+  reviewed: 2026-11-23, TfL Open Data terms (OGL v2.0 + TfL/OS attribution clauses) verified
   n_rows: 2306
+population_source: ONS Census 2021 Output Area centroids (OGL-UK-3.0; Contains OS data © Crown copyright and database rights 2026)
 excluded_sources: {}
 network:
   source_extract: geofabrik_great-britain-261025.osm.pbf
