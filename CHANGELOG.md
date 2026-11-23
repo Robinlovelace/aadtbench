@@ -10,19 +10,18 @@ leaderboards remain comparable.
 - **sDNA (`sdna-plus` 5.2.0, #31):** Fixed link/polyline weighting consistency,
   added in-memory `sdnapy` execution, and introduced `mode_hybrid`
   (`PEDESTRIAN` dispersed, `CYCLE_ROUNDTRIP`, `VEHICLE` two-phase betweenness),
-  lifting car median Spearman ρ to **0.794** ($\log R^2 = +0.504$) and heavy
-  to **0.724** ($\log R^2 = +0.449$).
+  lifting car median Spearman ρ to **0.751** ($\log R^2 = +0.444$) and heavy
+  to **0.727** ($\log R^2 = +0.479$).
 - **UNA, cityseer, AequilibraE (#32):** Good-faith tuning across ≥5 experiments
   per tool — 5% detour envelope + p95 gravity cap in `UNA`, mode-specific
   dispersal (8% walk / 3% other) + freight conductance in `cityseer`, and soft
-  BPR multi-path dispersion for walking/cycling in `AequilibraE ue_bfw`
-  (lifting cycling median $\log R^2$ to +0.055 and Oxford cycling to ρ = 0.813).
+  BPR multi-path dispersion for walking/cycling in `AequilibraE ue_bfw`.
 
 ### Data & licence hygiene
-- Rebuilt `oxford-v1` strictly with UK DfT manual counts (`dft_manual`,
-  OGL-UK-3.0: car, heavy, cycling), removing non-public/non-OGL local sensor
-  feeds, and replaced the CI mini case with `london-mini-v1` (DfT OGL-UK-3.0 +
-  TfL Active Travel OGL-UK-2.0 across all four modes).
+- Removed `oxford-v1` and `oxford-mini-v1` altogether, replaced the CI mini case
+  with `london-mini-v1` (DfT OGL-UK-3.0 + TfL Active Travel OGL-UK-2.0 across
+  all four modes), pruned legacy result archives from `v0.1.0`, and audited all
+  8 remaining cities against official public portals and licences.
 
 ### Compute reporting, website, and presentation
 - Added CPU thread-time and TDP-proportional electricity reporting (`Wh/city`)
@@ -40,8 +39,8 @@ leaderboards remain comparable.
 
 ## `v0.1.0` — 2026-11-08
 
-- Initial public release: 9 cities across 3 continents (8 open cases: Oxford,
-  Leeds, Bristol, London, Paris, Melbourne, Zurich, Toronto; plus Leuven
+- Initial public release: 8 cities across 3 continents (7 open cases: Leeds,
+  Bristol, London, Paris, Melbourne, Zurich, Toronto; plus Leuven
   non-commercial CC BY-NC 4.0) and `london-mini-v1` for CI.
 - Containerised adapters and GHCR images for `sDNA`, `UNA`, `cityseer`, and
   `AequilibraE`, plus 4 mandatory `T1` baselines.

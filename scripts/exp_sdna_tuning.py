@@ -1,4 +1,4 @@
-"""Capped-radius sDNA parameter sweep and AequilibraE comparison on oxford-v1 and bristol-v1.
+"""Capped-radius sDNA parameter sweep and AequilibraE comparison on bristol-v1 and leeds-v1.
 
 Radii are capped to mode-appropriate trip distances:
 - walking: 800 - 2500 m
@@ -209,7 +209,7 @@ def main(argv: list[str] | None = None) -> None:
 
     new_rows: list[dict] = []
     measures = ("NQPD",) if args.only_nqpd else ("NQPD", "Bt")
-    for cid in ("oxford-v1", "bristol-v1"):
+    for cid in ("bristol-v1", "leeds-v1"):
         case = load_case(cid)
         sc = case.site_road_class()
         print(f"=== {cid} ===", flush=True)

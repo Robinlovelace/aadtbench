@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Multi-tool parameter sweep across all 9 benchmark cities (including paris-v1)."""
+"""Multi-tool parameter sweep across all 8 benchmark cities."""
 from __future__ import annotations
 
 import numpy as np
@@ -11,7 +11,7 @@ from benchmark.case import load_case
 from benchmark.scoring import group_out_pooled, site_table
 
 CASES = [
-    "oxford-v1", "leeds-v1", "bristol-v1", "london-v1", "paris-v1",
+    "leeds-v1", "bristol-v1", "london-v1", "paris-v1",
     "melbourne-v1", "zurich-v1", "toronto-v1", "leuven-v1",
 ]
 

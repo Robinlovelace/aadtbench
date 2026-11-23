@@ -1,26 +1,26 @@
 # AADTBench
 
-An open benchmark for street-level multi-modal traffic estimation (walking, cycling, car, and heavy vehicles) across **9 cities on 3 continents** (8 open cases + Leuven non-commercial). Any tool that writes one flow per link can be scored on equal terms.
+An open benchmark for street-level multi-modal traffic estimation (walking, cycling, car, and heavy vehicles) across **8 cities on 3 continents** (7 open cases + Leuven non-commercial). Any tool that writes one flow per link can be scored on equal terms.
 
 **[Leaderboard](https://robinlovelace.net/aadtbench/leaderboard.html)** · **[Paper](https://robinlovelace.net/aadtbench/paper/)** · **[Specification](BENCHMARK.md)** · **[Add a tool](IMPLEMENTATIONS.md)** · **[Full CSV](leaderboard-summary.csv)**
 
 ## Headline results
 
 <!-- LEADERBOARD:START -->
-| Tool | Tier | Car (9) | Heavy (7) | Cycling (8) | Walking (4) | Median wall* | Wh/city* |
+| Tool | Tier | Car (8) | Heavy (6) | Cycling (7) | Walking (4) | Median wall* | Wh/city* |
 | --- | :---: | :---: | :---: | :---: | :---: | ---: | ---: |
-| **sDNA** | `T0` | **0.794** | **0.731** | 0.475 | 0.457 | 41 s–11.8 min | 0.43–11.5 |
-| **cityseer** | `T2` | 0.714 | 0.655 | **0.552** | 0.464 | 87 s | 0.30 |
-| **AequilibraE** | `T2` | 0.712 | 0.652 | 0.527 | 0.444 | 13 s–2.6 min | 0.07–1.9 |
-| **UNA** | `T1` | 0.684 | 0.604 | 0.534 | **0.478** | 3.1 min | 0.37 |
-| Best baseline | `T1` | 0.673 | 0.678 | 0.406 | 0.585 | <1 s | <0.01 |
+| **sDNA** | `T0` | **0.751** | **0.727** | 0.426 | 0.457 | 43 s–13.5 min | 0.46–13.5 |
+| **cityseer** | `T2` | 0.717 | 0.670 | 0.525 | 0.464 | 90 s | 0.34 |
+| **AequilibraE** | `T2` | 0.714 | 0.652 | 0.515 | 0.444 | 15 s–2.7 min | 0.08–2.0 |
+| **UNA** | `T1` | 0.692 | 0.625 | **0.529** | **0.478** | 3.5 min | 0.45 |
+| Best baseline | `T1` | 0.633 | 0.626 | 0.346 | 0.585 | <1 s | <0.01 |
 
-_Median spatial group-out Spearman ρ across all cities with ≥ 20 sites (best fixed variant per tool; **bold** = top open tool per mode). Top variants: Car/Heavy = `sDNA mode_hybrid` (log R² = +0.50 / +0.51); Cycling = `cityseer dispersed` (0.552; `UNA default` wins 4/8 cities); Walking = `baseline attractor_density` (0.585), `UNA shortest` (0.478), `cityseer dispersed` (mean 0.498), `sDNA nqpd_euclidean` (log R² = +0.20). *Per-city wall time and TDP-proportional CPU energy across variants (fastest to heaviest)._
+_Median spatial group-out Spearman ρ across all cities with ≥ 20 sites (best fixed variant per tool; **bold** = top open tool per mode). Top variants: Car/Heavy = `sDNA mode_hybrid` (log R² = +0.44 / +0.48); Cycling = `UNA default` (0.529) & `cityseer dispersed` (0.525, mean 0.494); Walking = `baseline attractor_density` (0.585), `UNA shortest` (0.478), `cityseer dispersed` (mean 0.498), `sDNA nqpd_euclidean` (log R² = +0.20). *Per-city wall time and TDP-proportional CPU energy across variants (fastest to heaviest)._
 <!-- LEADERBOARD:END -->
 
 ![AADTBench performance across modes, tools, speed, and CPU energy](assets/hero-benchmark.png)
 
-> Results cover 4 open tools (11 fixed variants) and 4 mandatory baselines on raw OpenStreetMap networks (Oxford, Leeds, Bristol, London, Paris, Melbourne, Zurich, Toronto, plus Leuven on its own non-commercial board). See the [interactive leaderboard](https://robinlovelace.net/aadtbench/leaderboard.html) or [paper](https://robinlovelace.net/aadtbench/paper/) for per-city scores, leave-one-city-out transfer, and variant ablations.
+> Results cover 4 open tools (11 fixed variants) and 4 mandatory baselines on raw OpenStreetMap networks (Leeds, Bristol, London, Paris, Melbourne, Zurich, Toronto, plus Leuven on its own non-commercial board). See the [interactive leaderboard](https://robinlovelace.net/aadtbench/leaderboard.html) or [paper](https://robinlovelace.net/aadtbench/paper/) for per-city scores, leave-one-city-out transfer, and variant ablations.
 
 ## Quick start
 
@@ -28,8 +28,8 @@ Every tool runs in its own GHCR container (`ghcr.io/robinlovelace/aadtbench-<too
 
 ```bash
 pip install -r requirements.txt
-python -m benchmark.fetch --version v0.1.0 --case oxford-v1
-python -m benchmark.run_all --cases oxford-v1 --tools baselines cityseer_od aequilibrae una sdna --docker
+python -m benchmark.fetch --version v0.1.0 --case bristol-v1
+python -m benchmark.run_all --cases bristol-v1 --tools baselines cityseer_od aequilibrae una sdna --docker
 ```
 
 Smoke-test a single tool on the CI mini case:

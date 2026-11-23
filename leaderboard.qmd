@@ -1,6 +1,6 @@
 ---
 title: "Leaderboard"
-subtitle: "Multi-modal street-level traffic estimation across 9 cities (4 open tools, 11 fixed variants, 4 baselines)"
+subtitle: "Multi-modal street-level traffic estimation across 8 cities (4 open tools, 11 fixed variants, 4 baselines)"
 toc: true
 execute:
   echo: false
@@ -18,7 +18,7 @@ board = pd.read_csv(CSV_PATH)
 board = board[board["status"] == "complete"].copy()
 
 OPEN = [
-    "oxford-v1", "leeds-v1", "bristol-v1", "london-v1",
+    "leeds-v1", "bristol-v1", "london-v1",
     "paris-v1", "melbourne-v1", "zurich-v1", "toronto-v1",
 ]
 CASES = OPEN + ["leuven-v1"]
@@ -177,7 +177,7 @@ Markdown(city_table("walking"))
 
 ## Compute & energy efficiency
 
-Median per-city resource usage across the eight open cases (16-thread / 3600 s budget; TDP-proportional CPU energy estimated from `cpu_time_s` using 350 W / 64 threads on the host AMD Threadripper PRO 9975WX).
+Median per-city resource usage across the seven open cases (16-thread / 3600 s budget; TDP-proportional CPU energy estimated from `cpu_time_s` using 350 W / 64 threads on the host AMD Threadripper PRO 9975WX).
 
 ```{python}
 res = (

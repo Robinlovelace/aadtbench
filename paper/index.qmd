@@ -41,7 +41,7 @@ if not _board_path.exists():
     _board_path = fetch_result("leaderboard.csv", dest=ROOT / "results")
 board = pd.read_csv(_board_path)
 board = board[board["status"] == "complete"]
-OPEN = ["oxford-v1", "leeds-v1", "bristol-v1", "london-v1", "paris-v1", "melbourne-v1", "zurich-v1", "toronto-v1"]
+OPEN = ["leeds-v1", "bristol-v1", "london-v1", "paris-v1", "melbourne-v1", "zurich-v1", "toronto-v1"]
 CASES = OPEN + ["leuven-v1"]
 go = board[(board["split"] == "group_out_pooled") & (board["track"] == "uncalibrated")]
 
@@ -231,12 +231,12 @@ four open tools and eleven variants evaluated in this study.
 
 @tbl-main and @fig-main compare the four tools (taking each tool's best fixed
 variant) against the `class_only` and best T1 baseline on the spatial group-out
-split across the eight open cases.
+split across the seven open cases.
 
 ```{python}
 #| echo: false
 #| label: tbl-main
-#| tbl-cap: "Spatial group-out Spearman rho by tool across the eight open cases (five folds of 3 km cells). Each tool column reports the best fixed variant for that tool."
+#| tbl-cap: "Spatial group-out Spearman rho by tool across the seven open cases (five folds of 3 km cells). Each tool column reports the best fixed variant for that tool."
 bl = go[(go.tool == "baseline") & go.rho.notna()]
 best = bl.loc[bl.groupby(["case_id", "mode"])["rho"].idxmax()].set_index(["case_id", "mode"])
 rows = []
@@ -297,17 +297,16 @@ ax.legend(fontsize=8, frameon=False, loc="lower left")
 fig.tight_layout()
 ```
 
-Across the eight open cities (@tbl-main, @fig-main), open tools consistently
+Across the seven open cities (@tbl-main, @fig-main), open tools consistently
 outperform the simple baselines on car, heavy and cycling targets: `sDNA` leads
-six of nine cities on car ($\rho$ up to $0.88$ in Oxford, $0.83$ in Bristol, and
-$0.80$ in Leeds, London and Toronto), while `cityseer` leads Zurich ($0.81$) and
-Paris ($0.50$). On cycling, `UNA` and `cityseer` trade leads across cities
-($\rho$ up to $0.82$ in Oxford and $0.69$ in London), well ahead of every
-spatial baseline. Walking remains the hardest mode to beat simple land-use
-covariates: local POI density (`attractor_density`, median $\rho = 0.59$) still
-outperforms every network tool in several cities, though `UNA`, `cityseer`,
-`AequilibraE` and `sDNA` each achieve $\rho \approx 0.48$–$0.73$ depending on
-urban form.
+five of eight cities on car ($\rho$ up to $0.83$ in Bristol and $0.80$ in
+Leeds, London and Toronto), while `cityseer` leads Zurich ($0.81$) and Paris
+($0.50$). On cycling, `UNA` and `cityseer` trade leads across cities ($\rho$ up
+to $0.69$ in London and $0.64$ in Zurich), well ahead of every spatial
+baseline. Walking remains the hardest mode to beat simple land-use covariates:
+local POI density (`attractor_density`, median $\rho = 0.59$) still outperforms
+every network tool in several cities, though `UNA`, `cityseer`, `AequilibraE`
+and `sDNA` each achieve $\rho \approx 0.48$–$0.73$ depending on urban form.
 
 ## Effect of variants and settings within tools
 
@@ -337,7 +336,7 @@ Markdown(pd.DataFrame(rows).to_markdown(index=False, disable_numparse=True))
 ```{python}
 #| echo: false
 #| label: fig-matrix
-#| fig-cap: "Breadth of benchmark performance across all 9 cities, 4 modes, 4 spatial baselines, and 11 open tool variants (spatial group-out Spearman rho, n >= 20 sites). Black outlines mark the highest-scoring open tool variant for each city and mode."
+#| fig-cap: "Breadth of benchmark performance across all 8 cities, 4 modes, 4 spatial baselines, and 11 open tool variants (spatial group-out Spearman rho, n >= 20 sites). Black outlines mark the highest-scoring open tool variant for each city and mode."
 #| fig-format: png
 #| fig-dpi: 160
 #| fig-width: 8.2
@@ -392,24 +391,24 @@ Three patterns emerge from @tbl-variants and @fig-matrix:
 1. **Congestion and multi-path dispersion (`AequilibraE AoN` vs `UE`).**
    Bi-conjugate Frank-Wolfe user equilibrium (`ue_bfw`) consistently matches or
    improves on all-or-nothing assignment (`aon`) for motor traffic (spreading
-   demand across parallel arterials via BPR congestion) and, with soft BPR
-   dispersion on active modes, lifts median cycling $\log R^2$ to $+0.06$
-   (Oxford cycling $\rho = 0.81$, $\log R^2 = +0.63$) and walking $\rho$ to
-   $0.48$ in Melbourne.
+   demand across parallel arterials via BPR congestion; median car
+   $\log R^2 = +0.41$) and, with soft BPR dispersion on active modes, improves
+   cycling magnitude ($\log R^2 = -0.08$) and walking $\rho$ ($0.48$ in
+   Melbourne).
 2. **Path dispersal and gravity decay (`cityseer` and `UNA`).** Allowing
    path-length tolerance in `cityseer` (`dispersed`: 8% walking, 3% other modes)
    improves active-travel rank correlation over shortest-path routing across
-   cities (median cycling $\rho = 0.55$, mean walking $\rho = 0.50$). In `UNA`,
-   exponential gravity decay with a detour envelope (`default`) leads four of
-   eight cycling cities (including Oxford $\rho = 0.82$ and Toronto $0.54$),
-   whereas `shortest` is stronger on long-distance car corridors and London
-   walking/cycling.
+   cities (mean cycling $\rho = 0.49$, mean walking $\rho = 0.50$). In `UNA`,
+   exponential gravity decay with a detour envelope (`default`) leads median
+   cycling across all seven cycling cities ($\rho = 0.53$, including Toronto
+   $0.54$), whereas `shortest` is stronger on long-distance car corridors and
+   London walking/cycling ($\rho = 0.69$ cycling).
 3. **Mode-specific hybrid metrics vs fast reach (`sDNA`).** On `T0_network`
    (street geometry and road hierarchy alone, with no population, POI or OD
    inputs), `sDNA mode_hybrid` achieves the highest overall car rank correlation
-   and calibrated magnitude (median $\rho = 0.79$, $\log R^2 = +0.50$) and leads
-   heavy vehicles (median $\rho = 0.73$, $\log R^2 = +0.51$). Meanwhile, `sDNA`
-   NQPD variants (`nqpd_euclidean`, `nqpd_angular`) run roughly $15\times$ faster
+   and calibrated magnitude (median $\rho = 0.75$, $\log R^2 = +0.44$) and leads
+   heavy vehicles (median $\rho = 0.73$, $\log R^2 = +0.48$). Meanwhile, `sDNA`
+   NQPD variants (`nqpd_euclidean`, `nqpd_angular`) run roughly $18\times$ faster
    while maintaining positive $\log R^2$ across walking and cycling.
 
 ## Leave-one-city-out transfer
@@ -456,7 +455,7 @@ countries.
 ```{python}
 #| echo: false
 #| label: tbl-resources
-#| tbl-cap: "Median per-city compute and estimated CPU electricity use across the eight open cases: wall time, total CPU thread-time, hardware-normalised speed index (wall time over a fixed reference workload), peak memory, and TDP-proportional CPU energy (Wh/city, from cpu_time_s using 350 W / 64 threads for the host AMD Threadripper PRO 9975WX)."
+#| tbl-cap: "Median per-city compute and estimated CPU electricity use across the seven open cases: wall time, total CPU thread-time, hardware-normalised speed index (wall time over a fixed reference workload), peak memory, and TDP-proportional CPU energy (Wh/city, from cpu_time_s using 350 W / 64 threads for the host AMD Threadripper PRO 9975WX)."
 CPU_W_PER_THREAD = {
     "AMD Ryzen Threadripper PRO 9975WX 32-Cores": 350.0 / 64.0,
 }
@@ -480,19 +479,19 @@ Markdown(t.to_markdown(index=False, disable_numparse=True))
 ```
 
 Reporting CPU thread-time alongside wall time separates total work from
-parallelism (@tbl-resources). `AequilibraE` (`aon`, ~15 s) and `sDNA` NQPD
-(~44 s) finish a typical city in under a minute, whereas `cityseer` takes
-~1.5 min (~2.6 GB RAM, 0.3–0.4 Wh/city) and `AequilibraE` (`ue_bfw`) takes
-~2.7 min (~1.6 GB RAM, ~2.0 Wh/city). `UNA` takes 2.7–4.3 min wall time
-(3.6–4.4 GB RAM) but runs mostly single-threaded (~0.3–0.6 Wh/city), while
+parallelism (@tbl-resources). `AequilibraE` (`aon`, ~17 s) and `sDNA` NQPD
+(~45–47 s) finish a typical city in under a minute, whereas `cityseer` takes
+~1.5 min (~2.8 GB RAM, 0.3–0.4 Wh/city) and `AequilibraE` (`ue_bfw`) takes
+~2.7 min (~1.7 GB RAM, ~2.0 Wh/city). `UNA` takes 2.8–5.0 min wall time
+(3.6–4.8 GB RAM) but runs mostly single-threaded (~0.4–0.7 Wh/city), while
 `sDNA` betweenness and `mode_hybrid` parallelise strongly (~11× threads,
-10–13.5 min wall time) with the lowest memory footprint (~1.3 GB). Following
+11–15 min wall time) with the lowest memory footprint (~1.5 GB). Following
 Green Algorithms [@lannelongue2021green], CPU electricity is estimated as
 $E = t_{\text{CPU}} \cdot (\text{TDP}/N_{\text{threads}})/3600$ (a
 thread-proportional package lower bound; direct hardware counters such as RAPL
 are preferred where available [@henderson2020systematic]). Even the heaviest
-variants use under 14 Wh/city—less than a single smartphone charge
-(~15 Wh)—while the fastest use under 0.5 Wh/city.
+variant uses ~15.5 Wh/city—roughly a single smartphone charge (~15 Wh)—while
+the fastest use under 0.5 Wh/city.
 
 # Discussion
 
@@ -505,7 +504,7 @@ horses for courses*—governed by four trade-offs:
 ```{python}
 #| echo: false
 #| label: fig-horses
-#| fig-cap: "Different horses for courses across 9 cities and 4 modes. (a) Mean Spearman rho by mode and tool (best variant), showing the crossover from T0/T1 spatial network analysis on active modes to T2 OD assignment on motor modes. (b) Rank correlation (rho) vs calibrated log R2 (point size proportional to coverage). (c) Within-tool variant gains by mode. (d) Accuracy vs wall-clock runtime across network sizes."
+#| fig-cap: "Different horses for courses across 8 cities and 4 modes. (a) Mean Spearman rho by mode and tool (best variant), showing the crossover from T0/T1 spatial network analysis on active modes to T2 OD assignment on motor modes. (b) Rank correlation (rho) vs calibrated log R2 (point size proportional to coverage). (c) Within-tool variant gains by mode. (d) Accuracy vs wall-clock runtime across network sizes."
 #| fig-format: png
 #| fig-dpi: 160
 #| fig-width: 7.5
@@ -609,10 +608,10 @@ fig.tight_layout()
 
 | Planning context / question | Available data tier | Recommended tool & variant | Key strength |
 |---|---|---|---|
-| **Network-only motor & active screening** (no OD or land-use data; street design & corridor hierarchy) | `T0_network` | **sDNA** (`mode_hybrid` for car/heavy; `nqpd_euclidean` for fast active reach) | Top overall car ($\rho = 0.79$, $\log R^2 = +0.50$) and heavy ($\rho = 0.73$, $\log R^2 = +0.51$) from street geometry & hierarchy alone; lowest RAM (~1.3 GB) and 100% coverage |
-| **Land-use & POI-driven active flows** (new developments, station access, amenity reach) | `T1_open_covariates` | **UNA** (`default` gravity + detour, `shortest` for London/car) | Explicit population-to-POI gravity decay with detour envelope; leads 4 of 8 cycling cities (Oxford $\rho = 0.82$, London $0.69$) at ~0.3–0.6 Wh/city |
-| **Fast multi-modal corridor screening with OD** (city-wide active + motor flows under ~1.5 min) | `T2_synthetic_od` | **cityseer** (`default` for motor, `dispersed` for active) | Fast Rust/Numba OD betweenness (~90 s, ~0.3 Wh/city); top median cycling $\rho = 0.55$ and #1 car in Zurich ($0.81$) and Paris ($0.50$) |
-| **Strategic assignment with congestion & active dispersion** (arterial capacity, road diet / diversion impacts) | `T2_synthetic_od` / `T3_observed_od` | **AequilibraE** (`ue_bfw` for congested/multi-path assignment; `aon` in ~15 s) | Explicit link capacities and BPR user equilibrium (`ue_bfw`) give strong motor magnitude ($\log R^2 = +0.40$), positive cycling $\log R^2$ (Oxford $\rho = 0.81$), and top walking in Melbourne ($0.48$) |
+| **Network-only motor & active screening** (no OD or land-use data; street design & corridor hierarchy) | `T0_network` | **sDNA** (`mode_hybrid` for car/heavy; `nqpd_euclidean` for fast active reach) | Top overall car ($\rho = 0.75$, $\log R^2 = +0.44$) and heavy ($\rho = 0.73$, $\log R^2 = +0.48$) from street geometry & hierarchy alone; lowest RAM (~1.5 GB) and 100% coverage |
+| **Land-use & POI-driven active flows** (new developments, station access, amenity reach) | `T1_open_covariates` | **UNA** (`default` gravity + detour, `shortest` for London/car) | Explicit population-to-POI gravity decay with detour envelope; top median cycling ($\rho = 0.53$, London $0.69$, Toronto $0.54$) and walking ($\rho = 0.48$) at ~0.4–0.7 Wh/city |
+| **Fast multi-modal corridor screening with OD** (city-wide active + motor flows under ~1.5 min) | `T2_synthetic_od` | **cityseer** (`default` for motor, `dispersed` for active) | Fast Rust/Numba OD betweenness (~90 s, ~0.4 Wh/city); highest mean car ($0.64$), cycling ($0.49$) and walking ($0.50$) $\rho$, and #1 car in Zurich ($0.81$) and Paris ($0.50$) |
+| **Strategic assignment with congestion & active dispersion** (arterial capacity, road diet / diversion impacts) | `T2_synthetic_od` / `T3_observed_od` | **AequilibraE** (`ue_bfw` for congested/multi-path assignment; `aon` in ~17 s) | Explicit link capacities and BPR user equilibrium (`ue_bfw`) give strong motor magnitude ($\log R^2 = +0.41$), best flow/assignment cycling $\log R^2$, and top walking in Melbourne ($0.48$) |
 
 : "Different horses for courses": matching open traffic estimation tools to planning questions, modes and data tiers. {#tbl-horses}
 

@@ -64,7 +64,7 @@ pip install -r requirements.txt
 docker build -f containers/my_tool/Dockerfile -t aadtbench-my_tool:ci .
 python -m benchmark.fetch --version v0.1.0 --case london-mini-v1
 python -m benchmark.smoke --tool my_tool --docker
-python -m benchmark.run_all --cases oxford-v1 --tools my_tool --tier T2_synthetic_od --docker
+python -m benchmark.run_all --cases bristol-v1 --tools my_tool --tier T2_synthetic_od --docker
 ```
 
 ## Add it to CI and GHCR

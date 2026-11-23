@@ -160,8 +160,8 @@ def build_markdown_table(df: pd.DataFrame) -> str:
     lines.append(
         "_Median spatial group-out Spearman ρ across all cities with ≥ 20 sites "
         "(best fixed variant per tool; **bold** = top open tool per mode). "
-        "Top variants: Car/Heavy = `sDNA mode_hybrid` (log R² = +0.50 / +0.51); "
-        "Cycling = `cityseer dispersed` (0.552; `UNA default` wins 4/8 cities); "
+        "Top variants: Car/Heavy = `sDNA mode_hybrid` (log R² = +0.44 / +0.48); "
+        "Cycling = `UNA default` (0.529) & `cityseer dispersed` (0.525, mean 0.494); "
         "Walking = `baseline attractor_density` (0.585), `UNA shortest` (0.478), "
         "`cityseer dispersed` (mean 0.498), `sDNA nqpd_euclidean` (log R² = +0.20). "
         "*Per-city wall time and TDP-proportional CPU energy across variants (fastest to heaviest)._"
