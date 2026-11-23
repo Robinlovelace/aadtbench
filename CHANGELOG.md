@@ -16,7 +16,13 @@ leaderboards remain comparable.
   per tool — 5% detour envelope + p95 gravity cap in `UNA`, mode-specific
   dispersal (8% walk / 3% other) + freight conductance in `cityseer`, and soft
   BPR multi-path dispersion for walking/cycling in `AequilibraE ue_bfw`
-  (lifting Oxford walking to ρ = 0.689 and cycling median $\log R^2$ to +0.055).
+  (lifting cycling median $\log R^2$ to +0.055 and Oxford cycling to ρ = 0.813).
+
+### Data & licence hygiene
+- Rebuilt `oxford-v1` strictly with UK DfT manual counts (`dft_manual`,
+  OGL-UK-3.0: car, heavy, cycling), removing non-public/non-OGL local sensor
+  feeds, and replaced the CI mini case with `london-mini-v1` (DfT OGL-UK-3.0 +
+  TfL Active Travel OGL-UK-2.0 across all four modes).
 
 ### Compute reporting, website, and presentation
 - Added CPU thread-time and TDP-proportional electricity reporting (`Wh/city`)
@@ -36,7 +42,7 @@ leaderboards remain comparable.
 
 - Initial public release: 9 cities across 3 continents (8 open cases: Oxford,
   Leeds, Bristol, London, Paris, Melbourne, Zurich, Toronto; plus Leuven
-  non-commercial CC BY-NC 4.0) and `oxford-mini-v1` for CI.
+  non-commercial CC BY-NC 4.0) and `london-mini-v1` for CI.
 - Containerised adapters and GHCR images for `sDNA`, `UNA`, `cityseer`, and
   `AequilibraE`, plus 4 mandatory `T1` baselines.
 - Spatial group-out (5-fold, 3 km cells) and leave-one-city-out scoring

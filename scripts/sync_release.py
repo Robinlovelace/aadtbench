@@ -14,8 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from benchmark.fetch import DEFAULT_VERSION, REPO, asset_name, sha256_file
 
 CASES = [
-    "bristol-v1", "leeds-v1", "leuven-v1", "london-v1", "melbourne-v1",
-    "oxford-mini-v1", "oxford-v1", "paris-v1", "toronto-v1", "zurich-v1",
+    "bristol-v1", "leeds-v1", "leuven-v1", "london-mini-v1", "london-v1",
+    "melbourne-v1", "oxford-v1", "paris-v1", "toronto-v1", "zurich-v1",
 ]
 CASE_FILES = [
     "build_stats.json", "crosswalk.csv",
@@ -74,7 +74,13 @@ def main() -> int:
                 existing[("results", rf)] = {"case": "results", "file": rf, "asset": aname, "size": sz, "sha256": sh}
                 print(f"[stage] {aname} ({sz} bytes)")
 
-        if not to_upload:
+        allowed_cases = set(CASES) | {"results"}
+        pruned = [k for k in list(existing.keys()) if k[0] not in allowed_cases]
+        for k in pruned:
+            print(f"[prune] {k[0]}/{k[1]}")
+            existing.pop(k, None)
+
+        if not to_upload and not pruned:
             print("All release assets are already in sync.")
             return 0
 

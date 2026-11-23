@@ -173,7 +173,7 @@ with status `timeout` and NA metrics.
 ## Continuous integration
 
 On every pull request: unit tests, `python -m benchmark.contract_check`, and a
-smoke test per open tool in its own container on `oxford-mini-v1`
+smoke test per open tool in its own container on `london-mini-v1`
 (`config/benchmark.yaml`). Full cases run locally (`scripts/run_board.sh`).
 
 ## Out of scope

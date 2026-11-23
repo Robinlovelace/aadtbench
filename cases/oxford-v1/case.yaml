@@ -13,7 +13,6 @@ radius_m: 15000.0
 margin_m: 0.0
 zone_m: 1000.0
 modes:
-- walking
 - cycling
 - car
 - heavy
@@ -21,13 +20,8 @@ sources:
 - source: dft_manual
   licence: OGL-UK-3.0
   url: https://roadtraffic.dft.gov.uk/downloads
-  reviewed: 2026-10-07, OGL v3 as recorded with the data, publisher page check pending
+  reviewed: 2026-10-07, OGL v3 as recorded with the data
   n_rows: 266
-- source: oxflow
-  licence: OGL-UK-3.0
-  url: https://www.oxfordshire.gov.uk (open data, OGL v3)
-  reviewed: 2026-10-07, confirmed by Robin Lovelace (PR 17 review)
-  n_rows: 685
 excluded_sources: {}
 network_licence: ODbL-1.0 (OpenStreetMap)
 split:
@@ -47,7 +41,7 @@ files:
 - network.parquet
 - sites.csv
 - source.osm.pbf
-data_size_bytes: 16941853
+data_size_bytes: 16833348
 network:
   source_extract: null
   source_timestamp: null

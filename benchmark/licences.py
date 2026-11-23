@@ -14,12 +14,6 @@ REVIEWED_SOURCES: dict[str, dict] = {
         "url": "https://roadtraffic.dft.gov.uk/downloads",
         "reviewed": "2026-10-07, OGL v3 as recorded with the data",
     },
-    "oxflow": {
-        "licence": "OGL-UK-3.0",
-        "publisher": "Oxfordshire County Council traffic and active travel counters",
-        "url": "https://www.oxfordshire.gov.uk (open data, OGL v3)",
-        "reviewed": "2026-10-07, confirmed by Robin Lovelace (PR 17 review)",
-    },
     "vic_dtp_aadt": {
         "licence": "CC-BY-4.0",
         "publisher": "Victoria Department of Transport and Planning, traffic volume",

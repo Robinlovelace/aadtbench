@@ -136,7 +136,7 @@ Markdown(pd.DataFrame(rows).to_markdown(index=False, disable_numparse=True))
 ```
 
 The open cases draw counts from public sources with redistributable licences:
-the UK Open Government Licence v3 and v2 (DfT, Oxfordshire County Council, Leeds
+the UK Open Government Licence v3 and v2 (DfT, Leeds
 City Council, Transport for London), the Open Database Licence ODbL 1.0 (Ville
 de Paris permanent road loops, Eco-Counter cycle counters and multimodal thermal
 sensors), CC BY 4.0 (City of Melbourne, Victoria Department of Transport and
@@ -204,7 +204,7 @@ subclasses `Adapter`, declares its metadata and variants, and implements
 `predict(ctx)`. The harness passes a blind copy of the case (`case.yaml`,
 `network.parquet`, `inputs/`, with no counts), enforces the wall-time limit and
 thread budget from `config/benchmark.yaml` (16 threads and 3600 s on full cases,
-2 threads and 300 s on the `oxford-mini-v1` CI case), and records wall time,
+2 threads and 300 s on the `london-mini-v1` CI case), and records wall time,
 CPU thread-time, speed index and peak memory in `system.json`.
 
 ## Tools and variants
@@ -296,14 +296,15 @@ fig.tight_layout()
 
 Across the eight open cities (@tbl-main, @fig-main), open tools consistently
 outperform the simple baselines on car, heavy and cycling targets: `sDNA` leads
-six of nine cities on car ($\rho$ up to $0.83$ in Bristol and $0.80$ in Oxford,
-Leeds, London and Toronto), while `cityseer` leads Zurich ($0.81$) and Paris
-($0.50$). On cycling, `UNA` and `cityseer` trade leads across cities ($\rho$ up
-to $0.73$ in Oxford and $0.69$ in London), well ahead of every spatial baseline.
-Walking remains the hardest mode to beat simple land-use covariates: local POI
-density (`attractor_density`, median $\rho = 0.59$) still outperforms every
-network tool in several cities, though `AequilibraE`, `cityseer`, `UNA` and
-`sDNA` each achieve $\rho \approx 0.48$–$0.73$ depending on urban form.
+six of nine cities on car ($\rho$ up to $0.88$ in Oxford, $0.83$ in Bristol, and
+$0.80$ in Leeds, London and Toronto), while `cityseer` leads Zurich ($0.81$) and
+Paris ($0.50$). On cycling, `UNA` and `cityseer` trade leads across cities
+($\rho$ up to $0.82$ in Oxford and $0.69$ in London), well ahead of every
+spatial baseline. Walking remains the hardest mode to beat simple land-use
+covariates: local POI density (`attractor_density`, median $\rho = 0.59$) still
+outperforms every network tool in several cities, though `UNA`, `cityseer`,
+`AequilibraE` and `sDNA` each achieve $\rho \approx 0.48$–$0.73$ depending on
+urban form.
 
 ## Effect of variants and settings within tools
 
@@ -389,21 +390,22 @@ Three patterns emerge from @tbl-variants and @fig-matrix:
    Bi-conjugate Frank-Wolfe user equilibrium (`ue_bfw`) consistently matches or
    improves on all-or-nothing assignment (`aon`) for motor traffic (spreading
    demand across parallel arterials via BPR congestion) and, with soft BPR
-   dispersion on active modes, lifts median cycling $\log R^2$ to $+0.06$ and
-   walking $\rho$ to $0.69$ in Oxford and $0.48$ in Melbourne.
+   dispersion on active modes, lifts median cycling $\log R^2$ to $+0.06$
+   (Oxford cycling $\rho = 0.81$, $\log R^2 = +0.63$) and walking $\rho$ to
+   $0.48$ in Melbourne.
 2. **Path dispersal and gravity decay (`cityseer` and `UNA`).** Allowing
    path-length tolerance in `cityseer` (`dispersed`: 8% walking, 3% other modes)
    improves active-travel rank correlation over shortest-path routing across
-   cities (median cycling $\rho = 0.55$, mean walking $\rho = 0.52$). In `UNA`,
+   cities (median cycling $\rho = 0.55$, mean walking $\rho = 0.50$). In `UNA`,
    exponential gravity decay with a detour envelope (`default`) leads four of
-   eight cycling cities (including Oxford $\rho = 0.73$ and Toronto $0.54$),
+   eight cycling cities (including Oxford $\rho = 0.82$ and Toronto $0.54$),
    whereas `shortest` is stronger on long-distance car corridors and London
    walking/cycling.
 3. **Mode-specific hybrid metrics vs fast reach (`sDNA`).** On `T0_network`
    (street geometry and road hierarchy alone, with no population, POI or OD
    inputs), `sDNA mode_hybrid` achieves the highest overall car rank correlation
    and calibrated magnitude (median $\rho = 0.79$, $\log R^2 = +0.50$) and leads
-   heavy vehicles (median $\rho = 0.72$, $\log R^2 = +0.45$). Meanwhile, `sDNA`
+   heavy vehicles (median $\rho = 0.73$, $\log R^2 = +0.51$). Meanwhile, `sDNA`
    NQPD variants (`nqpd_euclidean`, `nqpd_angular`) run roughly $15\times$ faster
    while maintaining positive $\log R^2$ across walking and cycling.
 
@@ -604,10 +606,10 @@ fig.tight_layout()
 
 | Planning context / question | Available data tier | Recommended tool & variant | Key strength |
 |---|---|---|---|
-| **Network-only motor & active screening** (no OD or land-use data; street design & corridor hierarchy) | `T0_network` | **sDNA** (`mode_hybrid` for car/heavy; `nqpd_euclidean` for fast active reach) | Top overall car ($\rho = 0.79$, $\log R^2 = +0.50$) and heavy ($\rho = 0.72$) from street geometry & hierarchy alone; lowest RAM (~1.3 GB) and 100% coverage |
-| **Land-use & POI-driven active flows** (new developments, station access, amenity reach) | `T1_open_covariates` | **UNA** (`default` gravity + detour, `shortest` for London/car) | Explicit population-to-POI gravity decay with detour envelope; leads 4 of 8 cycling cities (Oxford $\rho = 0.73$, London $0.69$) at ~0.3–0.6 Wh/city |
+| **Network-only motor & active screening** (no OD or land-use data; street design & corridor hierarchy) | `T0_network` | **sDNA** (`mode_hybrid` for car/heavy; `nqpd_euclidean` for fast active reach) | Top overall car ($\rho = 0.79$, $\log R^2 = +0.50$) and heavy ($\rho = 0.73$, $\log R^2 = +0.51$) from street geometry & hierarchy alone; lowest RAM (~1.3 GB) and 100% coverage |
+| **Land-use & POI-driven active flows** (new developments, station access, amenity reach) | `T1_open_covariates` | **UNA** (`default` gravity + detour, `shortest` for London/car) | Explicit population-to-POI gravity decay with detour envelope; leads 4 of 8 cycling cities (Oxford $\rho = 0.82$, London $0.69$) at ~0.3–0.6 Wh/city |
 | **Fast multi-modal corridor screening with OD** (city-wide active + motor flows under ~1.5 min) | `T2_synthetic_od` | **cityseer** (`default` for motor, `dispersed` for active) | Fast Rust/Numba OD betweenness (~90 s, ~0.3 Wh/city); top median cycling $\rho = 0.55$ and #1 car in Zurich ($0.81$) and Paris ($0.50$) |
-| **Strategic assignment with congestion & active dispersion** (arterial capacity, road diet / diversion impacts) | `T2_synthetic_od` / `T3_observed_od` | **AequilibraE** (`ue_bfw` for congested/multi-path assignment; `aon` in ~15 s) | Explicit link capacities and BPR user equilibrium (`ue_bfw`) give strong motor magnitude ($\log R^2 = +0.46$), positive cycling $\log R^2$, and top walking in Oxford ($0.69$) and Melbourne ($0.48$) |
+| **Strategic assignment with congestion & active dispersion** (arterial capacity, road diet / diversion impacts) | `T2_synthetic_od` / `T3_observed_od` | **AequilibraE** (`ue_bfw` for congested/multi-path assignment; `aon` in ~15 s) | Explicit link capacities and BPR user equilibrium (`ue_bfw`) give strong motor magnitude ($\log R^2 = +0.40$), positive cycling $\log R^2$ (Oxford $\rho = 0.81$), and top walking in Melbourne ($0.48$) |
 
 : "Different horses for courses": matching open traffic estimation tools to planning questions, modes and data tiers. {#tbl-horses}
 
@@ -650,7 +652,7 @@ AADTBench is open to three kinds of contribution:
 
 - **Tools and variants.** Add a thin adapter in `adapters/` (see
   `IMPLEMENTATIONS.md`) and register it in `config/benchmark.yaml`. Continuous
-  integration verifies the contract and runs a smoke test on `oxford-mini-v1`.
+  integration verifies the contract and runs a smoke test on `london-mini-v1`.
 - **Cases.** Any city with openly licensed traffic or active travel counts can
   be built with `benchmark/build_case.py`.
 - **Rules.** Changes to crosswalk rules, input tiers or scoring create a new
@@ -667,7 +669,7 @@ assets: release `v0.1.0` of the same repository, with SHA-256 checksums in
 
 We thank the public agencies and open-data communities that publish traffic and
 active-travel counts under open licences—the UK Department for Transport,
-Transport for London, Oxfordshire County Council, Leeds City Council, Ville de
+Transport for London, Leeds City Council, Ville de
 Paris, City of Melbourne, Victoria Department of Transport and Planning, Stadt
 Zürich, City of Toronto, Telraam, OpenStreetMap contributors, and WorldPop—as
 well as the maintainers of sDNA, UNA, cityseer, and AequilibraE.

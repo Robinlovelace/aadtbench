@@ -21,7 +21,7 @@ from benchmark.licences import NON_COMMERCIAL_SOURCES, REVIEWED_SOURCES, reviewe
 BENCHMARK_VERSION = "0.1.0"
 SOURCE_RULES = {"telraam": {"kind": "point", "radius_m": 50.0}, "toronto_tmc": {"kind": "junction"}}
 PAIR_SENSOR_M = 30.0
-DIRECTIONAL_SOURCES = {"oxflow", "vic_dtp_aadt", "stadt_zuerich_miv", "stadt_zuerich_fuss_velo",
+DIRECTIONAL_SOURCES = {"vic_dtp_aadt", "stadt_zuerich_miv", "stadt_zuerich_fuss_velo",
                        "toronto_svc", "toronto_bike", "paris_road"}
 
 
