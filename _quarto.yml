@@ -3,13 +3,11 @@ project:
   output-dir: _site
   render:
     - README.md
-    - leaderboard.qmd
     - paper/index.qmd
     - BENCHMARK.md
     - IMPLEMENTATIONS.md
   resources:
     - leaderboard-summary.csv
-    - assets/hero-benchmark.png
 
 execute:
   freeze: auto
@@ -26,8 +24,6 @@ website:
     left:
       - text: "Home"
         href: README.md
-      - text: "Leaderboard"
-        href: leaderboard.qmd
       - text: "Paper"
         href: paper/index.qmd
       - text: "Specification"

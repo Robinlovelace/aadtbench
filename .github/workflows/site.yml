@@ -36,7 +36,6 @@ jobs:
       - name: Check outputs
         run: |
           test -f _site/index.html
-          test -f _site/leaderboard.html
           test -f _site/paper/index.html
           test -f _site/paper/index.docx
       - name: Upload docx artifact

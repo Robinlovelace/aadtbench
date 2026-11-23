@@ -4,45 +4,37 @@ All notable changes to AADTBench are documented here. Changes to case data or
 scoring rules increment the benchmark data release version so earlier
 leaderboards remain comparable.
 
-## Unreleased (ready for `v0.1.1` / `v0.2.0`)
+## Unreleased
+
+### Benchmark & paper simplification
+- Streamlined the benchmark to **5 high-signal, 100% open & commercially
+  reusable cities across 3 continents** (`bristol-v1`, `london-v1`,
+  `melbourne-v1`, `toronto-v1`, `zurich-v1`), plus `london-mini-v1` for CI
+  smoke tests — cutting total 11-variant suite runtime and energy by ~35%.
+- Removed non-open Oxford sensor feeds, `leuven-v1` (non-commercial CC BY-NC),
+  `paris-v1` (lowest signal-to-runtime ratio), and `leeds-v1`, and pruned all
+  stale assets from release `v0.1.0`.
+- Consolidated the paper leaderboard into a single compact summary table
+  (`@tbl-leaderboard`) alongside `@fig-main`, `@fig-matrix`, `@tbl-resources`,
+  and `@fig-horses`; tightened the abstract and discussion; removed standalone
+  `leaderboard.qmd`, README results duplication, and 421 lines of dead scripts.
 
 ### Tool & adapter improvements
 - **sDNA (`sdna-plus` 5.2.0, #31):** Fixed link/polyline weighting consistency,
   added in-memory `sdnapy` execution, and introduced `mode_hybrid`
   (`PEDESTRIAN` dispersed, `CYCLE_ROUNDTRIP`, `VEHICLE` two-phase betweenness),
-  lifting car median Spearman ρ to **0.751** ($\log R^2 = +0.444$) and heavy
-  to **0.727** ($\log R^2 = +0.479$).
+  reaching car median Spearman ρ = **0.794** ($\log R^2 = +0.528$) and heavy
+  ρ = **0.737** ($\log R^2 = +0.541$).
 - **UNA, cityseer, AequilibraE (#32):** Good-faith tuning across ≥5 experiments
   per tool — 5% detour envelope + p95 gravity cap in `UNA`, mode-specific
-  dispersal (8% walk / 3% other) + freight conductance in `cityseer`, and soft
-  BPR multi-path dispersion for walking/cycling in `AequilibraE ue_bfw`.
-
-### Data & licence hygiene
-- Removed `oxford-v1` and `oxford-mini-v1` altogether, replaced the CI mini case
-  with `london-mini-v1` (DfT OGL-UK-3.0 + TfL Active Travel OGL-UK-2.0 across
-  all four modes), pruned legacy result archives from `v0.1.0`, and audited all
-  8 remaining cities against official public portals and licences.
-
-### Compute reporting, website, and presentation
+  dispersal (8% walk / 3% other) + freight conductance in `cityseer` (leading
+  cycling at median ρ = **0.610**, $\log R^2 = +0.124$), and soft BPR
+  multi-path dispersion in `AequilibraE ue_bfw` (top cycling $\log R^2 = +0.205$).
 - Added CPU thread-time and TDP-proportional electricity reporting (`Wh/city`)
-  in `paper/index.qmd` and `leaderboard.qmd`.
-- Switched `paper/index.qmd` to read tracked `leaderboard-summary.csv` directly
-  (falling back to release assets), preventing live website/paper drift.
-- Rewrote `README.md` into a concise, results-first homepage with an
-  auto-generated leaderboard table (`scripts/update_readme_results.py`) and hero
-  figure (`assets/hero-benchmark.png`).
-- Added a dedicated Quarto **Leaderboard** page (`leaderboard.qmd`) and updated
-  website navigation and responsive CSS.
-- Removed draft placeholders (`[refs]`, `[Discussion TBC]`, `TBC.`), fixed
-  typos, updated paper prose to match PRs #31–#32, and synced thread/time limits
-  in `BENCHMARK.md` and `IMPLEMENTATIONS.md`.
+  in `paper/index.qmd`.
 
 ## `v0.1.0` — 2026-11-08
 
-- Initial public release: 8 cities across 3 continents (7 open cases: Leeds,
-  Bristol, London, Paris, Melbourne, Zurich, Toronto; plus Leuven
-  non-commercial CC BY-NC 4.0) and `london-mini-v1` for CI.
-- Containerised adapters and GHCR images for `sDNA`, `UNA`, `cityseer`, and
-  `AequilibraE`, plus 4 mandatory `T1` baselines.
-- Spatial group-out (5-fold, 3 km cells) and leave-one-city-out scoring
-  harness, Quarto site, and paper draft.
+- Initial public benchmark harness, containerised adapters and GHCR images for
+  `sDNA`, `UNA`, `cityseer`, and `AequilibraE`, spatial group-out and
+  leave-one-city-out scoring, Quarto site, and paper draft.

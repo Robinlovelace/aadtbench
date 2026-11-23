@@ -141,10 +141,10 @@ placed each row.
   `benchmark/licences.py`, with publisher, link and review note. Its licence
   comes from that table, never from a default or from text shipped with the
   data.
-- Open cases: OGL, CC0, CC BY, ODbL.
-- Non-commercial cases (Telraam, CC BY-NC 4.0) are released as separate cases
-  with `licence_class: non_commercial` and kept off the leave-one-city-out
-  board.
+- Open cases: OGL-UK-3.0, TfL Open Data (OGL-UK-2.0 with TfL amendments),
+  OGL-Toronto, CC0-1.0, CC-BY-4.0, ODbL-1.0.
+- Non-commercial sources (e.g. Telraam, CC BY-NC 4.0) are excluded from the
+  open benchmark cases.
 - Networks and POIs are OpenStreetMap (ODbL-1.0). Population is WorldPop
   (CC BY 4.0) for all cases except `london-v1` and `london-mini-v1`, which use
   ONS Census 2021 Output Area centroids (OGL-UK-3.0; Contains OS data © Crown

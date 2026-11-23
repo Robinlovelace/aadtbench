@@ -8,14 +8,7 @@ author:
 date: today
 bibliography: references.bib
 abstract: |
-  Traffic estimation is a fundamental task in urban planning and has been the focus of academic research for more than a century, a key aspect of the discipline of transportation modelling. Methods, datasets and computer hardware and software for transport modelling have evolved over this period, but the fundamental question remains: how many vehicles (or people) travel along each street? Answers to that question enable many downstream applications, from congestion management, future infrastructure planning, and prioritisation of policies and investments for safer and more sustainable transport systems.
-  Despite the importance of traffic estimates, and the fact that most work generating them is publicly funded, most of the models that generate them in practice have been proprietary, limiting transparency and reproducibility in the field.
-  Furthermore, most traffic models have focussed on estimating motor traffic volumes, reducing their usefulness for the growing group of transport planners tasked with getting people *out* of cars and *onto* more sustainable modes including walking and cycling.
-  Over the past decade, researchers have tackled these issues by developing open tools for traffic estimation, but their adoption in practice has been limited, in part due to lack of understanding about what they are, what they can do, and which ones to use in different contexts.
-  This paper tackles these challenges by reviewing open tools for traffic estimation.
-  It is a 'hands on' review in the sense that we not only discuss the tools but also *test drive* them on real world datasets in an open access framework called aadtbench.
-  While there are dozens of tools that can be used for multi-modal traffic estimation, we focus on four prominent and well-tested tools here: AequilibraE, Cityseer, UNA, and sDNA.
-  The paper demonstrates that open source tools are *already* capable of providing reliable multi-modal traffic estimates and supports the development of the wider ecosystem of open tools for government decision-making and open source software development.
+  Street-level estimates of vehicle, cycle and pedestrian flows underpin transport investment, road safety and decarbonisation planning, yet most operational traffic models remain proprietary and car-centric. Open-source spatial network and traffic assignment tools can estimate multi-modal flows transparently, but their adoption is held back by a lack of systematic, reproducible comparison across cities and modes. We introduce AADTBench, an open benchmark and containerised evaluation harness, and test four prominent open tools (11 fixed variants)—sDNA, UNA, cityseer and AequilibraE—against four simple spatial baselines across five open-data cities on three continents (Bristol, London, Melbourne, Toronto and Zurich). Using a single out-of-fold scale factor per mode, open tools achieve strong spatial rank correlation on car (median Spearman $\rho = 0.79$, $\log R^2 = +0.53$), heavy vehicles ($\rho = 0.74$, $\log R^2 = +0.54$) and cycling ($\rho = 0.61$, $\log R^2 = +0.12$), while local point-of-interest density ($\rho = 0.62$) remains a hard baseline to beat for walking (best tool $\rho = 0.46$). No single tool dominates every mode or data tier; compute ranges from 13 s (0.07 Wh/city) to 12 min (11.5 Wh/city).
 keywords: [traffic flow estimation, benchmark, spatial network analysis, active travel, traffic counts, reproducibility, open data]
 execute:
   freeze: auto
@@ -41,9 +34,9 @@ if not _board_path.exists():
     _board_path = fetch_result("leaderboard.csv", dest=ROOT / "results")
 board = pd.read_csv(_board_path)
 board = board[board["status"] == "complete"]
-OPEN = ["leeds-v1", "bristol-v1", "london-v1", "paris-v1", "melbourne-v1", "zurich-v1", "toronto-v1"]
-CASES = OPEN + ["leuven-v1"]
-go = board[(board["split"] == "group_out_pooled") & (board["track"] == "uncalibrated")]
+CASES = ["bristol-v1", "london-v1", "melbourne-v1", "toronto-v1", "zurich-v1"]
+go = board[(board["split"] == "group_out_pooled") & (board["track"] == "uncalibrated") & (board["case_id"].isin(CASES))]
+lo = board[(board["split"] == "leave_one_city_out") & (board["track"] == "uncalibrated") & (board["case_id"].isin(CASES))]
 
 TOOLS = [
     ("sdna", "sDNA"),
@@ -90,135 +83,66 @@ Transport modelling grew as a discipline in response to rapid growth in ownershi
 With shifting transport policy priorities come shifts in transport modelling demands.
 Increasingly, there is a need for estimates of active modes, walking and cycling being the most prominent, to inform interventions ranging from where to build new bike lanes—as in Paris's 2027--2032 *Plan Vélo* [@lovelace2017pct; @paris2026planvelo]—to which streets to pedestrianise, exemplified by the recent pedestrianisation of Oxford Street in London [@cooper2019pedestrian; @gla2026oxfordstreet].
 
-
 Increased demand for estimates of active travel flows has resulted in a growing body of research analysing the comparatively sparse data on walking and cycling (compared with voluminous car traffic counts) [@tait2024contraflow; @kaiser2025counting; @bostanara2025planning; @klein2026global], and the emergence of companies such as VivaCity [@vivacity2024sensors; @amin2025vivacity] and Telraam (recently acquired by Eco-Counter) [@momirski2022wecount; @telraam2026ecocounter] that deploy computer-vision cameras and low-cost citizen-science sensors to collect continuous multimodal counts.
 Despite the growth of such research directions and companies, observed counts currently exist on a tiny fraction of links. As with car traffic, models are needed to fill the gaps where there is no data and to estimate the impact of future interventions. Unlike motor traffic modelling, however, active modes are not destined to concentrate on major roads: several people on foot or bike can fit in place of a single car, making the spatial distribution of flows less constrained by congestion, and more variable over short distances.
 A wide range of models and tools have been developed to estimate walking and cycling flows, although it is notable that little research focusses on modelling walking and cycling (and potentially other modes) in the same tool, inadvertently continuing the siloed single-mode approach seen in traditional transport modelling—for example, studies and tools addressing only walking [@griswold2019pedestrian; @wolpert2025pedestrian; @park2025pedestrian; @sevtsuk2026foottraffic], only cycling [@cooper2018predictive; @bhowmick2022bicycling; @viero2024bikedna; @lovelace2024cruse], or only motor traffic [@sfyridis2020aadt; @ma2026aadt], with relatively few frameworks modelling walking and cycling together [@schlosser2025activetravel].
 
 A paradox in research on estimating active modes is that focusing on them alone can neglect inter-modal interactions and one of the key barriers to active travel: the 'elephant in the room' of motor vehicle traffic.
-It is in this context that this paper was written.
-Building on the observation that open tools have greater potential to enable the reproducible and therefore falsifiable and scientifically rigorous evidence that is needed than proprietary tools [@lovelace_open_2020], we review open tools.
-It is an applied, practical review demonstrating how open tools can estimate active and motor traffic flows in a reproducible and comparable manner.
-Questions that many readers will be asking when approaching and hoping to use such tools include: which generates good estimates of flow in my use case, which is easiest to use, and which is fastest?
+Building on the observation that open tools have greater potential to enable reproducible, falsifiable evidence than proprietary software [@lovelace_open_2020], this paper provides a practical benchmark-based review of open tools for multi-modal flow estimation.
+Benchmarks have solved comparable tool-selection problems in other fields by fixing the task, the data and the scoring rule so any method can be evaluated on equal terms [@deng2009imagenet; @mattson2020mlperf].
 
-Benchmarks have solved this problem in other fields by fixing the task, the
-data and the scoring rule so any method can be evaluated on equal terms
-[@deng2009imagenet; @mattson2020mlperf].
-
-This paper describes the benchmark design (Section 2), the harness and the four
-tools evaluated (Section 3), and their performance across modes, variants and
-cities (Section 4). Section 5 discusses implications for practice and future
-benchmarking.
+This paper describes the benchmark design (Section 2), the harness and the four tools evaluated (Section 3), their performance and compute cost across modes, variants and cities (Section 4), and practical implications for choosing tools (Section 5).
 
 # Benchmark design
 
 ## Task and target
 
-The target is the two-way annual average daily flow on a link, for one of five modes: `walking`, `cycling`, `car` (motor vehicles other than heavy vehicles), `heavy` (goods vehicles, buses and coaches) and `motor` (all motor vehicles,
-for cases whose counts do not separate them). A tool writes one non-negative flow per link and mode on any scale.
+The target is the two-way annual average daily flow on a link across four evaluated modes: `walking` (people), `cycling`, `car` (light motor vehicles; all motor vehicles in Zurich), and `heavy` (goods vehicles, buses and coaches). A tool writes one non-negative flow per link and mode on any scale. The schema also supports an aggregated `motor` mode and an observed-OD tier (`T3_observed_od`) for future cases.
 
 ## Cases
 
-A case includes: a raw OpenStreetMap network with stable link ids and count sites with annual averages and are uploaded as GitHub releases (@tbl-cases).
+Each case pairs a raw OpenStreetMap network (stable link ids) with openly licensed count sites expanded to annual averages, distributed as a versioned GitHub release (@tbl-cases).
 
 ```{python}
 #| echo: false
 #| label: tbl-cases
-#| tbl-cap: "Cases in release v0.1.0. Sites are counted after the licence filter and the crosswalk (matched sites only). Leuven uses Telraam data (CC BY-NC 4.0) and is released as a separate non-commercial case."
+#| tbl-cap: "Five open-data cases in AADTBench v0.1.0 (matched counter sites per mode after licence review and crosswalk)."
 rows = []
 for c in CASES:
     y = yaml.safe_load((ROOT / "cases" / c / "case.yaml").read_text())
     n = go[go.case_id == c].drop_duplicates("mode").set_index("mode")["n_sites"]
-    rows.append({"Case": c, "Place": y.get("place", y.get("title", "")),
-                 "Licence class": y.get("licence_class", "open"),
-                 **{m: (int(n[m]) if m in n else "") for m in ["walking", "cycling", "car", "heavy", "motor"]}})
+    rows.append({
+        "Case": c,
+        "Place": y.get("place", y.get("title", "")),
+        "Links (k)": f"{y['network']['links'] / 1000:.0f}",
+        **{m: (int(n[m]) if m in n else "—") for m in ["walking", "cycling", "car", "heavy"]},
+    })
 Markdown(pd.DataFrame(rows).to_markdown(index=False, disable_numparse=True))
 ```
 
-The open cases draw counts from public sources with redistributable licences:
-the UK Open Government Licence v3.0 (Department for Transport, Leeds City
-Council) and TfL Open Data terms (OGL v2.0 with TfL amendments; Powered by TfL
-Open Data; Contains OS data © Crown copyright and database rights 2026), the
-Open Database Licence ODbL 1.0 (Direction de la Voirie et des Déplacements –
-Ville de Paris permanent road loops, Eco-Counter cycle counters and multimodal
-thermal sensors), CC BY 4.0 (City of Melbourne, Victoria Department of
-Transport and Planning), CC0 1.0 (Stadt Zürich), and the Open Government
-Licence – Toronto. Networks and points of interest come from OpenStreetMap
-[@haklay2008osm] and population from WorldPop [@tatem2017worldpop] (with ONS
-Census 2021 Output Area centroids under OGL-UK-3.0 for London).
+All five cases use commercially reusable open data: UK Open Government Licence v3.0 (Department for Transport) and TfL Open Data terms (OGL v2.0 with TfL amendments; Powered by TfL Open Data; Contains OS data © Crown copyright and database rights 2026), CC BY 4.0 (City of Melbourne, Victoria Department of Transport and Planning), CC0 1.0 (Stadt Zürich), and the Open Government Licence – Toronto. Networks and points of interest come from OpenStreetMap [@haklay2008osm], and population from WorldPop [@tatem2017worldpop] (with ONS Census 2021 Output Area centroids under OGL-UK-3.0 for London).
 
-## Count-to-link crosswalk
+## Crosswalk, input tiers, scoring and splits
 
-Placing counts on the wrong link introduces errors that look like model error.
-The crosswalk is built once by `benchmark/crosswalk.py` under deterministic
-rules: a count matches only links open to its mode, road names or numbers are
-matched where present, motor counts prefer the primary road class among close
-candidates, one-way dual carriageways are paired so two-way counts meet two-way
-predictions, and turning movement counts are mapped to junction approach arms.
+A deterministic crosswalk (`benchmark/crosswalk.py`) places counts onto mode-accessible links, matching road names where present, preferring major classes for motor counts, pairing one-way dual carriageways so two-way counts meet two-way flows, and mapping junction turning counts to approach arms.
 
-## Input tiers and model families
-
-Each run declares its input tier:
-
-- `T0_network`: the street network only.
-- `T1_open_covariates`: `T0` plus WorldPop population and OpenStreetMap POIs.
-- `T2_synthetic_od`: `T1` plus the benchmark's synthetic gravity OD per mode.
-- `T3_observed_od`: `T1` plus an observed OD matrix where available.
-
-Because centrality, betweenness and gravity models overlap, each run also
-declares a model family (`reach`, `flow`, `assignment`, `baseline`,
-`statistical` or `other`) and four options (`distance`, `radius_or_decay`,
-`weighting` and `congestion`).
-
-## Scoring rule, baselines and splits
-
-Every tool and spatial baseline is scored with one scale factor per mode fitted
-on the training folds:
+Each run declares its input tier (`T0_network`: street network only; `T1_open_covariates`: plus population and OSM POIs; `T2_synthetic_od`: plus a 1 km synthetic gravity OD matrix per mode) and model family (`reach`, `flow`, `assignment`, `baseline`, `statistical`, or `other`). Every tool and spatial baseline is scored with a single multiplicative scale factor per mode fitted on training counter sites:
 
 $$k = \exp\!\left(\operatorname{mean}_{i \in \text{train},\, f_i > 0,\, c_i > 0} \log\frac{c_i}{f_i}\right), \qquad \hat{c}_i = k f_i.$$
 
-Only counter sites enter the fit. Sites where a tool predicts zero flow are left
-out of the fit of $k$ but scored as zero. Spearman rank correlation ($\rho$) is
-the primary metric because it is invariant to $k$ and robust to extreme counts;
-$\log(1 + c)$ predictive $R^2$ and coverage (share of sites with $f_i > 0$) are
-reported alongside it.
+Zero-flow sites are excluded from fitting $k$ but scored as zero. Spearman rank correlation ($\rho$) is the primary metric (invariant to $k$ and robust to extreme counts), reported alongside calibrated $\log(1 + c)$ $R^2$ and coverage (share of sites with $f_i > 0$). Four mandatory `T1` baselines are scored on every target: `class_only` (geometric mean count per road class), `centre_distance` ($1000 / (1000 + d)$), `attractor_density` (POI weight within 500 m), and `population_density` (population within 1 km).
 
-Four mandatory baselines (`T1_open_covariates`) are scored on every case and
-mode:
-
-- `class_only`: the geometric mean training count of the site's road class.
-- `centre_distance`: $1000 / (1000 + d)$, where $d$ is distance in metres to
-  the case centre.
-- `attractor_density`: POI weight within 500 m of the link midpoint.
-- `population_density`: population within 1 km of the link midpoint.
-
-Sites are grouped into 3 km grid cells and split into five spatial folds (seed
-42). Each fold is scored using $k$ (or the class lookup) fitted on the other
-four folds, and out-of-fold predictions are pooled before computing metrics. On
-the leave-one-city-out split, $k$ is fitted on all other open cases for the
-same mode and evaluated on the held-out city.
+Sites are grouped into 3 km grid cells and split into five spatial folds (seed 42); out-of-fold predictions are pooled before scoring (**spatial group-out**). On the **leave-one-city-out (LOCO)** split, $k$ (or the class lookup) is fitted on the other cities for the same mode and scored on the held-out city to test cross-city magnitude transfer.
 
 # The harness and evaluated tools
 
-## Adapter contract and resource budget
+A tool joins AADTBench through a single Python adapter in `adapters/` implementing `predict(ctx)` and a pinned container image (`ghcr.io/robinlovelace/aadtbench-<tool>:latest`). The harness passes a blind copy of the case (no counts), enforces the resource budget from `config/benchmark.yaml` (16 threads and 3600 s on full cases; 2 threads and 300 s on the `london-mini-v1` CI case), and logs wall time, CPU thread-time, hardware-normalised speed index and peak memory in `system.json`.
 
-A tool joins the benchmark through a single Python file in `adapters/` that
-subclasses `Adapter`, declares its metadata and variants, and implements
-`predict(ctx)`. The harness passes a blind copy of the case (`case.yaml`,
-`network.parquet`, `inputs/`, with no counts), enforces the wall-time limit and
-thread budget from `config/benchmark.yaml` (16 threads and 3600 s on full cases,
-2 threads and 300 s on the `london-mini-v1` CI case), and records wall time,
-CPU thread-time, speed index and peak memory in `system.json`.
-
-## Tools and variants
-
-We distinguish **tools** (distinct software packages) from **variants** (fixed
-algorithmic or parameter settings within a tool). @tbl-tools summarises the
-four open tools and eleven variants evaluated in this study.
+We distinguish **tools** (software packages) from **variants** (fixed algorithmic settings within a tool). @tbl-tools summarises the four open tools and eleven variants evaluated.
 
 | Tool | Package | Family | Input tier | Variant | Description |
 |:---|:---|:---|:---|:---|:---|
-| **sDNA** | `sdna-plus` [@cooper2020sdna] | `flow` / `reach` | `T0_network` | `betweenness_angular`, `betweenness_euclidean`, `mode_hybrid`, `nqpd_angular`, `nqpd_euclidean` | Polyline-length weighted betweenness, mode-specific hybrid metrics (`PEDESTRIAN` with stochastic dispersal, `CYCLE_ROUNDTRIP`, `VEHICLE` two-phase betweenness), and NQPD within mode-specific radii |
+| **sDNA** | `sdna-plus` [@cooper2020sdna] | `flow` / `reach` | `T0_network` | `betweenness_angular`, `betweenness_euclidean`, `mode_hybrid`, `nqpd_angular`, `nqpd_euclidean` | Polyline-length weighted betweenness, mode-specific hybrid metrics (`PEDESTRIAN` dispersed, `CYCLE_ROUNDTRIP`, `VEHICLE` two-phase betweenness), and NQPD within mode-specific radii |
 | **UNA** | `urban_network_analysis` [@sevtsuk2026una] | `flow` | `T1_open_covariates` | `default`, `shortest` | Gravity-weighted population-to-POI flow with 5% detour tolerance (`default`) vs shortest-path only (`shortest`) |
 | **cityseer** | `cityseer` [@simons2022cityseer] | `flow` | `T2_synthetic_od` | `default`, `dispersed` | OD-weighted shortest-path betweenness vs path-length tolerance dispersal (8% walking, 3% other modes) |
 | **AequilibraE** | `aequilibrae` [@aequilibrae2024] | `assignment` | `T2_synthetic_od` | `aon`, `ue_bfw` | All-or-nothing (AoN) free-flow assignment vs bi-conjugate Frank-Wolfe user equilibrium (UE) with BPR congestion (and soft BPR dispersion on active modes) |
@@ -227,53 +151,76 @@ four open tools and eleven variants evaluated in this study.
 
 # Results
 
-## Tool comparison across cities and modes
+## Leaderboard across cities and modes
 
-@tbl-main and @fig-main compare the four tools (taking each tool's best fixed
-variant) against the `class_only` and best T1 baseline on the spatial group-out
-split across the seven open cases.
+@tbl-leaderboard summarises the benchmark leaderboard across the five cities (taking each tool's best fixed variant per mode), combining spatial group-out rank correlation ($\rho$), spatial magnitude ($\log R^2$), and leave-one-city-out magnitude transfer (LOCO $\log R^2$). @fig-main shows the per-city spread.
 
 ```{python}
 #| echo: false
-#| label: tbl-main
-#| tbl-cap: "Spatial group-out Spearman rho by tool across the seven open cases (five folds of 3 km cells). Each tool column reports the best fixed variant for that tool."
-bl = go[(go.tool == "baseline") & go.rho.notna()]
-best = bl.loc[bl.groupby(["case_id", "mode"])["rho"].idxmax()].set_index(["case_id", "mode"])
+#| label: tbl-leaderboard
+#| tbl-cap: "Summary leaderboard across the five open cities (median across cities with n >= 20 sites, best fixed variant per tool and mode). Bold highlights the highest-scoring open tool per mode on spatial Spearman rho. Full per-city rows are published in leaderboard-summary.csv."
+go_v = go[go.n_sites >= 20]
+lo_v = lo[lo.n_sites >= 20]
+mode_order = [("car", "Car"), ("heavy", "Heavy"), ("cycling", "Cycling"), ("walking", "Walking")]
+all_tools = [*TOOLS, ("baseline", "Best baseline")]
+
 rows = []
-for (c, m), r in best.iterrows():
-    if c not in OPEN:
-        continue
-    row = {
-        "Case": c,
-        "Mode": m,
-        "Sites": int(r["n_sites"]),
-        "Class only": fmt(pick(bl, "baseline", "class_only", "T1_open_covariates").get((c, m))),
-        "Best baseline": f"{fmt(r['rho'])} ({r['variant'].replace('_', ' ')})",
-    }
-    for tool_id, label in TOOLS:
-        row[label] = fmt(best_tool(go, tool_id).get((c, m)))
-    rows.append(row)
+for m_id, m_label in mode_order:
+    sub_g = go_v[go_v["mode"] == m_id]
+    sub_l = lo_v[lo_v["mode"] == m_id]
+    n_cities = int(sub_g["case_id"].nunique())
+    mode_entries = []
+    for t_id, t_label in all_tools:
+        tg = sub_g[sub_g["tool"] == t_id]
+        if tg.empty:
+            continue
+        grp = (
+            tg.groupby("variant")
+            .agg(med_rho=("rho", "median"), mean_rho=("rho", "mean"),
+                 med_r2=("log_r2", "median"), cov=("coverage", "median"))
+            .sort_values(["med_rho", "mean_rho"], ascending=False)
+        )
+        v_top = grp.index[0]
+        rec = grp.iloc[0]
+        tl = sub_l[(sub_l["tool"] == t_id) & (sub_l["variant"] == v_top)]
+        loco_r2 = tl["log_r2"].median() if not tl.empty else np.nan
+        mode_entries.append((t_id, t_label, v_top, rec["med_rho"], rec["med_r2"], loco_r2, rec["cov"]))
+    top_open_rho = max(e[3] for e in mode_entries if e[0] != "baseline")
+    for idx, (t_id, t_label, v_top, mrho, mr2, lr2, cov) in enumerate(mode_entries):
+        is_top = (t_id != "baseline") and (abs(mrho - top_open_rho) < 1e-9)
+        rows.append({
+            "Mode (cities)": f"{m_label} ({n_cities})" if idx == 0 else "",
+            "Tool": f"**{t_label}**" if is_top else t_label,
+            "Best variant": f"`{v_top}`",
+            "Spatial ρ": f"**{mrho:.3f}**" if is_top else f"{mrho:.3f}",
+            "Spatial log R²": f"{mr2:+.3f}",
+            "LOCO log R²": "" if pd.isna(lr2) else f"{lr2:+.3f}",
+            "Coverage": f"{cov:.2f}",
+        })
 Markdown(pd.DataFrame(rows).to_markdown(index=False, disable_numparse=True))
 ```
 
 ```{python}
 #| echo: false
 #| label: fig-main
-#| fig-cap: "Spearman rho by case and mode (spatial group-out). Points show the best T1 baseline and each open tool (best variant)."
+#| fig-cap: "Spatial group-out Spearman rho by city and mode across the five open cases. Points show the best T1 baseline and each open tool (best fixed variant)."
 #| fig-format: png
 #| fig-dpi: 160
 #| fig-width: 6.5
-#| fig-height: 5.4
+#| fig-height: 4.3
 import matplotlib.pyplot as plt
 
-order = [(c, m) for c in OPEN for m in ["walking", "cycling", "car", "heavy", "motor"]
-         if (c, m) in best.index]
-labels = [f"{c} {m}" for c, m in order]
-fig, ax = plt.subplots(figsize=(6.5, 5.4))
+bl = go[(go.tool == "baseline") & go.rho.notna()]
+best = bl.loc[bl.groupby(["case_id", "mode"])["rho"].idxmax()].set_index(["case_id", "mode"])
+order = [(c, m) for c in CASES for m in ["walking", "cycling", "car", "heavy"] if (c, m) in best.index]
+labels = [f"{c.replace('-v1', '')} {m}" for c, m in order]
+
+fig, ax = plt.subplots(figsize=(6.5, 4.3))
 y = np.arange(len(order))[::-1]
 ax.axvline(0, color="#b8b8b2", lw=0.8, zorder=0)
 ax.grid(axis="x", color="#ececea", lw=0.6, zorder=0)
-ax.scatter([best.loc[k, "rho"] for k in order], y, s=42, marker="o", color="#2a78d6", label="Best baseline", zorder=3, edgecolor="white", linewidth=0.8)
+ax.scatter([best.loc[k, "rho"] for k in order], y, s=42, marker="o", color="#2a78d6",
+           label="Best baseline", zorder=3, edgecolor="white", linewidth=0.8)
 
 styles = [
     ("sdna", "sDNA", "D", "#8c564b"),
@@ -285,7 +232,8 @@ for tool_id, label, marker, color in styles:
     s = best_tool(go, tool_id)
     vals = [s.get(k, np.nan) for k in order]
     if not all(pd.isna(vals)):
-        ax.scatter(vals, y, s=42, marker=marker, color=color, label=label, zorder=3, edgecolor="white", linewidth=0.8)
+        ax.scatter(vals, y, s=42, marker=marker, color=color, label=label,
+                   zorder=3, edgecolor="white", linewidth=0.8)
 
 ax.set_yticks(y)
 ax.set_yticklabels(labels, fontsize=8, color="#3d3d3a")
@@ -297,50 +245,20 @@ ax.legend(fontsize=8, frameon=False, loc="lower left")
 fig.tight_layout()
 ```
 
-Across the seven open cities (@tbl-main, @fig-main), open tools consistently
-outperform the simple baselines on car, heavy and cycling targets: `sDNA` leads
-five of eight cities on car ($\rho$ up to $0.83$ in Bristol and $0.80$ in
-Leeds, London and Toronto), while `cityseer` leads Zurich ($0.81$) and Paris
-($0.50$). On cycling, `UNA` and `cityseer` trade leads across cities ($\rho$ up
-to $0.69$ in London and $0.64$ in Zurich), well ahead of every spatial
-baseline. Walking remains the hardest mode to beat simple land-use covariates:
-local POI density (`attractor_density`, median $\rho = 0.59$) still outperforms
-every network tool in several cities, though `UNA`, `cityseer`, `AequilibraE`
-and `sDNA` each achieve $\rho \approx 0.48$–$0.73$ depending on urban form.
+Open tools consistently beat every baseline on motor and cycling targets (@tbl-leaderboard, @fig-main): `sDNA mode_hybrid` leads four of five cities on car (median $\rho = 0.79$, $\log R^2 = +0.53$; up to $0.83$ in Bristol and $0.79$ in London and Toronto) and leads heavy vehicles (median $\rho = 0.74$, $\log R^2 = +0.54$), while `cityseer` leads Zurich car ($0.81$). Because a single multiplicative scale factor preserves rank order, cross-city magnitude transfer (LOCO $\log R^2$) stays strongly positive for motor traffic ($+0.46$ to $+0.53$ for `sDNA` and `AequilibraE`), whereas active-mode LOCO $\log R^2$ turns negative where overall walking and cycling shares differ sharply between cities. On cycling, `cityseer` (median $\rho = 0.61$, $\log R^2 = +0.12$; wins Zurich $0.64$ and Bristol $0.58$) and `UNA` (wins London $0.69$ and Toronto $0.54$) trade leads well ahead of every baseline. Walking remains the hardest mode: local POI density (`attractor_density`, median $\rho = 0.62$) outperforms every network tool overall, though `UNA` ($0.53$ in London), `AequilibraE` ($0.48$ in Melbourne) and `sDNA` ($0.48$ and $\log R^2 = +0.25$ in Toronto) capture meaningful street-level variation.
 
-## Effect of variants and settings within tools
+## Effect of variants across all cities
 
-Separating tools from variants clarifies which modelling assumptions matter
-within each package (@tbl-variants and @fig-matrix).
-
-```{python}
-#| echo: false
-#| label: tbl-variants
-#| tbl-cap: "Comparison of tool variants across open cases (spatial group-out Spearman rho)."
-rows = []
-for c in OPEN:
-    for m in ["walking", "cycling", "car", "heavy"]:
-        if (c, m) not in best.index:
-            continue
-        row = {"Case": c, "Mode": m}
-        any_val = False
-        for tool, var, tier, lab in VARIANTS:
-            v = pick(go, tool, var, tier).get((c, m), np.nan)
-            any_val = any_val or not pd.isna(v)
-            row[lab] = fmt(v)
-        if any_val:
-            rows.append(row)
-Markdown(pd.DataFrame(rows).to_markdown(index=False, disable_numparse=True))
-```
+@fig-matrix shows every city, mode, baseline and tool variant side by side, highlighting which modelling choices drive gains within each package:
 
 ```{python}
 #| echo: false
 #| label: fig-matrix
-#| fig-cap: "Breadth of benchmark performance across all 8 cities, 4 modes, 4 spatial baselines, and 11 open tool variants (spatial group-out Spearman rho, n >= 20 sites). Black outlines mark the highest-scoring open tool variant for each city and mode."
+#| fig-cap: "Benchmark performance across all 5 open cities, 4 modes, 4 spatial baselines, and 11 open tool variants (spatial group-out Spearman rho, n >= 20 sites). Black outlines mark the highest-scoring open tool variant for each city and mode."
 #| fig-format: png
 #| fig-dpi: 160
 #| fig-width: 8.2
-#| fig-height: 7.4
+#| fig-height: 6.0
 from matplotlib.patches import Rectangle
 
 ALL_COLS = [
@@ -350,7 +268,7 @@ ALL_COLS = [
     ("baseline", "population_density", "T1_open_covariates", "Base: pop"),
     *VARIANTS,
 ]
-fig, axes = plt.subplots(2, 2, figsize=(8.2, 7.4), sharey=False)
+fig, axes = plt.subplots(2, 2, figsize=(8.2, 6.0), sharey=False)
 modes_grid = [("walking", "(a) Walking"), ("cycling", "(b) Cycling"),
               ("car", "(c) Car"), ("heavy", "(d) Heavy")]
 go_valid = go[go.n_sites >= 20]
@@ -362,7 +280,7 @@ for ax, (m_id, m_title) in zip(axes.ravel(), modes_grid):
         s = pick(go_valid, t_id, v_id, tr_id)
         for i, c_id in enumerate(cases_m):
             mat[i, j] = s.get((c_id, m_id), np.nan)
-    im = ax.imshow(mat, vmin=0.0, vmax=0.82, cmap="YlGnBu", aspect="auto")
+    ax.imshow(mat, vmin=0.0, vmax=0.82, cmap="YlGnBu", aspect="auto")
     ax.axvline(3.5, color="#3d3d3a", lw=1.1, ls="--")
     for i in range(len(cases_m)):
         tool_slice = mat[i, 4:]
@@ -373,12 +291,12 @@ for ax, (m_id, m_title) in zip(axes.ravel(), modes_grid):
                 txt_col = "white" if v >= 0.52 else "#222220"
                 fw = "bold" if j == j_best else "normal"
                 ax.text(j, i, f"{v:.2f}".lstrip("0") if v >= 0 else f"-{abs(v):.2f}".lstrip("0"),
-                        ha="center", va="center", fontsize=6.2, color=txt_col, fontweight=fw)
+                        ha="center", va="center", fontsize=6.4, color=txt_col, fontweight=fw)
         if j_best >= 4:
             ax.add_patch(Rectangle((j_best - 0.48, i - 0.48), 0.96, 0.96,
                                    fill=False, edgecolor="#111111", lw=1.3))
     ax.set_yticks(np.arange(len(cases_m)))
-    ax.set_yticklabels([c.replace("-v1", "") for c in cases_m], fontsize=7.5)
+    ax.set_yticklabels([c.replace("-v1", "") for c in cases_m], fontsize=7.8)
     ax.set_xticks(np.arange(len(ALL_COLS)))
     ax.set_xticklabels([c[3] for c in ALL_COLS], rotation=48, ha="right", fontsize=6.8)
     ax.set_title(m_title, fontsize=9, loc="left", fontweight="bold")
@@ -386,82 +304,20 @@ for ax, (m_id, m_title) in zip(axes.ravel(), modes_grid):
 fig.tight_layout()
 ```
 
-Three patterns emerge from @tbl-variants and @fig-matrix:
+- **Congestion & dispersion (`AequilibraE`):** User equilibrium (`ue_bfw`) improves calibrated magnitude over all-or-nothing (`aon`) across motor ($\log R^2$: $+0.49$ vs $+0.41$ car; $+0.52$ vs $+0.44$ heavy) and cycling ($+0.21$ vs $+0.07$), and lifts Melbourne walking to $\rho = 0.48$.
+- **Path dispersal & decay (`cityseer`, `UNA`):** Allowing path-length tolerance in `cityseer` (`dispersed`) improves both cycling (median $\rho = 0.61$ vs $0.57$) and walking ($0.46$ vs $0.35$). In `UNA`, gravity decay with a 5% detour envelope (`default`) edges `shortest` on median cycling ($0.56$ vs $0.53$) and walking ($0.45$ vs $0.43$), while `shortest` wins London cycling ($0.69$) and walking ($0.53$).
+- **Mode-specific hybrid metrics vs fast reach (`sDNA`):** `mode_hybrid` delivers the top motor scores from street geometry alone (`T0`), whereas `nqpd_euclidean` / `nqpd_angular` run ~15× faster and maintain positive $\log R^2$ ($+0.17$) on walking.
 
-1. **Congestion and multi-path dispersion (`AequilibraE AoN` vs `UE`).**
-   Bi-conjugate Frank-Wolfe user equilibrium (`ue_bfw`) consistently matches or
-   improves on all-or-nothing assignment (`aon`) for motor traffic (spreading
-   demand across parallel arterials via BPR congestion; median car
-   $\log R^2 = +0.41$) and, with soft BPR dispersion on active modes, improves
-   cycling magnitude ($\log R^2 = -0.08$) and walking $\rho$ ($0.48$ in
-   Melbourne).
-2. **Path dispersal and gravity decay (`cityseer` and `UNA`).** Allowing
-   path-length tolerance in `cityseer` (`dispersed`: 8% walking, 3% other modes)
-   improves active-travel rank correlation over shortest-path routing across
-   cities (mean cycling $\rho = 0.49$, mean walking $\rho = 0.50$). In `UNA`,
-   exponential gravity decay with a detour envelope (`default`) leads median
-   cycling across all seven cycling cities ($\rho = 0.53$, including Toronto
-   $0.54$), whereas `shortest` is stronger on long-distance car corridors and
-   London walking/cycling ($\rho = 0.69$ cycling).
-3. **Mode-specific hybrid metrics vs fast reach (`sDNA`).** On `T0_network`
-   (street geometry and road hierarchy alone, with no population, POI or OD
-   inputs), `sDNA mode_hybrid` achieves the highest overall car rank correlation
-   and calibrated magnitude (median $\rho = 0.75$, $\log R^2 = +0.44$) and leads
-   heavy vehicles (median $\rho = 0.73$, $\log R^2 = +0.48$). Meanwhile, `sDNA`
-   NQPD variants (`nqpd_euclidean`, `nqpd_angular`) run roughly $18\times$ faster
-   while maintaining positive $\log R^2$ across walking and cycling.
-
-## Leave-one-city-out transfer
-
-```{python}
-#| echo: false
-#| label: tbl-loco
-#| tbl-cap: "Leave-one-city-out Spearman rho and log R2: the scale factor k (or class lookup) is fitted on the other open cases for the same mode and scored on the held-out city."
-lo = board[(board.split == "leave_one_city_out") & (board.track == "uncalibrated")]
-rows = []
-for (c, m), g in lo.groupby(["case_id", "mode"]):
-    if c not in OPEN:
-        continue
-    b = g[(g.tool == "baseline") & g.rho.notna()]
-    if b.empty:
-        continue
-    rb = b.loc[b["rho"].idxmax()]
-    row = {
-        "Case": c,
-        "Mode": m,
-        "Best baseline rho (log R2)": f"{fmt(rb['rho'])} ({fmt(rb['log_r2'])})",
-    }
-    for tool_id, label in TOOLS:
-        d = g[(g.tool == tool_id) & g.rho.notna()]
-        if d.empty:
-            row[f"{label} rho (log R2)"] = ""
-        else:
-            rt = d.loc[d["rho"].idxmax()]
-            row[f"{label} rho (log R2)"] = f"{fmt(rt['rho'])} ({fmt(rt['log_r2'])})"
-    rows.append(row)
-Markdown(pd.DataFrame(rows).to_markdown(index=False, disable_numparse=True))
-```
-
-Because a single multiplicative scale factor $k$ does not alter rank order on a
-held-out city, leave-one-city-out Spearman $\rho$ matches the spatial group-out
-$\rho$, whereas $\log R^2$ tests whether absolute traffic magnitude transfers
-between cities (@tbl-loco). Transferring $k$ across cities preserves positive
-$\log R^2$ for `class_only` and `AequilibraE` on several car targets, but fails
-where sensor expansion methods or overall modal shares differ sharply across
-countries.
-
-## Computational resources
+## Computational resources and energy
 
 ```{python}
 #| echo: false
 #| label: tbl-resources
-#| tbl-cap: "Median per-city compute and estimated CPU electricity use across the seven open cases: wall time, total CPU thread-time, hardware-normalised speed index (wall time over a fixed reference workload), peak memory, and TDP-proportional CPU energy (Wh/city, from cpu_time_s using 350 W / 64 threads for the host AMD Threadripper PRO 9975WX)."
+#| tbl-cap: "Median per-city compute and estimated CPU electricity use across the five open cases: wall time, total CPU thread-time, hardware-normalised speed index, peak memory, and TDP-proportional CPU energy (Wh/city, from cpu_time_s using 350 W / 64 threads for the host AMD Threadripper PRO 9975WX)."
 CPU_W_PER_THREAD = {
     "AMD Ryzen Threadripper PRO 9975WX 32-Cores": 350.0 / 64.0,
 }
-r = go[(go.tool != "baseline") & (go.case_id.isin(OPEN))].drop_duplicates(
-    ["case_id", "tool", "variant", "input_tier"]
-).copy()
+r = go[go.tool != "baseline"].drop_duplicates(["case_id", "tool", "variant", "input_tier"]).copy()
 w_per_thr = r["cpu_model"].map(CPU_W_PER_THREAD).fillna(6.0)
 r["energy_wh"] = r["cpu_time_s"] * w_per_thr / 3600.0
 t = (
@@ -478,33 +334,18 @@ t["Wh/city"] = t["Wh/city"].round(2)
 Markdown(t.to_markdown(index=False, disable_numparse=True))
 ```
 
-Reporting CPU thread-time alongside wall time separates total work from
-parallelism (@tbl-resources). `AequilibraE` (`aon`, ~17 s) and `sDNA` NQPD
-(~45–47 s) finish a typical city in under a minute, whereas `cityseer` takes
-~1.5 min (~2.8 GB RAM, 0.3–0.4 Wh/city) and `AequilibraE` (`ue_bfw`) takes
-~2.7 min (~1.7 GB RAM, ~2.0 Wh/city). `UNA` takes 2.8–5.0 min wall time
-(3.6–4.8 GB RAM) but runs mostly single-threaded (~0.4–0.7 Wh/city), while
-`sDNA` betweenness and `mode_hybrid` parallelise strongly (~11× threads,
-11–15 min wall time) with the lowest memory footprint (~1.5 GB). Following
-Green Algorithms [@lannelongue2021green], CPU electricity is estimated as
-$E = t_{\text{CPU}} \cdot (\text{TDP}/N_{\text{threads}})/3600$ (a
-thread-proportional package lower bound; direct hardware counters such as RAPL
-are preferred where available [@henderson2020systematic]). Even the heaviest
-variant uses ~15.5 Wh/city—roughly a single smartphone charge (~15 Wh)—while
-the fastest use under 0.5 Wh/city.
+Reporting CPU thread-time alongside wall time separates total work from parallelism (@tbl-resources). `AequilibraE` (`aon`, 13 s, 0.07 Wh/city) and `sDNA` NQPD (44–47 s, 0.5 Wh/city) finish a typical city in under a minute; `cityseer` takes ~1.5 min (~2.8 GB RAM, 0.3 Wh/city) and `AequilibraE` (`ue_bfw`) takes ~2.6 min (~1.6 GB RAM, 2.0 Wh/city). `UNA` takes 2.6–3.6 min (3.6–4.0 GB RAM) but runs mostly single-threaded (0.3–0.45 Wh/city), while `sDNA` betweenness and `mode_hybrid` parallelise strongly (~11× threads, 9.6–11.8 min) with the lowest memory footprint (~1.5 GB). Following Green Algorithms [@lannelongue2021green], CPU electricity is estimated as $E = t_{\text{CPU}} \cdot (\text{TDP}/N_{\text{threads}})/3600$ (a thread-proportional lower bound; hardware RAPL counters are preferred where available [@henderson2020systematic]). Even the heaviest variant uses 11.5 Wh/city—less than a single smartphone charge (~15 Wh).
 
 # Discussion
 
-## Different horses for courses: matching tools to planning questions
+## Different horses for courses
 
-No single tool dominates across every mode, input tier, metric and city scale
-(@fig-horses). Instead, the benchmark reveals a clear division of labour—*different
-horses for courses*—governed by four trade-offs:
+No single tool dominates across every mode, data tier, metric and compute budget (@fig-horses). @tbl-horses maps each open tool to the planning questions and data tiers where it excels.
 
 ```{python}
 #| echo: false
 #| label: fig-horses
-#| fig-cap: "Different horses for courses across 8 cities and 4 modes. (a) Mean Spearman rho by mode and tool (best variant), showing the crossover from T0/T1 spatial network analysis on active modes to T2 OD assignment on motor modes. (b) Rank correlation (rho) vs calibrated log R2 (point size proportional to coverage). (c) Within-tool variant gains by mode. (d) Accuracy vs wall-clock runtime across network sizes."
+#| fig-cap: "Different horses for courses across 5 cities and 4 modes. (a) Mean Spearman rho by mode and tool (best variant). (b) Rank correlation (rho) vs calibrated log R2 (point size proportional to coverage). (c) Mean within-tool variant gains by mode. (d) Accuracy vs wall-clock runtime across cities."
 #| fig-format: png
 #| fig-dpi: 160
 #| fig-width: 7.5
@@ -565,8 +406,7 @@ deltas = []
 for tool, v1, v2, tier, lab, ms, col in pairs:
     s1 = pick(go[go.n_sites >= 20], tool, v1, tier)
     s2 = pick(go[go.n_sites >= 20], tool, v2, tier)
-    common = s1.index.intersection(s2.index)
-    common = [idx for idx in common if idx[1] in ms and idx[0] in OPEN]
+    common = [idx for idx in s1.index.intersection(s2.index) if idx[1] in ms]
     deltas.append((s1.loc[common] - s2.loc[common]).mean() if common else 0.0)
 ax.barh(y_p, deltas, color=[p[6] for p in pairs], height=0.55, alpha=0.85)
 ax.axvline(0, color="#3d3d3a", lw=0.8)
@@ -606,76 +446,33 @@ for a in axes.ravel():
 fig.tight_layout()
 ```
 
-| Planning context / question | Available data tier | Recommended tool & variant | Key strength |
+| Planning context | Data tier | Recommended tool & variant | Practical advantage |
 |---|---|---|---|
-| **Network-only motor & active screening** (no OD or land-use data; street design & corridor hierarchy) | `T0_network` | **sDNA** (`mode_hybrid` for car/heavy; `nqpd_euclidean` for fast active reach) | Top overall car ($\rho = 0.75$, $\log R^2 = +0.44$) and heavy ($\rho = 0.73$, $\log R^2 = +0.48$) from street geometry & hierarchy alone; lowest RAM (~1.5 GB) and 100% coverage |
-| **Land-use & POI-driven active flows** (new developments, station access, amenity reach) | `T1_open_covariates` | **UNA** (`default` gravity + detour, `shortest` for London/car) | Explicit population-to-POI gravity decay with detour envelope; top median cycling ($\rho = 0.53$, London $0.69$, Toronto $0.54$) and walking ($\rho = 0.48$) at ~0.4–0.7 Wh/city |
-| **Fast multi-modal corridor screening with OD** (city-wide active + motor flows under ~1.5 min) | `T2_synthetic_od` | **cityseer** (`default` for motor, `dispersed` for active) | Fast Rust/Numba OD betweenness (~90 s, ~0.4 Wh/city); highest mean car ($0.64$), cycling ($0.49$) and walking ($0.50$) $\rho$, and #1 car in Zurich ($0.81$) and Paris ($0.50$) |
-| **Strategic assignment with congestion & active dispersion** (arterial capacity, road diet / diversion impacts) | `T2_synthetic_od` / `T3_observed_od` | **AequilibraE** (`ue_bfw` for congested/multi-path assignment; `aon` in ~17 s) | Explicit link capacities and BPR user equilibrium (`ue_bfw`) give strong motor magnitude ($\log R^2 = +0.41$), best flow/assignment cycling $\log R^2$, and top walking in Melbourne ($0.48$) |
+| **Network-only motor & street design** (no OD or land-use data) | `T0_network` | **sDNA** (`mode_hybrid` motor; `nqpd_euclidean` active) | Highest motor $\rho$ ($0.79$ car, $0.74$ heavy) and LOCO transfer ($+0.53$) from street geometry alone; lowest RAM (~1.5 GB) |
+| **POI-driven active travel** (developments, station access, amenity reach) | `T1_open_covariates` | **UNA** (`default` detour; `shortest` London) | Explicit population-to-POI gravity decay; leads London cycling ($0.69$) and walking ($0.53$) at ~0.3–0.5 Wh/city |
+| **Fast multi-modal city screening** (active + motor under ~1.5 min) | `T2_synthetic_od` | **cityseer** (`default` motor; `dispersed` active) | Top median cycling ($\rho = 0.61$) and Zurich car ($0.81$) in ~90 s (~0.3 Wh/city) |
+| **Congested highway & corridor scenarios** (road diets, diversion) | `T2_synthetic_od` | **AequilibraE** (`ue_bfw` congested; `aon` in 13 s) | Explicit link capacities and BPR equilibrium give top cycling $\log R^2$ ($+0.21$), strong motor magnitude ($+0.49$), and 13 s AoN screening |
 
-: "Different horses for courses": matching open traffic estimation tools to planning questions, modes and data tiers. {#tbl-horses}
+: "Different horses for courses": matching open tools to planning contexts, modes and data tiers. {#tbl-horses}
 
-Three broader findings stand out:
+Three broader lessons emerge for transport modellers and benchmark developers:
 
-1. **Road class vs network routing.** For motor traffic, road hierarchy encodes
-   decades of infrastructure investment and speed regulation. Tools that incorporate
-   hierarchical speeds and capacities (`AequilibraE` and conductance-weighted
-   `cityseer` / `sDNA`) or road-class baselines outperform purely geometric
-   shortest-path routing on motor modes. Conversely, for walking and cycling,
-   local land-use density (`attractor_density`, `population_density`), street
-   connectivity (`sDNA` NQPD/betweenness) and distance-decayed accessibility
-   (`UNA`) are crucial.
-2. **Zone connector topology matters as much as the routing engine.** Snapping
-   1 km² zones to a single arbitrary node discards all intrazonal trips and
-   dumps entire zone volumes onto minor residential streets. Splitting high-demand
-   zones into a multi-connector subgrid (and snapping motor connectors to the
-   primary/secondary/tertiary collector network) improves Spearman $\rho$,
-   $\log R^2$ and sensor coverage across every OD-based tool (`AequilibraE` and
-   `cityseer`).
-3. **Evaluation design.** Spatial group-out cross-validation, explicit simple
-   baselines, and separate rank ($\rho$), magnitude ($\log R^2$) and coverage
-   metrics prevent over-claiming skill from spatial autocorrelation or road-class
-   calibration.
+1. **Hierarchy drives motor flows; land use drives walking.** Road class and speed hierarchy carry most of the signal for car and heavy traffic, whereas pedestrian volumes correlate most strongly with local POI density (`attractor_density`, $\rho = 0.62$)—showing that active-travel models must pair network routing with high-resolution land-use attractors.
+2. **Connector topology matters as much as the routing engine.** Snapping coarse 1 km² zones to a single arbitrary node discards intrazonal trips and overloads residential streets; multi-connector subgrids snapped to collector roads consistently lift $\rho$, $\log R^2$ and coverage across OD tools (`AequilibraE`, `cityseer`).
+3. **Evaluation design guards against over-claiming.** Spatial group-out folds, explicit simple baselines, and separate rank ($\rho$), magnitude ($\log R^2$), coverage and energy (`Wh/city`) reporting expose trade-offs hidden by single-metric leaderboards.
 
 ## Limitations
 
-Counts remain uneven across modes and cities: Melbourne has no open cycling
-counts, Zurich has only motor and active counts, and UK DfT manual counts are
-short-period expansions rather than 365-day sensors. All networks in v0.1 are
-raw OpenStreetMap highway graphs without topological simplification, which tests
-tool robustness directly on raw OSM but penalises algorithms whose runtime scales
-with node count. Finally, the `T2_synthetic_od` matrix uses a single coarse
-(1 km) gravity specification; higher-resolution origins and destinations or
-observed travel demand (`T3`) are priorities for future releases.
+Counts remain uneven across modes: Melbourne lacks open cycling counts, Zurich lacks heavy and pedestrian counts, and UK DfT counts are short-period expansions rather than continuous 365-day sensors. All networks in v0.1 are unsimplified raw OpenStreetMap graphs, which tests real-world robustness directly but penalises node-count-sensitive algorithms. Finally, `T2_synthetic_od` uses a coarse 1 km gravity matrix; finer-grained demand and observed OD tables (`T3`) are priorities for future releases.
 
-# Contributing
+# Contributing and availability
 
-AADTBench is open to three kinds of contribution:
+AADTBench welcomes new tool adapters (`IMPLEMENTATIONS.md`), openly licensed cities (`benchmark/build_case.py`), and versioned rule proposals. Continuous integration checks the adapter contract and runs Docker smoke tests on `london-mini-v1`.
 
-- **Tools and variants.** Add a thin adapter in `adapters/` (see
-  `IMPLEMENTATIONS.md`) and register it in `config/benchmark.yaml`. Continuous
-  integration verifies the contract and runs a smoke test on `london-mini-v1`.
-- **Cases.** Any city with openly licensed traffic or active travel counts can
-  be built with `benchmark/build_case.py`.
-- **Rules.** Changes to crosswalk rules, input tiers or scoring create a new
-  benchmark version so earlier leaderboards remain reproducible.
-
-# Data and code availability
-
-Code and the complete scored leaderboard (`leaderboard-summary.csv`):
-<https://github.com/Robinlovelace/aadtbench>. Case bundles and archived release
-assets: release `v0.1.0` of the same repository, with SHA-256 checksums in
-`manifest-v0.1.0.json`.
+Code and the complete scored leaderboard (`leaderboard-summary.csv`): <https://github.com/Robinlovelace/aadtbench>. Case bundles: release `v0.1.0` of the same repository, with SHA-256 checksums in `manifest-v0.1.0.json`.
 
 # Acknowledgements
 
-We thank the public agencies and open-data communities that publish traffic and
-active-travel counts under open licences—the UK Department for Transport,
-Transport for London (Powered by TfL Open Data; Contains OS data © Crown
-copyright and database rights 2026), Office for National Statistics, Leeds City
-Council, Direction de la Voirie et des Déplacements – Ville de Paris (ODbL 1.0),
-City of Melbourne, Victoria Department of Transport and Planning, Stadt Zürich,
-City of Toronto, Telraam, OpenStreetMap contributors, and WorldPop—as well as
-the maintainers of sDNA, UNA, cityseer, and AequilibraE.
+We thank the public agencies and open-data communities that publish traffic and active-travel counts under open licences—the UK Department for Transport, Transport for London (Powered by TfL Open Data; Contains OS data © Crown copyright and database rights 2026), Office for National Statistics, City of Melbourne, Victoria Department of Transport and Planning, Stadt Zürich, City of Toronto, OpenStreetMap contributors, and WorldPop—as well as the maintainers of sDNA, UNA, cityseer, and AequilibraE.
 
 # References

@@ -78,7 +78,7 @@ NON_COMMERCIAL_SOURCES: dict[str, dict] = {
 
 REJECTED_SOURCES: dict[str, str] = {
     "wyca_tam": "WYCA traffic and active mode counts are not open data.",
-    "telraam": "CC BY-NC 4.0: only in cases labelled licence_class non_commercial (leuven-v1).",
+    "telraam": "CC BY-NC 4.0: non-commercial only; excluded from open benchmark cases.",
     "vivacity": "no open publication found (Data Mill North searched 2026-10-08).",
 }
 
