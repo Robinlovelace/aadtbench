@@ -216,7 +216,7 @@ def build_hero_figure(df: pd.DataFrame, out_path: Path) -> None:
 
     ax1.set_yticks(y_base)
     ax1.set_yticklabels([f"{lbl}\n({df[df['mode']==m]['case_id'].nunique()} cities)" for m, lbl in MODES], fontsize=8.5)
-    ax1.set_xlim(0.35, 0.90)
+    ax1.set_xlim(0.28, 0.86)
     ax1.set_xlabel("Median Spearman $\\rho$ (spatial group-out)", fontsize=8.5, color="#333333")
     ax1.set_title("(a) Best fixed variant by mode", fontsize=9.5, loc="left", fontweight="bold", color="#222222")
     ax1.grid(axis="x", color="#eaeae6", lw=0.7, zorder=0)
@@ -269,7 +269,7 @@ def build_hero_figure(df: pd.DataFrame, out_path: Path) -> None:
 
     ax2.set_xscale("log")
     ax2.set_xlim(8, 1600)
-    ax2.set_ylim(0.66, 0.825)
+    ax2.set_ylim(0.655, 0.775)
     ax2.set_xlabel("Median wall time per city (s, log scale)", fontsize=8.5, color="#333333")
     ax2.set_ylabel("Car median Spearman $\\rho$", fontsize=8.5, color="#333333")
     ax2.set_title("(b) Car accuracy vs speed & energy", fontsize=9.5, loc="left", fontweight="bold", color="#222222")
