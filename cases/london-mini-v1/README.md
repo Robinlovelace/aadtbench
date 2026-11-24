@@ -26,5 +26,5 @@ Sources (licences from `benchmark/licences.py`):
 
 - Powered by TfL Open Data.
 - Contains OS data © Crown copyright and database rights 2026.
-- Contains public sector information licensed under the Open Government Licence v3.0 (Department for Transport; Office for National Statistics).
-- Inputs: Population from ONS Census 2021 Output Area centroids (OGL-UK-3.0; subset of `london-v1`), POIs from OpenStreetMap (ODbL-1.0), 500 m zones, synthetic OD.
+- Contains public sector information licensed under the Open Government Licence v3.0 (Department for Transport).
+- Inputs: Population from WorldPop (CC BY 4.0, 100 m constrained), POIs from OpenStreetMap (ODbL-1.0), 500 m zones, synthetic OD.

@@ -25,5 +25,5 @@ Run `scripts/run_board.sh` to execute the full 5-city suite from `config/benchma
 ## Data, results, and contributing
 
 - **Results:** See the [paper](https://robinlovelace.net/aadtbench/paper/) for the leaderboard, figures, and compute/energy analysis, or download [`leaderboard-summary.csv`](leaderboard-summary.csv) directly.
-- **Case bundles:** 100% openly licensed networks (OSM, ODbL-1.0), population (WorldPop CC BY 4.0; ONS Census 2021 Output Areas OGL-UK-3.0 for London), and reviewed open counts live in the [v0.1.0 release](https://github.com/Robinlovelace/aadtbench/releases/tag/v0.1.0), verified by SHA-256 on download. London active travel counts are Powered by TfL Open Data (Contains OS data © Crown copyright and database rights 2026).
+- **Case bundles:** 100% openly licensed networks (OSM, ODbL-1.0), WorldPop population (CC BY 4.0), and reviewed open counts live in the [v0.1.0 release](https://github.com/Robinlovelace/aadtbench/releases/tag/v0.1.0), verified by SHA-256 on download. London active travel counts are Powered by TfL Open Data (Contains OS data © Crown copyright and database rights 2026).
 - **Contribute:** New tools, cities, and rule proposals are welcome via issues and pull requests — see [`BENCHMARK.md`](BENCHMARK.md) for the rules and [`IMPLEMENTATIONS.md`](IMPLEMENTATIONS.md) for the adapter contract and container images.

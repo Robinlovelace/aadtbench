@@ -83,9 +83,11 @@ adapter and its updated `leaderboard-summary.csv` rows.
 
 ### Published tool containers (GHCR)
 
-| Tool | GHCR image | Dockerfile |
-|---|---|---|
-| **sDNA** | `ghcr.io/robinlovelace/aadtbench-sdna:latest` | `containers/sdna/Dockerfile` |
-| **UNA** | `ghcr.io/robinlovelace/aadtbench-una:latest` | `containers/una/Dockerfile` |
-| **cityseer** | `ghcr.io/robinlovelace/aadtbench-cityseer_od:latest` | `containers/cityseer_od/Dockerfile` |
-| **AequilibraE** | `ghcr.io/robinlovelace/aadtbench-aequilibrae:latest` | `containers/aequilibrae/Dockerfile` |
+All four images build on `python:3.12-slim` and share the same `requirements.txt` harness layer (~662 MB uncompressed):
+
+| Tool | GHCR image | Uncompressed size (tool layer) | Dockerfile |
+|---|---|---:|---|
+| **sDNA** | `ghcr.io/robinlovelace/aadtbench-sdna:latest` | 1.05 GB (+4.7 MB) | `containers/sdna/Dockerfile` |
+| **AequilibraE** | `ghcr.io/robinlovelace/aadtbench-aequilibrae:latest` | 1.16 GB (+94 MB) | `containers/aequilibrae/Dockerfile` |
+| **UNA** | `ghcr.io/robinlovelace/aadtbench-una:latest` | 1.41 GB (+279 MB) | `containers/una/Dockerfile` |
+| **cityseer** | `ghcr.io/robinlovelace/aadtbench-cityseer_od:latest` | 1.45 GB (+314 MB) | `containers/cityseer_od/Dockerfile` |

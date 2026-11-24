@@ -35,10 +35,11 @@ sources:
 - source: tfl
   licence: OGL-UK-2.0
   url: https://cycling.data.tfl.gov.uk
-  attribution: Powered by TfL Open Data. Contains OS data © Crown copyright and database rights 2026.
-  reviewed: 2026-11-23, TfL Open Data terms (OGL v2.0 + TfL/OS attribution clauses) verified
+  attribution: Powered by TfL Open Data. Contains OS data © Crown copyright and database
+    rights 2026.
+  reviewed: 2026-11-23, TfL Open Data terms (OGL v2.0 + TfL/OS attribution clauses)
+    verified
   n_rows: 68
-population_source: ONS Census 2021 Output Area centroids (OGL-UK-3.0; Contains OS data © Crown copyright and database rights 2026)
 excluded_sources: {}
 files:
 - crosswalk.csv
@@ -49,7 +50,7 @@ files:
 - network.parquet
 - sites.csv
 - source.osm.pbf
-data_size_bytes: 4311165
+data_size_bytes: 4452475
 network:
   source_extract: source.osm.pbf
   source_timestamp: unknown

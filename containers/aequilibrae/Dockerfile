@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # AequilibraE assignment tool image. Build from the repository root:
 #   docker build -f containers/aequilibrae/Dockerfile -t aadtbench-aequilibrae .
-# Self-contained (no base image) so that CI can cache it with buildx.
+# Shares the python:3.12-slim + requirements.txt layer with all other tool images.
 FROM python:3.12-slim
 
 LABEL org.opencontainers.image.title="AADTBench aequilibrae" \
@@ -15,7 +15,9 @@ WORKDIR /workspace
 
 COPY requirements.txt /tmp/requirements.txt
 RUN mkdir -p /tmp/numba /tmp/matplotlib && chmod 1777 /tmp/numba /tmp/matplotlib \
-    && pip install -r /tmp/requirements.txt aequilibrae==1.7.2
+    && pip install -r /tmp/requirements.txt
+
+RUN pip install aequilibrae==1.7.2
 
 COPY adapters ./adapters
 COPY benchmark/__init__.py benchmark/system.py ./benchmark/

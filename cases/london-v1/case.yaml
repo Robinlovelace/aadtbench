@@ -35,10 +35,11 @@ sources:
 - source: tfl
   licence: OGL-UK-2.0
   url: https://cycling.data.tfl.gov.uk
-  attribution: Powered by TfL Open Data. Contains OS data © Crown copyright and database rights 2026.
-  reviewed: 2026-11-23, TfL Open Data terms (OGL v2.0 + TfL/OS attribution clauses) verified
+  attribution: Powered by TfL Open Data. Contains OS data © Crown copyright and database
+    rights 2026.
+  reviewed: 2026-11-23, TfL Open Data terms (OGL v2.0 + TfL/OS attribution clauses)
+    verified
   n_rows: 2306
-population_source: ONS Census 2021 Output Area centroids (OGL-UK-3.0; Contains OS data © Crown copyright and database rights 2026)
 excluded_sources: {}
 network:
   source_extract: geofabrik_great-britain-261025.osm.pbf
@@ -58,4 +59,4 @@ files:
 - network.parquet
 - sites.csv
 - source.osm.pbf
-data_size_bytes: 85915329
+data_size_bytes: 89348738
